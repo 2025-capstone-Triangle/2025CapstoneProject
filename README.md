@@ -50,22 +50,21 @@
 
 ## ⚙️ 기술 스택
   추후 작성
-<!-- <img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
-<img src="https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" />
-<img src="https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&amp;logo=springsecurity&amp;logoColor=white">
-<img src="https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=for-the-badge&amp;logo=spring&amp;logoColor=white">
-<img src="https://img.shields.io/badge/Spring_Cloud-6DB33F?style=for-the-badge&amp;logo=spring&amp;logoColor=white">
-<img src="https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=Hibernate&logoColor=white">
-<img src="https://img.shields.io/badge/QueryDSL-0096C7?style=for-the-badge&amp;logo=querydsl&amp;logoColor=white">
-<img src="https://img.shields.io/badge/LangChain4j-0056D6?style=for-the-badge&amp;logo=langchain&amp;logoColor=white">
-<img src="https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&amp;logo=google&amp;logoColor=white">
-<img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&amp;logo=redis&amp;logoColor=white">
-<img src="https://img.shields.io/badge/Gradle-02303A?style=for-the-badge&amp;logo=gradle&amp;logoColor=white">
-<img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" />
-<img src="https://img.shields.io/badge/Supabase-181818?style=for-the-badge&logo=supabase&logoColor=white" />
-<img src="https://img.shields.io/badge/Amazon_AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white" />
-<img src="https://img.shields.io/badge/NGNIX-429345?style=for-the-badge&logo=ngnix&logoColor=white" />
-<img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" /> -->
 
+<div>
+  <img src="https://img.shields.io/badge/Pytorch-CD2701?style=for-the-badge&amp;logo=pytorch&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
+  <img src="https://img.shields.io/badge/Amazon_AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-yellow?style=for-the-badge&amp;logo=python&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/SpringBoot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" />
+  <img src="https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&amp;logo=springsecurity&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=for-the-badge&amp;logo=spring&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/React-00DBFF?style=for-the-badge&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/QueryDSL-0096C7?style=for-the-badge&amp;logo=querydsl&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&amp;logo=google&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/LangChain-0056D6?style=for-the-badge&amp;logo=langchain&amp;logoColor=white">
+  <img src="https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=Hibernate&logoColor=white ">
+</div>
 
 ---

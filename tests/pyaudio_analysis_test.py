@@ -19,10 +19,10 @@ print(f"    샘플링 주파수(Fs): {Fs}Hz")
 print(f"    오디오 신호 길이: {len(x)} 샘플")
 print(f"    오디오 재생 시간: {len(x)/Fs:.2f}초")
 
+
 # ----------------------------------------------------
 # 2. 특징 추출 (stFeatureExtraction: Short-Term Feature Extraction)
 # ----------------------------------------------------
-
 window_size_samples = int(0.050 * Fs) # 50ms 윈도우 (프레임 길이)
 step_size_samples = int(0.025 * Fs)  # 25ms 스텝 (50% 겹침)
 
@@ -33,25 +33,41 @@ print(f"    - 총 특징 개수: {F.shape[0]}개")
 print(f"    - 총 프레임 개수: {F.shape[1]}개")
 print(f"특징 이름 (일부): {feature_names[:5]} ... {feature_names[-5:]}")
 
+
 # ----------------------------------------------------
-# 3. 추출된 특징 아웃풋 확인 (맛보기!)
+# 3. 추출된 특징 아웃풋 확인
 # ----------------------------------------------------
 print("\n첫 5개 프레임의 특징 (일부):")
 # 첫 5개 특징 (ZCR, 에너지, 피치 등)에 대해, 첫 5개 프레임의 값을 출력
 for i in range(min(5, F.shape[0])): # 특징 5개만
     print(f"  {feature_names[i]:<20}: {F[i, :min(5, F.shape[1])]}")
 
-# --- 시각화 (선택 사항이지만 강력 추천!) ---
+
+personality_features = [
+    "spectral_centroid", "spectral_spread", "spectral_entropy", "mfcc_1", "mfcc_2", "mfcc_3", "delta energy", "delta zcr"
+]
+
+feature_map = {name: i for i, name in enumerate(feature_names)}
+
+for feature_name in personality_features:
+    try:
+        idx = feature_map[feature_name]
+
+        print(f"{feature_name:<20}: {F[idx, :min(5, F.shape[1])]}")
+
+    except KeyError:
+        print(f"{feature_name:<20}: 해당 특징을 찾을 수 없습니다")
+# --- 시각화 ---
 if F.shape[1] > 1: # 프레임이 여러 개일 때만 시각화 의미 있음
     time_axis = np.arange(F.shape[1]) * (step_size_samples / Fs)
 
     plt.figure(figsize=(15, 6))
 
     plt.subplot(2, 1, 1)
-    plt.plot(time_axis, F[feature_names.index("zcr"), :])
-    plt.title('Zero Crossing Rate (ZCR) over time')
+    plt.plot(time_axis, F[feature_names.index("spectral_centroid"), :])
+    plt.title('Tone Brightness over time')
     plt.xlabel('Time (s)')
-    plt.ylabel('ZCR')
+    plt.ylabel('Normalized Centroid')
 
     plt.subplot(2, 1, 2)
     plt.plot(time_axis, np.log10(F[feature_names.index("energy"), :] + 1e-6)) # log 스케일

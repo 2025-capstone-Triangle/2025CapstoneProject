@@ -1,13 +1,16 @@
-# 2025CapstoneProject
+# Team 07 我
 
-> 	개인/단체 이미지 브랜딩 및 캐릭터 해석 플랫폼의 레포지토리 입니다.
+> 	음성, 이미지 성향 분석을 통해 페르소나를 진단해주고 맞춤형 콘텐츠까지 제작하주는 Person:A 의 개발 레포지토리입니다.
 >
 > \- 이화여자대학교 캡스톤디자인창업프로젝트 7팀 我 -
 
 ## 📌 프로젝트 소개
 
 <div align="center">
-  <p>개인/단체 이미지 브랜딩 및 캐릭터 해석 플랫폼</p>
+  <p><strong>트렌드를 주도할 자신만의 디지털 아이덴티티를 구축하고 싶은 20대 크리에이터를 위한 음성, 이미지, 성향 분석 기반 온라인 페르소나 및 맞춤형 컨텐츠 생성 도우미</strong></p>
+  <p>
+    프로젝트 간단 설명
+  </p>
 </div>
 
 <br/>
@@ -43,13 +46,10 @@
 </div>
 
 ## ✅ 서비스 소개
-추후 작성
-
-## 🛠️ 주요 기능 소개
-추후 작성
+<p><strong>트렌드를 주도할 자신만의 디지털 아이덴티티를 구축하고 싶은 20대 크리에이터를 위한 음성, 이미지, 성향 분석 기반 온라인 페르소나 및 맞춤형 컨텐츠 생성 도우미</strong></p>
+간단 설명 및 랜딩 페이지
 
 ## ⚙️ 기술 스택
-  추후 작성
 
 <div>
   <img src="https://img.shields.io/badge/Pytorch-CD2701?style=for-the-badge&amp;logo=pytorch&amp;logoColor=white">
@@ -66,5 +66,10 @@
   <img src="https://img.shields.io/badge/LangChain-0056D6?style=for-the-badge&amp;logo=langchain&amp;logoColor=white">
   <img src="https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=Hibernate&logoColor=white ">
 </div>
+
+## 🛠️ 주요 기능 소개
+추후 작성
+
+화면과 함께 설명
 
 ---

@@ -3,15 +3,14 @@
 from pyAudioAnalysis import audioBasicIO
 from pyAudioAnalysis import ShortTermFeatures
 import numpy as np
-import matplotlib.pyplot as plt
 
 # ----------------------------------------------------
 # 1. 파일 로드 
 # ----------------------------------------------------
-input_audio_file  = "data/raw/data1.wav"
+input_audio_file  = "../data/raw/음침민서.wav"
 
 [Fs, x] = audioBasicIO.read_audio_file(input_audio_file)
-if x.ndim > 1: #
+if x.ndim > 1: 
     x = np.mean(x, axis=1)
 
 print(f"오디오 파일 '{input_audio_file}'로드 완료:")
@@ -37,45 +36,60 @@ print(f"특징 이름 (일부): {feature_names[:5]} ... {feature_names[-5:]}")
 # ----------------------------------------------------
 # 3. 추출된 특징 아웃풋 확인
 # ----------------------------------------------------
-print("\n첫 5개 프레임의 특징 (일부):")
-# 첫 5개 특징 (ZCR, 에너지, 피치 등)에 대해, 첫 5개 프레임의 값을 출력
-for i in range(min(5, F.shape[0])): # 특징 5개만
-    print(f"  {feature_names[i]:<20}: {F[i, :min(5, F.shape[1])]}")
 
-
-personality_features = [
-    "spectral_centroid", "spectral_spread", "spectral_entropy", "mfcc_1", "mfcc_2", "mfcc_3", "delta energy", "delta zcr"
+# 통계를 계산할 특징 리스트 
+key_features = [
+    "zcr", "energy", "spectral_centroid", "spectral_spread", "spectral_entropy",
+    "mfcc_1", "mfcc_2", "mfcc_3", "delta energy", "delta zcr"
 ]
 
 feature_map = {name: i for i, name in enumerate(feature_names)}
 
-for feature_name in personality_features:
+results = {}
+
+total_frames = F.shape[1]
+sample_size = 5
+
+# 오디오 시작 (Start)
+start_frames = np.arange(min(sample_size, total_frames))
+
+# 오디오 중간 (Middle) - 중앙 프레임을 중심으로 추출
+middle_start = max(0, total_frames // 2 - sample_size // 2)
+middle_frames = np.arange(middle_start, min(total_frames, middle_start + sample_size))
+
+# 오디오 끝 (End)
+end_start = max(0, total_frames - sample_size)
+end_frames = np.arange(end_start, total_frames)
+
+sample_indices = {
+    "시작": start_frames,
+    "중간": middle_frames,
+    "끝": end_frames
+}
+
+for feature_name in key_features:
     try:
         idx = feature_map[feature_name]
 
-        print(f"{feature_name:<20}: {F[idx, :min(5, F.shape[1])]}")
+        mean_val = np.mean(F[idx, :])
+        std_val = np.std(F[idx, :])
+        print(f"\n✨ {feature_name.upper()} (인덱스: {idx})")
+        results[feature_name] = {"mean": mean_val, "std": std_val}
+        print(f"{feature_name:<25} {mean_val:^15.4f} {std_val:^15.4f}")
+        print("-" * 30)
+
+        for label, indices in sample_indices.items():
+            # 실제 F 행렬에 접근 가능한 인덱스만 사용 (오디오가 너무 짧을 경우 대비)
+            valid_indices = indices[indices < total_frames]
+            
+            # 해당 프레임들의 특징 값 추출
+            feature_values = F[idx, valid_indices]
+
+            # 출력 포맷 조정: 프레임 인덱스 표시
+            frame_indices_str = ', '.join(map(str, valid_indices))
+            
+            print(f"  {label:<15} (프레임: {frame_indices_str})")
+            print(f"    값: {feature_values}")
 
     except KeyError:
-        print(f"{feature_name:<20}: 해당 특징을 찾을 수 없습니다")
-# --- 시각화 ---
-if F.shape[1] > 1: # 프레임이 여러 개일 때만 시각화 의미 있음
-    time_axis = np.arange(F.shape[1]) * (step_size_samples / Fs)
-
-    plt.figure(figsize=(15, 6))
-
-    plt.subplot(2, 1, 1)
-    plt.plot(time_axis, F[feature_names.index("spectral_centroid"), :])
-    plt.title('Tone Brightness over time')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Normalized Centroid')
-
-    plt.subplot(2, 1, 2)
-    plt.plot(time_axis, np.log10(F[feature_names.index("energy"), :] + 1e-6)) # log 스케일
-    plt.title('Energy (Log) over time')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Log Energy')
-
-    plt.tight_layout()
-    plt.show()
-else:
-    print("\n프레임이 부족하여 시각화할 수 없습니다. 더 긴 오디오 파일을 사용해보세요.")
+        print(f"\n{feature_name.upper():<20}: 해당 특징을 찾을 수 없습니다")

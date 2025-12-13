@@ -6,7 +6,11 @@
 terminal에
 
 pip install python-dotenv
+
+
 pip install -U langchain
+
+
 pip install -U langchain-google-genai
 
 입력

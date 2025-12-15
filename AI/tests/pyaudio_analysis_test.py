@@ -84,10 +84,10 @@ def analyze_audio(audio):
     if x.ndim > 1: 
         x = np.mean(x, axis=1)
 
-    print(f"오디오 파일 '{input_audio_file}'로드 완료:") 
-    print(f"    샘플링 주파수(Fs): {Fs}Hz")
-    print(f"    오디오 신호 길이: {len(x)} 샘플")
-    print(f"    오디오 재생 시간: {len(x)/Fs:.2f}초")
+    # print(f"오디오 파일 '{input_audio_file}'로드 완료:") 
+    # print(f"    샘플링 주파수(Fs): {Fs}Hz")
+    # print(f"    오디오 신호 길이: {len(x)} 샘플")
+    # print(f"    오디오 재생 시간: {len(x)/Fs:.2f}초")
 
     # 2. 특징 추출 (stFeatureExtraction: Short-Term Feature Extraction)
     window = int(0.050 * Fs) # 50ms 윈도우 (프레임 길이)

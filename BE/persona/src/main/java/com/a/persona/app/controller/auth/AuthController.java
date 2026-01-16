@@ -1,5 +1,6 @@
 package com.a.persona.app.controller.auth;
 
+import com.a.persona.app.controller.auth.payload.DuplicationCheckRequest;
 import com.a.persona.app.controller.auth.payload.SigninRequest;
 import com.a.persona.app.controller.auth.payload.SignupRequest;
 import com.a.persona.app.controller.auth.payload.TokenResponse;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @Tag(name="인증", description = "로그인 및 인증 관련 API입니다.")
 @RestController
@@ -70,4 +73,33 @@ public class AuthController {
                 .body(CommonApiResponse.success(ResponseCode.OK));
     }
 
+    /**
+     * 중복 확인 처리 API<br>
+     * 요청객체에서 이메일 또는 아이디 중 둘 중 하나만 입력이 되어야 하며,<br>
+     * 이메일, 아이디가 모두 담겨있거나 모두 없는 경우 오류코드 반환
+     * @param duplicationCheckRequest 이메일 또는 아이디를 담는 요청 객체
+     * @return 검사 성공시 {@code Boolean} 형을 응답에 담아 보내며,<br>
+     * 잘못 된 요청인 경우 {@code HttpStatus.BAD_REQUEST} 반환
+     */
+    @PostMapping("/check")
+    @Operation(summary = "중복 검사", description = "중복된 이메일 또는 닉네임이 존재하는지 확인합니다.<br>"
+            + "이메일 또는 닉네임이 이미 존재하는지 <code>Boolean</code> 으로 반환합니다.<br>"
+            + "요청시 이메일 또는 닉네임 둘중 하나만 값이 있어야 하며, 둘다 null이거나 데이터를 가지고 있다면 <code>400(BadRequest)</code>를 반환합니다.")
+    public ResponseEntity<CommonApiResponse<Map<String, Boolean>>> isDuplicated(
+            @RequestBody DuplicationCheckRequest duplicationCheckRequest
+    ) {
+        String email = duplicationCheckRequest.getEmail();
+        String username = duplicationCheckRequest.getUsername();
+        if(email != null && username == null){
+            if(memberService.isEmailExists(email))
+                return ResponseEntity.ok(CommonApiResponse.success(Map.of("isDuplicated", true)));
+            return ResponseEntity.ok(CommonApiResponse.success(Map.of("isDuplicated", false)));
+        } else if (email == null && username != null){
+            if(memberService.isUsername(username))
+                return ResponseEntity.ok(CommonApiResponse.success(Map.of("isDuplicated", true)));
+            return  ResponseEntity.ok(CommonApiResponse.success(Map.of("isDuplicated", false)));
+        } else {
+            return ResponseEntity.badRequest().body(CommonApiResponse.error(ResponseCode.BAD_REQUEST));
+        }
+    }
 }

@@ -95,10 +95,10 @@ def analyze_audio(audio):
 
     F, feature_names = ShortTermFeatures.feature_extraction(x, Fs, window, step)
 
-    #print(f"\n추출된 특징 행렬 (F)의 형태: {F.shape}")
-    #print(f"    - 총 특징 개수: {F.shape[0]}개")
-    #print(f"    - 총 프레임 개수: {F.shape[1]}개")
-    #print(f"특징 이름 (일부): {feature_names[:5]} ... {feature_names[-5:]}")
+    print(f"\n추출된 특징 행렬 (F)의 형태: {F.shape}")
+    print(f"    - 총 특징 개수: {F.shape[0]}개")
+    print(f"    - 총 프레임 개수: {F.shape[1]}개")
+    print(f"특징 이름 (일부): {feature_names[:5]} ... {feature_names[-5:]}")
     #초반부 코드가 잘 동작하는지 확인하기 위함으로, 현재는 사용하지 않습니다
 
     #Harmonic, Pitch 값을 구간 별로 행렬에 수동으로 저장합니다
@@ -187,12 +187,12 @@ def analyze_audio(audio):
             result_dict[feature_name.upper()]={}
             
             result_dict[feature_name.upper()]["index"] = idx
-            # print(f"\n {feature_name.upper()} (인덱스: {idx})")
+            print(f"\n {feature_name.upper()} (인덱스: {idx})")
             
             result_dict[feature_name.upper()]["mean"] = mean_val
             result_dict[feature_name.upper()]["std_val"] = std_val
-            # print(f"{feature_name:<25} {mean_val:^15.4f} {std_val:^15.4f}")
-            # print("-" * 30)
+            print(f"{feature_name:<25} {mean_val:^15.4f} {std_val:^15.4f}")
+            print("-" * 30)
 
             for label, indices in sample_indices.items():
                 # 실제 F 행렬에 접근 가능한 인덱스만 사용 (오디오가 너무 짧을 경우 대비)
@@ -208,8 +208,8 @@ def analyze_audio(audio):
                 result_dict[feature_name.upper()][label]["frame"] = frame_indices_str
                 result_dict[feature_name.upper()][label]["values"] = feature_values.tolist()
 
-                # print(f"  {label:<15} (프레임: {frame_indices_str})")
-                # print(f"    값: {feature_values}")
+                print(f"  {label:<15} (프레임: {frame_indices_str})")
+                print(f"    값: {feature_values}")
 
         except KeyError:
             print(f"\n{feature_name.upper():<20}: 해당 특징을 찾을 수 없습니다")
@@ -245,7 +245,7 @@ def generate_voice_keywords(audio):
         ("human", analyze_audio(audio)),
     ]
     ai_msg = model.invoke(messages)
-    # print(ai_msg.content)
+    print(ai_msg.content)
     return ai_msg.content
 
 if __name__ == "__main__":

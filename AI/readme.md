@@ -50,6 +50,15 @@ pip install -U langchain
 pip install -U langchain-google-genai
 ```
 
+
+#### C. `SemanticSegmentation` 관련 라이브러리
+
+포즈 추적 및 구도 추천을 위한 라이브러리입니다.
+
+```bash
+pip install mediapipe
+```
+
 -----
 
 ### 3\. API 키 설정 (LangChain 연동)

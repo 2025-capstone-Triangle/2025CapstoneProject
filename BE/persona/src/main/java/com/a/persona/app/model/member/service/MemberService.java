@@ -3,9 +3,13 @@ package com.a.persona.app.model.member.service;
 import com.a.persona.app.controller.auth.payload.SignupRequest;
 import com.a.persona.app.model.auth.code.Role;
 import com.a.persona.app.model.member.domain.Member;
+import com.a.persona.app.model.member.dto.MemberDto;
 import com.a.persona.app.model.member.repo.MemberRepository;
+import com.a.persona.infra.error.exceptions.CommonException;
+import com.a.persona.infra.response.ResponseCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MemberService {
 
+    private final ModelMapper modelMapper;
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -52,6 +57,70 @@ public class MemberService {
                 .is_creator(signupRequest.getIs_creator())
                 .build();
 
+        memberRepository.save(member);
+    }
+
+    /**
+     * 멤버의 정보를 조회합니다.
+     * @param username 유저 아이디
+     * @return MemberDto
+     */
+    public MemberDto getMember(String username) {
+
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        return modelMapper.map(member, MemberDto.class);
+    }
+
+    /**
+     * 멤버의 비밀번호를 변경합니다.
+     * @param username
+     * @param password
+     */
+    public void updatePassword(String username, String password) {
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        member.setPassword(passwordEncoder.encode(password));
+        memberRepository.save(member);
+    }
+
+    /**
+     * 멤버의 이메일을 변경합니다.
+     * @param username
+     * @param email
+     */
+    public void updateEmail(String username, String email) {
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        member.setEmail(email);
+        memberRepository.save(member);
+    }
+
+    /**
+     * 멤버의 기타 정보를 변경합니다.
+     * @param username
+     * @param memberDto
+     */
+    public void updateMember(String username, MemberDto memberDto) {
+
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        if(memberDto.getIs_creator()!=null){
+            member.setIs_creator(memberDto.getIs_creator());
+        }
+        if(memberDto.getBirth()!=null){
+            member.setBirth(memberDto.getBirth());
+        }
+        if(memberDto.getSex()!=null){
+            member.setSex(memberDto.getSex());
+        }
+        memberRepository.save(member);
+
+    }
+
+    /**
+     * 멤버를 soft delete 합니다.
+     * @param username
+     */
+    public void deleteMember(String username) {
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        member.setIs_creator(false);
         memberRepository.save(member);
     }
 }

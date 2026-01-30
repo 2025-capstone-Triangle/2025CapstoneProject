@@ -11,3 +11,28 @@ INSERT INTO member (id, username, password, email, role, birth, sex, is_creator,
 VALUES
     (nextval('member_sequence'), 'admin', '{bcrypt}$2a$10$eQswQEePE9YBRlCvoGjzvucjQZ1JJYdhVwob.gfLJ5I.swOpReeDC', 'admin01@example.com', 'ROLE_ADMIN', '2002-03-10', 'FEMALE', true, now(), now(), true),
     (nextval('member_sequence'), 'admin1', '{bcrypt}$2a$10$eQswQEePE9YBRlCvoGjzvucjQZ1JJYdhVwob.gfLJ5I.swOpReeDC', 'admin02@persona.com', 'ROLE_ADMIN', '1995-01-01', 'MALE', false, now(), now(), true);
+
+-- 1. Persona 기본 정보 삽입 (member_id 10000, 10001 사용)
+INSERT INTO persona (id, name, profile, member_id, is_saved, created_at, updated_at, is_active)
+VALUES
+    (nextval('persona_sequence'), '새벽의 예술가', 'https://s3.persona.com/profiles/artist_01.jpg', 10000, true, now(), now(), true),
+    (nextval('persona_sequence'), '냉철한 분석가', 'https://s3.persona.com/profiles/analyst_02.jpg', 10000, false, now(), now(), true),
+    (nextval('persona_sequence'), '햇살 머금은 모험가', 'https://s3.persona.com/profiles/adventurer_03.jpg', 10001, true, now(), now(), true),
+    (nextval('persona_sequence'), '도심 속 미니멀리스트', 'https://s3.persona.com/profiles/minimal_04.jpg', 10001, true, now(), now(), true);
+
+-- 2. Persona 키워드 삽입 (위에서 생성된 ID 10000, 10001, 10002, 10003 가정)
+INSERT INTO persona_keywords (persona_id, keyword)
+VALUES
+    (10000, '감성적인'), (10000, '창의적'), (10000, '몽환적'),
+    (10001, '논리적'), (10001, '효율성'), (10001, '정확한'),
+    (10002, '에너제틱'), (10002, '자유로운'), (10002, '낙천적'),
+    (10003, '단순한'), (10003, '정적인'), (10003, '세련된');
+
+-- 3. Persona 컬러 삽입
+INSERT INTO persona_colors (persona_id, color)
+VALUES
+    (10000, '#4A148C'), (10000, '#7B1FA2'), -- 보라 계열
+    (10001, '#263238'), (10001, '#546E7A'), -- 다크 그레이 계열
+    (10002, '#FFB300'), (10002, '#F4511E'), -- 오렌지/옐로우 계열
+    (10003, '#F5F5F5'), (10003, '#9E9E9E'); -- 화이트/그레이 계열
+

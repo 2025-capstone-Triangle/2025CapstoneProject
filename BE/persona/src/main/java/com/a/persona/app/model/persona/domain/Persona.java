@@ -3,15 +3,14 @@ package com.a.persona.app.model.persona.domain;
 import com.a.persona.app.model.common.BaseEntity;
 import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -54,4 +53,8 @@ public class Persona extends BaseEntity {
     @Column(name = "color")
     @Builder.Default
     private List<String> colors = new ArrayList<>();
+
+    private Boolean isSaved = false;
+
+    // todo 코드 넣기
 }

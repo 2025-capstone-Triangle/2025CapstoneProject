@@ -1,17 +1,17 @@
 package com.a.persona.app.controller.auth;
 
-import com.a.persona.app.controller.auth.payload.DuplicationCheckRequest;
-import com.a.persona.app.controller.auth.payload.SigninRequest;
-import com.a.persona.app.controller.auth.payload.SignupRequest;
-import com.a.persona.app.controller.auth.payload.TokenResponse;
+import com.a.persona.app.controller.auth.payload.*;
 import com.a.persona.app.model.auth.AuthService;
 import com.a.persona.app.model.auth.dto.TokenDto;
+import com.a.persona.app.model.mail.MailService;
 import com.a.persona.app.model.member.service.MemberService;
 import com.a.persona.infra.response.CommonApiResponse;
 import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.Map;
 
 @Tag(name="인증", description = "로그인 및 인증 관련 API입니다.")
@@ -34,6 +35,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final MemberService memberService;
+    private final MailService mailService;
 
     /**
      * 로그인 처리 매서드
@@ -61,7 +63,7 @@ public class AuthController {
      */
     @Operation(summary = "회원가입", description = "회원가입 요청을 처리합니다. <br>" +
             "사용자 생년월일은 YYYY-MM-DD 의 형식입니다." +
-            "사용자 성별은 ENUM값(FEMALE, MALE)으로 관리됩니다. ")
+            "사용자 성별은 ENUM값(FEMALE, MALE, ETC)으로 관리됩니다. ")
     @PostMapping("/signup")
     public ResponseEntity<CommonApiResponse<ResponseCode>> signup(
             @RequestBody SignupRequest signupRequest
@@ -102,4 +104,53 @@ public class AuthController {
             return ResponseEntity.badRequest().body(CommonApiResponse.error(ResponseCode.BAD_REQUEST));
         }
     }
+
+    /**
+     * 이메일로 코드 전송
+     * @param verifyEmailRequest
+     * @return
+     */
+    @PostMapping("/email")
+    @Operation(summary = "이메일 코드 요청", description = "첨부된 이메일로 코드를 발송합니다.<br>")
+    public ResponseEntity<CommonApiResponse<Void>> createVerifyCode(
+            @RequestBody @Valid VerifyEmailRequest verifyEmailRequest
+    ){
+        if(verifyEmailRequest.getCode()!=null) {
+            return ResponseEntity.badRequest().body(CommonApiResponse.error(ResponseCode.BAD_REQUEST));
+        }
+
+        String userEmail = verifyEmailRequest.getEmail();
+        try {
+            // 이메일 발송
+            mailService.sendVerificationEmail(userEmail);
+            return ResponseEntity.ok(CommonApiResponse.noContent());
+        } catch (MessagingException | IOException e) {
+            return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+
+    /**
+     * 코드 발송 확인
+     * @param verifyEmailRequest
+     * @return
+     */
+    @PostMapping("/code")
+    public ResponseEntity<CommonApiResponse<Void>> verifyEmail(
+            @RequestBody @Valid VerifyEmailRequest verifyEmailRequest
+    ) {
+        if(verifyEmailRequest.getCode()==null) {
+            return ResponseEntity.badRequest().body(CommonApiResponse.error(ResponseCode.BAD_REQUEST));
+        }
+
+        String userEmail = verifyEmailRequest.getEmail();
+        if(authService.isVerifyCode(userEmail, verifyEmailRequest.getCode())) {
+            return ResponseEntity.ok(CommonApiResponse.noContent());
+        }
+        return ResponseEntity.status(ResponseCode.INVALID_CODE.status())
+                .body(CommonApiResponse.error(ResponseCode.INVALID_CODE));
+    }
+
+
+
 }

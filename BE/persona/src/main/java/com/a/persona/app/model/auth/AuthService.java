@@ -9,6 +9,7 @@ import com.a.persona.infra.auth.jwt.JwtTokenProvider;
 import com.a.persona.infra.auth.jwt.dto.AccessTokenDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final UserBlackListRepository userBlackListRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 //    private final LoginLogService loginLogService;
 
     public TokenDto signin(SigninRequest signinRequest) {
@@ -74,4 +78,32 @@ public class AuthService {
                 .build();
     }
 
+    /**
+     * 인증코드를 생성하고 Redis에 저장
+     * @param email 사용자 이메일
+     * @param code 생성한 코드
+     */
+    public void saveVerifyCode(String email, String code) {
+        String redisKey = "email:verify:" + email;
+        redisTemplate.opsForValue().set(redisKey, code, Duration.ofMinutes(3));
+    }
+
+
+    /**
+     * Redis에 이메일, 인증코드로 저장된 데이터를 기반으로, 인증코드 검증
+     * @param email 사용자 이메일
+     * @param userInputCode 입력받은 인증 코드
+     * @return
+     */
+    public boolean isVerifyCode(String email, String userInputCode) {
+        String redisKey = "email:verify:" + email;
+        Object raw = redisTemplate.opsForValue().get(redisKey);
+
+        if (raw instanceof String storedCode && storedCode.equals(userInputCode)) {
+            redisTemplate.delete(redisKey); // 인증에 성공했으면 삭제 (optional)
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

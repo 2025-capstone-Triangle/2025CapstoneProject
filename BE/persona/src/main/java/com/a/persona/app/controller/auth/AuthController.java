@@ -111,7 +111,7 @@ public class AuthController {
      * @param emailRequest
      * @return
      */
-    @PostMapping("/email")
+    @PostMapping("/check-email")
     @Operation(summary = "이메일 코드 요청", description = "첨부된 이메일로 코드를 발송합니다.<br>")
     public ResponseEntity<CommonApiResponse<Void>> createVerifyCode(
             @RequestBody @Valid EmailRequest emailRequest
@@ -132,7 +132,7 @@ public class AuthController {
      * @param verifyEmailRequest
      * @return
      */
-    @PostMapping("/code")
+    @PostMapping("/verify-code")
     @Operation(summary = "코드 검증", description = "입력된 코드가 적절한지 검증합니다.<br>")
     public ResponseEntity<CommonApiResponse<Void>> verifyEmail(
             @RequestBody @Valid VerifyEmailRequest verifyEmailRequest

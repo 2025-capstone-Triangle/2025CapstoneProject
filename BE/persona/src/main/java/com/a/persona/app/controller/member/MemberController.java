@@ -94,7 +94,6 @@ public class MemberController {
             @RequestBody @Valid EmailRequest emailRequest
             ){
         memberService.updateEmail(userDetails.getUsername(), emailRequest.getEmail());
-        //todo 이메일 인증
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 

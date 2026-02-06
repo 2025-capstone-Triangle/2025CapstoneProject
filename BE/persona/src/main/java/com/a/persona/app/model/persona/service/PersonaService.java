@@ -1,13 +1,13 @@
 package com.a.persona.app.model.persona.service;
 
-import com.a.persona.app.controller.persona.payload.PersonaRequest;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
 import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
 import com.a.persona.infra.config.AmazonConfig;
-import com.a.persona.infra.error.exceptions.CommonException;
+import com.a.persona.infra.error.exceptions.NotFoundException;
+import com.a.persona.infra.nanoid.CodeGenerator;
 import com.a.persona.infra.response.ResponseCode;
 import com.a.persona.infra.s3.AmazonS3Manager;
 import jakarta.transaction.Transactional;
@@ -18,9 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional
@@ -43,7 +41,7 @@ public class PersonaService {
      */
     public List<PersonaDto> findPersonas(String username) {
 
-        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
 
         List<Persona> personas = personaRepository.findPersonasByMemberAndIsActive(member,true);
 
@@ -63,10 +61,6 @@ public class PersonaService {
                                 .build()
                 ).toList()
         );
-
-
-
-        
     }
 
     /**
@@ -76,9 +70,21 @@ public class PersonaService {
      * @return
      */
     public PersonaDto findPersona(String username, String code) {
-        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        return modelMapper.map(persona,PersonaDto.class);
+        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        log.info("찾은 멤버 ID: {}", member.getId());
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        return PersonaDto.builder()
+                .id(persona.getId())
+                .name(persona.getName())
+                .profile(persona.getProfile())
+                .member(member)
+                .keywords(persona.getKeywords())
+                .colors(persona.getColors())
+                .createdAt(persona.getCreatedAt())
+                .updatedAt(persona.getUpdatedAt())
+                .isActive(persona.getIsActive())
+                .code(persona.getCode())
+                .build();
     }
 
     /**
@@ -87,8 +93,8 @@ public class PersonaService {
      * @param code 삭제할 페르소나 코드
      */
     public void deletePersona(String username, String code) {
-        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         persona.setIsActive(false);
         personaRepository.save(persona);
     }
@@ -100,10 +106,11 @@ public class PersonaService {
      * @param name 페르소나 이름
      */
     public void savePersona(String username, String code, String name) {
-        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         persona.setIsSaved(true);
-        persona.setName(name);
+        if(name!=null)
+            persona.setName(name);
         personaRepository.save(persona);
     }
 
@@ -140,8 +147,67 @@ public class PersonaService {
 
         // todo 이름 키워드를 통해 대충 만들기
 
-        // todo code 꼭 생성
+        String code;
+        // 코드가 중복이 아니도록
+        do {
+            code = CodeGenerator.generateShareCode();
+        } while (isExistCode(code));
+        persona.setCode(code);
 
         return null;
+    }
+
+    /**
+     * 해당 페르소나 코드가 중복되는지 확인합니다.
+     * @param code 중복 확인할 코드
+     * @return
+     */
+    public Boolean isExistCode(String code){
+        return personaRepository.existsByCode(code);
+    }
+
+    /**
+     * 페르소나의 이름을 업데이트 합니다.
+     * @param username 아이디
+     * @param code 수정할 페르소나 코드
+     * @param name 수정할 페르소나의 새로운 이름!
+     */
+    public void updatePersona(String username, String code, String name) {
+        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        if(name!=null)
+            persona.setName(name);
+        personaRepository.save(persona);
+    }
+
+    /**
+     * 공유받은 페르소나를 저장합니다.
+     * @param username 저장할 유저 아이디
+     * @param code 공유받은 페르소나 코드
+     * @param name 혹시나 이름을 바꾼다면 이름
+     */
+    public void saveSharedPersona(String username, String code, String name) {
+        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        // 기존 페르소나
+        Persona sharedpersona = personaRepository.findPersonaByCodeAndIsActive(code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+
+        // 기존의 페르소나를 복붙
+        Persona newPersona = Persona.builder()
+                .name(name)
+                .profile(sharedpersona.getProfile())
+                .member(member)
+                .keywords(new HashSet<>(sharedpersona.getKeywords()))
+                .colors(new HashSet<>(sharedpersona.getColors()))
+                .isSaved(true)
+                .build();
+        String newCode;
+        // 코드가 중복이 아니도록
+        do {
+            newCode = CodeGenerator.generateShareCode();
+        } while (isExistCode(newCode));
+        newPersona.setCode(newCode);
+        if(name!=null)
+            newPersona.setName(name);
+        personaRepository.save(newPersona);
     }
 }

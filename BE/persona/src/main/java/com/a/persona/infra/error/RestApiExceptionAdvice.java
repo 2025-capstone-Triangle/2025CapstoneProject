@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestControllerAdvice(basePackages = "com.honlife.core.app.controller")
+@RestControllerAdvice(basePackages = "com.a.persona.app.controller")
 @Slf4j
 public class RestApiExceptionAdvice {
     

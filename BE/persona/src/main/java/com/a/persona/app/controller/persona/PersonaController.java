@@ -33,8 +33,8 @@ public class PersonaController {
 
     /**
      * 현재 로그인한 멤버의 페르소나 리스트를 가져옵니다.
-     * @param userDetails
-     * @param code
+     * @param userDetails 로그인한 멤버
+     * @param code 검색할 페르소나 코드
      * @return
      */
     @GetMapping()
@@ -58,6 +58,7 @@ public class PersonaController {
                             .createdAt(personaDto.getCreatedAt())
                             .updatedAt(personaDto.getUpdatedAt())
                             .isActive(personaDto.getIsActive())
+                            .code(personaDto.getCode())
                             .build()
             ).toList();
             return ResponseEntity.ok(CommonApiResponse.success(responses));
@@ -74,17 +75,26 @@ public class PersonaController {
                 .createdAt(personaDto.getCreatedAt())
                 .updatedAt(personaDto.getUpdatedAt())
                 .isActive(personaDto.getIsActive())
+                .code(personaDto.getCode())
                 .build());
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
 
-    // 페르소나 진단
-    @PostMapping()
+    /**
+     * 주어진 데이터로 페르소나를 진단합니다.
+     * @param userDetails 진단할 사용자
+     * @param image 사용자 이미지
+     * @param voice 사용자 목소리
+     * @param preferenceType 사용자 선호 테스트 결과
+     * @return
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다. <br>" +
             "진단 후, 페르소나의 id를 같이 보냅니다. 추후 페르소나 저장 시에 위 id를 함께 보내면 저장할 수 있습니다.<br>" +
-            "(이미지 파일은 jpg, 음성 파일은 wav로 통일)")
+            "(이미지 파일은 jpg, 음성 파일은 wav로 통일)" +
+            "json 파일로는 이미지나 음성 파일을 보낼 수 없어서 form data로 보내주세요")
     public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestPart("image") List<MultipartFile> image,
@@ -114,8 +124,13 @@ public class PersonaController {
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
-    // 페르소나 저장
-    @PatchMapping("/save")
+    /**
+     * 신규 페르소나 저장
+     * @param userDetails 저장할 유저
+     * @param personaSaveRequest 페르소나
+     * @return
+     */
+    @PatchMapping("/save-new")
     @Operation(summary = "페르소나 저장", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
     public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> savePersona(
@@ -127,12 +142,47 @@ public class PersonaController {
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 
-    // 페르소나 수정
-    
+    /**
+     * 페르소나 이름 수정
+     * @param userDetails 저장할 유저
+     * @param personaSaveRequest 수정할 페르소나의 코드 및 새로운 이름
+     * @return
+     */
+    @PatchMapping("")
+    @Operation(summary = "페르소나 수정", description = "코드에 해당하는 페르소나의 이름을 수정합니다. <br>" +
+            "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
+    public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> updatePersona(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody PersonaSaveRequest personaSaveRequest
+    ) {
+        personaService.updatePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
 
-    // 페르소나 공유
-    
-    // 페르소나 삭제
+        return ResponseEntity.ok(CommonApiResponse.noContent());
+    }
+
+    /**
+     * 공유받은 페르소나를 저장합니다.
+     * @param userDetails 저장할 유저
+     * @param personaSaveRequest 저장할 페르소나읰 코드와 혹시나 변경한다면 이름
+     * @return
+     */
+    @PatchMapping("/save-share")
+    @Operation(summary = "공유받은 페르소나 저장", description = "공유 받은 페르소나를 저장합니다.<br>" +
+            "내가 생각하기에 그 페르소나 결과 페이지로 넘어가서 이름도 편집할 수 있게 해 둠")
+    public ResponseEntity<CommonApiResponse<Void>> saveSharedPersona(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody PersonaSaveRequest personaSaveRequest
+    ){
+        personaService.saveSharedPersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
+        return ResponseEntity.ok(CommonApiResponse.noContent());
+    }
+
+    /**
+     * 해당 페르소나를 저장합니다.
+     * @param userDetails
+     * @param code
+     * @return
+     */
     @DeleteMapping("")
     @Operation(summary = "페르소나 삭제", description = "해당 페르소나를 soft delete합니다. <br>" +
             "연관된 모든 정보도 전부 soft delete 됩니다.(로그, 멤버 제외)")

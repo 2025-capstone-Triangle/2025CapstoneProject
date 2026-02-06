@@ -56,5 +56,5 @@ public class Persona extends BaseEntity {
 
     private Boolean isSaved = false;
 
-    // todo 코드 넣기
+    private String code;
 }

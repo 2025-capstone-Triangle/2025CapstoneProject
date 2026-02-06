@@ -14,20 +14,22 @@ import java.util.List;
 @Builder
 public class PersonaResponse {
 
-    private Long id;
+    Long id;
 
-    private String name;
+    String name;
 
-    private String profile;
+    String profile;
 
-    private List<String> keywords = new ArrayList<>();
+    List<String> keywords = new ArrayList<>();
 
-    private List<String> colors = new ArrayList<>();
+    List<String> colors = new ArrayList<>();
 
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 
-    private Boolean isActive;
+    Boolean isActive;
 
+    String code;
+    
 }

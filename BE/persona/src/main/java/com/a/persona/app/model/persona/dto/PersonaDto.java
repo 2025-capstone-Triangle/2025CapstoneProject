@@ -35,4 +35,6 @@ public class PersonaDto extends BaseEntity {
     private LocalDateTime updatedAt;
 
     private Boolean isActive;
+
+    private String code;
 }

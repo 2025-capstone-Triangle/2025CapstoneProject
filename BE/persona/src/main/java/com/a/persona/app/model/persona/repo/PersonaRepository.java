@@ -13,4 +13,6 @@ public interface PersonaRepository extends JpaRepository<Persona, Long>, Persona
     List<Persona> findPersonasByMemberAndIsActive(Member member, Boolean isActive);
 
     Optional<Persona> findPersonaByMemberAndIdAndIsActive(Member member, Long id, Boolean isActive);
+
+    Optional<Persona> findPersonaByMemberAndCodeAndIsActive(Member member, String code, Boolean isActive);
 }

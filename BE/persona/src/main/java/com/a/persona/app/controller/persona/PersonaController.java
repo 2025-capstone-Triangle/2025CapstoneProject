@@ -1,8 +1,7 @@
 package com.a.persona.app.controller.persona;
 
-
-import com.a.persona.app.controller.persona.payload.PersonaRequest;
 import com.a.persona.app.controller.persona.payload.PersonaResponse;
+import com.a.persona.app.controller.persona.payload.PersonaSaveRequest;
 import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.persona.service.PersonaService;
 import com.a.persona.infra.response.CommonApiResponse;
@@ -35,7 +34,8 @@ public class PersonaController {
     /**
      * 현재 로그인한 멤버의 페르소나 리스트를 가져옵니다.
      * @param userDetails
-     * @return List<PersonaResponse>
+     * @param code
+     * @return
      */
     @GetMapping()
     @Operation(summary = "페르소나 조회", description = "현재 로그인한 사용자의 페르소나를 조회합니다. <br>" +
@@ -43,10 +43,10 @@ public class PersonaController {
             "그렇지 않을 경우, 해당 계정에 존재하는 모든 페르소나에 대한 정보가 출력됩니다.")
     public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> getPersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(required = false) Long id // todo code로 변경 필요
+            @RequestParam(required = false) String code
     ) {
         // 전체 조회
-        if(id==null){
+        if(code==null){
             List<PersonaDto> personas = personaService.findPersonas(userDetails.getUsername());
             List<PersonaResponse> responses = personas.stream().map(
                     personaDto -> PersonaResponse.builder()
@@ -64,7 +64,7 @@ public class PersonaController {
         }
 
         // 단건 조회
-        PersonaDto personaDto = personaService.findPersona(userDetails.getUsername(), id);
+        PersonaDto personaDto = personaService.findPersona(userDetails.getUsername(), code);
         List<PersonaResponse> responses = List.of(PersonaResponse.builder()
                 .id(personaDto.getId())
                 .name(personaDto.getName())
@@ -87,8 +87,8 @@ public class PersonaController {
             "(이미지 파일은 jpg, 음성 파일은 wav로 통일)")
     public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestPart("image") List<MultipartFile> image,   // 파일 파트
-            @RequestPart("voice") List<MultipartFile> voice,   // 파일 파트
+            @RequestPart("image") List<MultipartFile> image,
+            @RequestPart("voice") List<MultipartFile> voice,
             @RequestPart("preferenceType") String preferenceType
     ) {
         PersonaDto personaDto = null;
@@ -120,28 +120,28 @@ public class PersonaController {
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
     public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> savePersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam String code
-    ) {
-        // todo code로 변경
-        personaService.savePersona(userDetails.getUsername(), 1L);
+            @RequestBody PersonaSaveRequest personaSaveRequest
+            ) {
+        personaService.savePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 
     // 페르소나 수정
+    
 
     // 페르소나 공유
     
     // 페르소나 삭제
-    @DeleteMapping("/{id}")
+    @DeleteMapping("")
     @Operation(summary = "페르소나 삭제", description = "해당 페르소나를 soft delete합니다. <br>" +
             "연관된 모든 정보도 전부 soft delete 됩니다.(로그, 멤버 제외)")
     public ResponseEntity<CommonApiResponse<Void>> deleteMember(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id
+            @RequestParam String code
     ) {
         //todo 연관된 테이블 정리
-        personaService.deletePersona(userDetails.getUsername(), id);
+        personaService.deletePersona(userDetails.getUsername(), code);
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 

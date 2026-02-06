@@ -68,24 +68,42 @@ public class PersonaService {
 
         
     }
-    // todo code를 통해 찾도록
-    public PersonaDto findPersona(String username, Long id) {
+
+    /**
+     *
+     * @param username
+     * @param code
+     * @return
+     */
+    public PersonaDto findPersona(String username, String code) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndIdAndIsActive(member,id,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
         return modelMapper.map(persona,PersonaDto.class);
     }
 
-    public void deletePersona(String username, Long id) {
+    /**
+     * code에 해당하는 페르소나를 삭제하는 메소드
+     * @param username 유저 아이디
+     * @param code 삭제할 페르소나 코드
+     */
+    public void deletePersona(String username, String code) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndIdAndIsActive(member,id,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
         persona.setIsActive(false);
         personaRepository.save(persona);
     }
 
-    public void savePersona(String username, Long id) {
+    /**
+     * 진단한 페르소나를 저장하는 메소드
+     * @param username 유저 아이디
+     * @param code 페르소나 코드
+     * @param name 페르소나 이름
+     */
+    public void savePersona(String username, String code, String name) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndIdAndIsActive(member,id,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
         persona.setIsSaved(true);
+        persona.setName(name);
         personaRepository.save(persona);
     }
 
@@ -101,7 +119,6 @@ public class PersonaService {
     public PersonaDto createPersona(String username, List<MultipartFile> image, List<MultipartFile> voice, String preferenceType) throws IOException {
 
         Persona persona = new Persona();
-        // todo S3에 저장
         // UUID 생성 및 저장
         String uuid = UUID.randomUUID().toString();
         String fileName = username+"_"+uuid;
@@ -120,6 +137,8 @@ public class PersonaService {
             log.info("voiceUrl :{}", voiceUrl);
         }
         // todo AI server로 보내기
+
+        // todo 이름 키워드를 통해 대충 만들기
 
         // todo code 꼭 생성
 

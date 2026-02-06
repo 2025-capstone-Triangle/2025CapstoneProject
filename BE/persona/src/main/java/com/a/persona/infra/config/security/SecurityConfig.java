@@ -49,7 +49,7 @@ public class SecurityConfig {
                             "/swagger-ui.html"
                     ).permitAll()
                     .requestMatchers("/", "/error", "/favicon.ico", "/api/v1/check/**", "/api/v1/signin",
-                        "/api/v1/signup", "/api/v1/auth/**", "/api/v1/code", "/api/v1/email").permitAll()
+                        "/api/v1/signup", "/api/v1/auth/**", "/api/v1/check-email", "/api/v1/verify-code").permitAll()
                     .requestMatchers("/api/**").authenticated()
                     .anyRequest().permitAll()
             )

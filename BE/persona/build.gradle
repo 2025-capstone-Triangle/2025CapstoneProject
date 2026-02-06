@@ -61,7 +61,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
-    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+    implementation ('org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE')
+
+    // NanoID 생성을 위한 라이브러리
+    implementation 'com.aventrix.jnanoid:jnanoid:1.0.1'
 }
 
 tasks.named('test') {

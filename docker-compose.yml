@@ -1,0 +1,52 @@
+services:
+  api:
+    build:
+      context: ./BE/persona
+      dockerfile: Dockerfile
+    container_name: persona-api
+    restart: unless-stopped
+    env_file:
+      - ./BE/persona/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+
+  fe:
+    build:
+      context: ./FE
+      dockerfile: Dockerfile
+    container_name: persona-fe
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres:16
+    container_name: persona-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: persona
+      POSTGRES_USER: persona
+      POSTGRES_PASSWORD: persona
+    ports:
+      - "5432:5432"
+    volumes:
+      - persona_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: persona-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - persona_redis:/data
+
+volumes:
+  persona_pgdata:
+  persona_redis:

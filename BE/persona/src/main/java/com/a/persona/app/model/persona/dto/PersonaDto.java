@@ -10,7 +10,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @NoArgsConstructor
@@ -26,9 +28,9 @@ public class PersonaDto extends BaseEntity {
 
     private Member member;
 
-    private List<String> keywords = new ArrayList<>();
+    private Set<String> keywords = new HashSet<>();
 
-    private List<String> colors = new ArrayList<>();
+    private Set<String> colors = new HashSet<>();;
 
     private LocalDateTime createdAt;
 

@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -45,14 +47,14 @@ public class Persona extends BaseEntity {
     @CollectionTable(name = "persona_keywords", joinColumns = @JoinColumn(name = "persona_id"))
     @Column(name = "keyword")
     @Builder.Default
-    private List<String> keywords = new ArrayList<>();
+    private Set<String> keywords = new HashSet<>();
 
     // 굳이 entity로 따로 만들지 않고 사용
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "persona_colors", joinColumns = @JoinColumn(name = "persona_id"))
     @Column(name = "color")
     @Builder.Default
-    private List<String> colors = new ArrayList<>();
+    private Set<String> colors = new HashSet<>();
 
     private Boolean isSaved = false;
 

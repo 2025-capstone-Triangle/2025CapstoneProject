@@ -1,6 +1,7 @@
 package com.a.persona.app.controller.auth;
 
 import com.a.persona.app.controller.auth.payload.*;
+import com.a.persona.app.controller.member.payload.EmailRequest;
 import com.a.persona.app.model.auth.AuthService;
 import com.a.persona.app.model.auth.dto.TokenDto;
 import com.a.persona.app.model.mail.MailService;
@@ -107,19 +108,15 @@ public class AuthController {
 
     /**
      * 이메일로 코드 전송
-     * @param verifyEmailRequest
+     * @param emailRequest
      * @return
      */
     @PostMapping("/email")
     @Operation(summary = "이메일 코드 요청", description = "첨부된 이메일로 코드를 발송합니다.<br>")
     public ResponseEntity<CommonApiResponse<Void>> createVerifyCode(
-            @RequestBody @Valid VerifyEmailRequest verifyEmailRequest
+            @RequestBody @Valid EmailRequest emailRequest
     ){
-        if(verifyEmailRequest.getCode()!=null) {
-            return ResponseEntity.badRequest().body(CommonApiResponse.error(ResponseCode.BAD_REQUEST));
-        }
-
-        String userEmail = verifyEmailRequest.getEmail();
+        String userEmail = emailRequest.getEmail();
         try {
             // 이메일 발송
             mailService.sendVerificationEmail(userEmail);
@@ -136,6 +133,7 @@ public class AuthController {
      * @return
      */
     @PostMapping("/code")
+    @Operation(summary = "코드 검증", description = "입력된 코드가 적절한지 검증합니다.<br>")
     public ResponseEntity<CommonApiResponse<Void>> verifyEmail(
             @RequestBody @Valid VerifyEmailRequest verifyEmailRequest
     ) {

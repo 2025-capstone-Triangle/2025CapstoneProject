@@ -10,6 +10,6 @@ public class VerifyEmailRequest {
     @NotEmpty
     @Value("test@test.com")
     String email;
-
+    @NotEmpty
     String code;
 }

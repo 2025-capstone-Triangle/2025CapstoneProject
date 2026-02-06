@@ -1,14 +1,12 @@
 package com.a.persona.app.controller.persona;
 
 
-import com.a.persona.app.controller.member.payload.MemberResponse;
 import com.a.persona.app.controller.persona.payload.PersonaRequest;
 import com.a.persona.app.controller.persona.payload.PersonaResponse;
-import com.a.persona.app.model.member.dto.MemberDto;
-import com.a.persona.app.model.persona.domain.Persona;
 import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.persona.service.PersonaService;
 import com.a.persona.infra.response.CommonApiResponse;
+import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +17,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 
 @Tag(name="페르소나", description = "페르소나 관련 API입니다.")
@@ -40,11 +39,11 @@ public class PersonaController {
      */
     @GetMapping()
     @Operation(summary = "페르소나 조회", description = "현재 로그인한 사용자의 페르소나를 조회합니다. <br>" +
-            "Parameter에 페르소나 ID를 넣을 시, 해당하는 페르소나에 대한 정보만을 반환합니다. <br>" +
+            "Parameter에 페르소나 code를 넣을 시, 해당하는 페르소나에 대한 정보만을 반환합니다. <br>" +
             "그렇지 않을 경우, 해당 계정에 존재하는 모든 페르소나에 대한 정보가 출력됩니다.")
     public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> getPersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long id
+            @RequestParam(required = false) Long id // todo code로 변경 필요
     ) {
         // 전체 조회
         if(id==null){
@@ -84,28 +83,55 @@ public class PersonaController {
     @PostMapping()
     @Operation(summary = "페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다. <br>" +
-            "진단 후, 페르소나의 id를 같이 보냅니다. 추후 페르소나 저장 시에 위 id를 함께 보내면 저장할 수 있습니다.")
-    public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> createPersona(
+            "진단 후, 페르소나의 id를 같이 보냅니다. 추후 페르소나 저장 시에 위 id를 함께 보내면 저장할 수 있습니다.<br>" +
+            "(이미지 파일은 jpg, 음성 파일은 wav로 통일)")
+    public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PersonaRequest personaRequest
+            @RequestPart("image") List<MultipartFile> image,   // 파일 파트
+            @RequestPart("voice") List<MultipartFile> voice,   // 파일 파트
+            @RequestPart("preferenceType") String preferenceType
     ) {
-        //todo ai 서버와 상호작용 및 이미지와 음성 S3에 올리기
-        return ResponseEntity.ok(CommonApiResponse.noContent());
+        PersonaDto personaDto = null;
+        try {
+            personaDto = personaService.createPersona(userDetails.getUsername(), image, voice, preferenceType);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
+        if(personaDto==null){
+            return ResponseEntity.ok(CommonApiResponse.noContent());
+        }
+        PersonaResponse response = PersonaResponse.builder()
+                .id(personaDto.getId())
+                .name(personaDto.getName())
+                .profile(personaDto.getProfile())
+                .keywords(personaDto.getKeywords())
+                .colors(personaDto.getColors())
+                .createdAt(personaDto.getCreatedAt())
+                .updatedAt(personaDto.getUpdatedAt())
+                .isActive(personaDto.getIsActive())
+                .code(personaDto.getCode())
+                .build();
+        return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
     // 페르소나 저장
-    @PatchMapping("/{id}")
+    @PatchMapping("/save")
     @Operation(summary = "페르소나 저장", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
     public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> savePersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id
+            @RequestParam String code
     ) {
-        personaService.savePersona(userDetails.getUsername(), id);
+        // todo code로 변경
+        personaService.savePersona(userDetails.getUsername(), 1L);
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 
+    // 페르소나 수정
+
+    // 페르소나 공유
+    
     // 페르소나 삭제
     @DeleteMapping("/{id}")
     @Operation(summary = "페르소나 삭제", description = "해당 페르소나를 soft delete합니다. <br>" +

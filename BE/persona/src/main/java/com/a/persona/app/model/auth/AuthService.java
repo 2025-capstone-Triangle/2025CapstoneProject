@@ -5,6 +5,7 @@ import com.a.persona.app.model.auth.dto.TokenDto;
 import com.a.persona.app.model.auth.token.RefreshTokenService;
 import com.a.persona.app.model.auth.token.UserBlackListRepository;
 import com.a.persona.app.model.auth.token.entity.RefreshToken;
+import com.a.persona.app.model.loginLog.service.LoginLogService;
 import com.a.persona.infra.auth.jwt.JwtTokenProvider;
 import com.a.persona.infra.auth.jwt.dto.AccessTokenDto;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final UserBlackListRepository userBlackListRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final LoginLogService loginLogService;
 //    private final LoginLogService loginLogService;
 
     public TokenDto signin(SigninRequest signinRequest) {
@@ -43,7 +45,7 @@ public class AuthService {
         Authentication authentication = authenticationManagerBuilder.getObject()
                 .authenticate(authenticationToken);
         // todo 로그인시 자동으로 로그인 기록 저장
-
+        loginLogService.createLoginLog(signinRequest.getUsername());
         return processSignin(authentication);
     }
 

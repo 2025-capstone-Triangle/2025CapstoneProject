@@ -3,6 +3,7 @@ package com.a.persona.app.model.content.domain;
 import com.a.persona.app.model.common.BaseEntity;
 import com.a.persona.app.model.content.code.ContentType;
 import com.a.persona.app.model.persona.domain.Persona;
+import com.a.persona.app.model.reference.domain.Reference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

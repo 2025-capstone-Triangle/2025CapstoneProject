@@ -1,4 +1,4 @@
-package com.a.persona.app.model.content.domain;
+package com.a.persona.app.model.reference.domain;
 
 import com.a.persona.app.model.common.BaseEntity;
 import jakarta.persistence.*;

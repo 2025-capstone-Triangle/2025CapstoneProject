@@ -1,7 +1,7 @@
 package com.a.persona.app.model.contentLog.domain;
 
 
-import com.a.persona.app.model.content.domain.Reference;
+import com.a.persona.app.model.reference.domain.Reference;
 import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -57,6 +57,7 @@ public class ContentController {
             @RequestBody ContentRequest contentRequest
     ) {
         // todo ai server와 통신
+        ContentDto contentDto = contentService.createContent(userDetails.getUsername(), contentRequest);
         ContentResponse response = null;
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }

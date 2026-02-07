@@ -33,8 +33,8 @@ public class AuthService {
     private final UserBlackListRepository userBlackListRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final LoginLogService loginLogService;
-//    private final LoginLogService loginLogService;
 
+    @Transactional
     public TokenDto signin(SigninRequest signinRequest) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(signinRequest.getUsername(),
@@ -44,8 +44,9 @@ public class AuthService {
         // 인증 실패 시: AuthenticationException 발생
         Authentication authentication = authenticationManagerBuilder.getObject()
                 .authenticate(authenticationToken);
-        // todo 로그인시 자동으로 로그인 기록 저장
+
         loginLogService.createLoginLog(signinRequest.getUsername());
+
         return processSignin(authentication);
     }
 

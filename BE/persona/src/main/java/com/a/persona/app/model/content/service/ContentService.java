@@ -68,6 +68,14 @@ public class ContentService {
         
         // todo AI server에 페르소나, 레퍼런스, 비율 전달
         
+        Content content = Content.builder()
+                .persona(persona)
+                .reference(reference)
+                .img("임시") // todo ai 연결 후 수정
+                .description("임시")
+                .type(contentRequest.getType())
+                .build();
+        
         // 생성 로그
         contentLogService.createContentLog(member,reference);
 

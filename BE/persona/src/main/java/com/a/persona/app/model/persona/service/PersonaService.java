@@ -159,6 +159,7 @@ public class PersonaService {
         persona.setCode(code);
         // todo 이미지 파일 저장 presigned-url이 아니라 진짜 url
 
+        personaRepository.save(persona);
         // 페르소나 생성 로그
         personaLogService.createPersonaLog(member,persona);
 

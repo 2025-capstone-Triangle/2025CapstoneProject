@@ -9,6 +9,7 @@ import com.a.persona.app.model.member.service.MemberService;
 import com.a.persona.infra.response.CommonApiResponse;
 import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -75,6 +76,7 @@ public class AuthController {
         return ResponseEntity.ok()
                 .body(CommonApiResponse.success(ResponseCode.OK));
     }
+
 
     /**
      * 중복 확인 처리 API<br>

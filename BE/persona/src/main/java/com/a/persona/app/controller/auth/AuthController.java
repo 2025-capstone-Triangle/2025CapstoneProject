@@ -27,7 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.util.Map;
 
-@Tag(name="인증", description = "로그인 및 인증 관련 API입니다.")
+@Tag(name = "인증", description = "로그인 및 인증 관련 API입니다. <br><br>" +
+        "⚠️ <b>로그아웃 안내</b><br>" +
+        "• URL: <code>POST /api/v1/logout</code><br>")
 @RestController
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor

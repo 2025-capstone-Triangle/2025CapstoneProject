@@ -50,7 +50,7 @@ public class ContentController {
 
     // content 생성
     @PostMapping()
-    @Operation(summary = "content 생성", description = "현재 로그인한 사용자의 페르소나를 기반으로 컨텐츠를 생성합니다." +
+    @Operation(summary = "(미구현) content 생성", description = "현재 로그인한 사용자의 페르소나를 기반으로 컨텐츠를 생성합니다." +
             "Type(SQUARE(1:1), FEED(4:5), STORY(9:16))")
     public ResponseEntity<CommonApiResponse<ContentResponse>> createContent(
             @AuthenticationPrincipal UserDetails userDetails,

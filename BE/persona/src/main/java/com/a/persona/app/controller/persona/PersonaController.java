@@ -102,14 +102,24 @@ public class PersonaController {
             @RequestPart("preferenceType") String preferenceType
     ) {
         PersonaDto personaDto = null;
+        String username = null;
+
         try {
-            personaDto = personaService.createPersona(userDetails.getUsername(), image, voice, preferenceType);
+            // 비회원 유저 고려
+            if(userDetails!=null)
+                username = userDetails.getUsername();
+            
+            // 페르소나 진단
+            personaDto = personaService.createPersona(username, image, voice, preferenceType);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
+
+        // AI 연결 전 임시로
         if(personaDto==null){
             return ResponseEntity.ok(CommonApiResponse.noContent());
         }
+
         PersonaResponse response = PersonaResponse.builder()
                 .id(personaDto.getId())
                 .name(personaDto.getName())

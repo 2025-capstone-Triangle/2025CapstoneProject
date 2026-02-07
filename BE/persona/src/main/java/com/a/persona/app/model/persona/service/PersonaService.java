@@ -5,6 +5,7 @@ import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
 import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
+import com.a.persona.app.model.personaLog.service.PersonaLogService;
 import com.a.persona.infra.config.AmazonConfig;
 import com.a.persona.infra.error.exceptions.NotFoundException;
 import com.a.persona.infra.nanoid.CodeGenerator;
@@ -14,6 +15,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +34,7 @@ public class PersonaService {
     private final AmazonS3Manager s3Manager;
     private final ModelMapper modelMapper;
     private final AmazonConfig amazonConfig;
+    private final PersonaLogService personaLogService;
 
 
     /**
@@ -46,19 +49,19 @@ public class PersonaService {
         List<Persona> personas = personaRepository.findPersonasByMemberAndIsActive(member,true);
 
         return new ArrayList<PersonaDto>(
-                personaRepository.findPersonasByMemberAndIsActive(member,true).stream().map(
-                        persona -> PersonaDto.builder()
-                                .id(persona.getId())
-                                .name(persona.getName())
-                                .profile(persona.getProfile())
-                                .member(member)
-                                .keywords(persona.getKeywords())
-                                .colors(persona.getColors())
-                                .createdAt(persona.getCreatedAt())
-                                .updatedAt(persona.getUpdatedAt())
-                                .isActive(persona.getIsActive())
-                                .code(persona.getCode())
-                                .build()
+                    personas.stream().map(
+                    persona -> PersonaDto.builder()
+                            .id(persona.getId())
+                            .name(persona.getName())
+                            .profile(persona.getProfile())
+                            .member(member)
+                            .keywords(persona.getKeywords())
+                            .colors(persona.getColors())
+                            .createdAt(persona.getCreatedAt())
+                            .updatedAt(persona.getUpdatedAt())
+                            .isActive(persona.getIsActive())
+                            .code(persona.getCode())
+                            .build()
                 ).toList()
         );
     }
@@ -71,7 +74,6 @@ public class PersonaService {
      */
     public PersonaDto findPersona(String username, String code) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        log.info("찾은 멤버 ID: {}", member.getId());
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         return PersonaDto.builder()
                 .id(persona.getId())
@@ -126,6 +128,12 @@ public class PersonaService {
     public PersonaDto createPersona(String username, List<MultipartFile> image, List<MultipartFile> voice, String preferenceType) throws IOException {
 
         Persona persona = new Persona();
+
+        Member member = null;
+        if(username!=null){
+            member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        }
+
         // UUID 생성 및 저장
         String uuid = UUID.randomUUID().toString();
         String fileName = username+"_"+uuid;
@@ -135,14 +143,10 @@ public class PersonaService {
 
         // 이미지 파일 업로드 및 URL 리스트 반환
         List<String> pictureUrls = s3Manager.upload(image, amazonConfig.getImagePath(), fileName);
-        for(String pictureUrl : pictureUrls){
-            log.info("pictureUrl :{}", pictureUrl);
-        }
+
         // 이미지 파일 업로드 및 URL 리스트 반환
         List<String> voiceUrls = s3Manager.upload(voice, amazonConfig.getVoicePath(), fileName);
-        for(String voiceUrl : voiceUrls){
-            log.info("voiceUrl :{}", voiceUrl);
-        }
+
         // todo AI server로 보내기
 
         // todo 이름 키워드를 통해 대충 만들기
@@ -153,6 +157,10 @@ public class PersonaService {
             code = CodeGenerator.generateShareCode();
         } while (isExistCode(code));
         persona.setCode(code);
+        // todo 이미지 파일 저장 presigned-url이 아니라 진짜 url
+
+        // 페르소나 생성 로그
+        personaLogService.createPersonaLog(member,persona);
 
         return null;
     }

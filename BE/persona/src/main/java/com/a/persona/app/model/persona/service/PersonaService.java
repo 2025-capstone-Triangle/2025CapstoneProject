@@ -50,18 +50,7 @@ public class PersonaService {
 
         return new ArrayList<PersonaDto>(
                     personas.stream().map(
-                    persona -> PersonaDto.builder()
-                            .id(persona.getId())
-                            .name(persona.getName())
-                            .profile(persona.getProfile())
-                            .member(member)
-                            .keywords(persona.getKeywords())
-                            .colors(persona.getColors())
-                            .createdAt(persona.getCreatedAt())
-                            .updatedAt(persona.getUpdatedAt())
-                            .isActive(persona.getIsActive())
-                            .code(persona.getCode())
-                            .build()
+                            PersonaDto::fromEntity
                 ).toList()
         );
     }
@@ -75,18 +64,7 @@ public class PersonaService {
     public PersonaDto findPersona(String username, String code) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        return PersonaDto.builder()
-                .id(persona.getId())
-                .name(persona.getName())
-                .profile(persona.getProfile())
-                .member(member)
-                .keywords(persona.getKeywords())
-                .colors(persona.getColors())
-                .createdAt(persona.getCreatedAt())
-                .updatedAt(persona.getUpdatedAt())
-                .isActive(persona.getIsActive())
-                .code(persona.getCode())
-                .build();
+        return PersonaDto.fromEntity(persona);
     }
 
     /**

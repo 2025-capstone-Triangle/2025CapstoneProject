@@ -3,6 +3,7 @@ package com.a.persona.app.model.member.dto;
 import com.a.persona.app.model.auth.code.Role;
 import com.a.persona.app.model.common.BaseEntity;
 import com.a.persona.app.model.member.code.Sex;
+import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MemberDto extends BaseEntity {
+public class MemberDto {
 
     private Long id;
 
@@ -37,4 +38,21 @@ public class MemberDto extends BaseEntity {
     private LocalDateTime updatedAt;
 
     private Boolean isActive;
+
+    public static MemberDto fromEntity(Member member) {
+        return MemberDto.builder()
+                .id(member.getId())
+                .username(member.getUsername())
+                // 주의: 보안을 위해 password는 보통 DTO 변환 시 null로 비워두거나 제외합니다.
+                .password(null)
+                .email(member.getEmail())
+                .role(member.getRole())
+                .birth(member.getBirth())
+                .sex(member.getSex())
+                .is_creator(member.getIs_creator())
+                .createdAt(member.getCreatedAt())
+                .updatedAt(member.getUpdatedAt())
+                .isActive(member.getIsActive())
+                .build();
+    }
 }

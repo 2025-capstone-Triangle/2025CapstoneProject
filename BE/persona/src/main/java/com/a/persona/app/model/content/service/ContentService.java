@@ -2,6 +2,7 @@ package com.a.persona.app.model.content.service;
 
 import com.a.persona.app.controller.content.payload.ContentRequest;
 import com.a.persona.app.model.content.domain.Content;
+import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.reference.domain.Reference;
 import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.content.repo.ContentRepository;
@@ -43,14 +44,7 @@ public class ContentService {
         List<Content> contents = contentRepository.findByPersonaAndIsActive(persona,true);
 
         return new ArrayList<ContentDto>(contents.stream().map(
-                content -> ContentDto.builder()
-                        .id(content.getId())
-                        .persona(persona)
-                        .reference(content.getReference())
-                        .img(content.getImg())
-                        .type(content.getType())
-                        .description(content.getDescription())
-                        .build()
+                ContentDto::fromEntity
             ).toList());
 
     }

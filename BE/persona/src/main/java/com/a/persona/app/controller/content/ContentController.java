@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +27,6 @@ import java.util.List;
 public class ContentController {
 
     private final ContentService contentService;
-    private final ModelMapper modelMapper;
 
     // content 조회
     @GetMapping("")
@@ -42,7 +40,13 @@ public class ContentController {
         List<ContentDto> contents = contentService.getContent(userDetails.getUsername(),code);
         List<ContentResponse> responses = contents.stream().map(
                 contentDto ->
-                    modelMapper.map(contentDto, ContentResponse.class)
+                        ContentResponse.builder()
+                                .id(contentDto.getId())
+                                .persona(contentDto.getPersona())
+                                .reference(contentDto.getReference())
+                                .img(contentDto.getImg())
+                                .type(contentDto.getType())
+                                .description(contentDto.getDescription()).build()
         ).toList();
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReferenceLike extends BaseEntity {
+public class ReferenceLike{
     @Id
     @Column(nullable = false, updatable = false)
     @SequenceGenerator(

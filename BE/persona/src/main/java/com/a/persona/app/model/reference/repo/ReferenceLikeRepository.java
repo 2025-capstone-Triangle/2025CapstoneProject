@@ -11,4 +11,6 @@ import java.util.List;
 @Repository
 public interface ReferenceLikeRepository extends JpaRepository<ReferenceLike,Long> {
     ReferenceLike findByReferenceAndMember(Reference reference, Member member);
+
+    void deleteReferenceLikeByReferenceAndMember(Reference reference, Member member);
 }

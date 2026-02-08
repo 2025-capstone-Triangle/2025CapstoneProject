@@ -51,20 +51,20 @@ public class ReferenceService {
      * @param id 요즘 뜨는 컨텐츠의 아이디
      * @param like 북마크 상태
      */
+    @Transactional
     public void updateLike(String username, Long id, Boolean like) {
 
         Reference reference = referenceRepository.findById(id).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Member member = memberRepository.findByUsername(username).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        ReferenceLike referenceLike = referenceLikeRepository.findByReferenceAndMember(reference, member);
 
-        if(referenceLike == null){
-            referenceLike = ReferenceLike.builder()
+        if(like){
+            ReferenceLike referenceLike = ReferenceLike.builder()
                     .member(member)
                     .reference(reference)
                     .build();
+            referenceLikeRepository.save(referenceLike);
+        }else {
+            referenceLikeRepository.deleteReferenceLikeByReferenceAndMember(reference, member);
         }
-
-        referenceLike.setIsActive(like);
-        referenceLikeRepository.save(referenceLike);
     }
 }

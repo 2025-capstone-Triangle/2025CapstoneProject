@@ -35,7 +35,7 @@ public class PersonaController {
      * 현재 로그인한 멤버의 페르소나 리스트를 가져옵니다.
      * @param userDetails 로그인한 멤버
      * @param code 검색할 페르소나 코드
-     * @return
+     * @return List<PersonaResponse>
      */
     @GetMapping()
     @Operation(summary = "페르소나 조회", description = "현재 로그인한 사용자의 페르소나를 조회합니다. <br>" +
@@ -87,7 +87,7 @@ public class PersonaController {
      * @param image 사용자 이미지
      * @param voice 사용자 목소리
      * @param preferenceType 사용자 선호 테스트 결과
-     * @return
+     * @return PersonaResponse
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "(미구현)페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
@@ -138,12 +138,11 @@ public class PersonaController {
      * 신규 페르소나 저장
      * @param userDetails 저장할 유저
      * @param personaSaveRequest 페르소나
-     * @return
      */
     @PatchMapping("/save-new")
     @Operation(summary = "페르소나 저장", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
-    public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> savePersona(
+    public ResponseEntity<CommonApiResponse<Void>> savePersona(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PersonaSaveRequest personaSaveRequest
             ) {
@@ -156,12 +155,11 @@ public class PersonaController {
      * 페르소나 이름 수정
      * @param userDetails 저장할 유저
      * @param personaSaveRequest 수정할 페르소나의 코드 및 새로운 이름
-     * @return
      */
     @PatchMapping("")
     @Operation(summary = "페르소나 수정", description = "코드에 해당하는 페르소나의 이름을 수정합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
-    public ResponseEntity<CommonApiResponse<List<PersonaResponse>>> updatePersona(
+    public ResponseEntity<CommonApiResponse<Void>> updatePersona(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PersonaSaveRequest personaSaveRequest
     ) {
@@ -174,7 +172,6 @@ public class PersonaController {
      * 공유받은 페르소나를 저장합니다.
      * @param userDetails 저장할 유저
      * @param personaSaveRequest 저장할 페르소나읰 코드와 혹시나 변경한다면 이름
-     * @return
      */
     @PatchMapping("/save-share")
     @Operation(summary = "공유받은 페르소나 저장", description = "공유 받은 페르소나를 저장합니다.<br>" +
@@ -189,9 +186,8 @@ public class PersonaController {
 
     /**
      * 해당 페르소나를 저장합니다.
-     * @param userDetails
-     * @param code
-     * @return
+     * @param userDetails 로그인 한 유저
+     * @param code 페르소나 코드
      */
     @DeleteMapping("")
     @Operation(summary = "페르소나 삭제", description = "해당 페르소나를 soft delete합니다. <br>" +

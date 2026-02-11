@@ -1,8 +1,12 @@
 package com.a.persona.app.controller.content;
 
+import com.a.persona.app.controller.content.payload.ContentLikeReqeust;
 import com.a.persona.app.controller.content.payload.ContentRequest;
 import com.a.persona.app.controller.content.payload.ContentResponse;
+import com.a.persona.app.controller.content.payload.ContentStatResponse;
+import com.a.persona.app.controller.reference.payload.ReferenceLikeReqeust;
 import com.a.persona.app.model.content.dto.ContentDto;
+import com.a.persona.app.model.content.dto.ContentStatDto;
 import com.a.persona.app.model.content.service.ContentService;
 import com.a.persona.infra.response.CommonApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,23 +35,15 @@ public class ContentController {
     // content 조회
     @GetMapping("")
     @Operation(summary = "content 조회", description = "선택한 페르소나의 생성된 모든 컨텐츠를 조회합니다. <br>" +
-            "페르소나 코드를 입력받습니다.")
-    public ResponseEntity<CommonApiResponse<List<ContentResponse>>> getCurrentContent(
+            "페르소나 코드를 입력받습니다.<br>" +
+            "이거 페르소나랑 레퍼런스 정보 다 넘기는데 굳이 이럴 필요 없나여 아니면 일단 주는 게 편한가여?")
+    public ResponseEntity<CommonApiResponse<List<ContentStatResponse>>> getCurrentContent(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String code
     ) {
-        // todo 단건 조회도 필요한가?
-        List<ContentDto> contents = contentService.getContent(userDetails.getUsername(),code);
-        List<ContentResponse> responses = contents.stream().map(
-                contentDto ->
-                        ContentResponse.builder()
-                                .id(contentDto.getId())
-                                .persona(contentDto.getPersona())
-                                .reference(contentDto.getReference())
-                                .img(contentDto.getImg())
-                                .type(contentDto.getType())
-                                .description(contentDto.getDescription()).build()
-        ).toList();
+        List<ContentStatDto> contents = contentService.getContent(userDetails.getUsername(),code);
+
+        List<ContentStatResponse> responses = contents.stream().map(ContentStatResponse::from).toList();
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
@@ -71,11 +67,24 @@ public class ContentController {
     @DeleteMapping("/{id}")
     @Operation(summary = "content 삭제", description = "해당 content를 soft delete합니다. <br>" +
             "연관된 모든 정보도 전부 soft delete 됩니다.")
-    public ResponseEntity<CommonApiResponse<Void>> deleteMember(
+    public ResponseEntity<CommonApiResponse<Void>> deleteContent(
             @PathVariable Long id
     ) {
         //todo 연관된 테이블 정리
         contentService.deleteContent(id);
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
+
+    // 컨텐츠 좋아요
+    @PatchMapping
+    @Operation(summary = "생성 컨텐츠 북마크", description = "생성된 컨텐츠를 북마크 처리 합니다.<br>" +
+            "id는 해당 컨텐츠의 id입니다. like 안에 Boolean 값을 넣어 처리합니다.")
+    public ResponseEntity<CommonApiResponse<Void>> likeContent(
+            @RequestBody ContentLikeReqeust contentLikeReqeust
+    ){
+        contentService.updateLike(contentLikeReqeust.getId(),contentLikeReqeust.getLike());
+
+        return ResponseEntity.ok(CommonApiResponse.noContent());
+    }
+
 }

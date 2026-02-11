@@ -2,6 +2,9 @@ package com.a.persona.app.model.content.service;
 
 import com.a.persona.app.controller.content.payload.ContentRequest;
 import com.a.persona.app.model.content.domain.Content;
+import com.a.persona.app.model.content.domain.ContentLike;
+import com.a.persona.app.model.content.dto.ContentStatDto;
+import com.a.persona.app.model.content.repo.ContentLikeRepository;
 import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.reference.domain.Reference;
 import com.a.persona.app.model.content.dto.ContentDto;
@@ -11,6 +14,7 @@ import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
+import com.a.persona.app.model.reference.domain.ReferenceLike;
 import com.a.persona.app.model.reference.repo.ReferenceRepository;
 import com.a.persona.infra.error.exceptions.NotFoundException;
 import com.a.persona.infra.response.ResponseCode;
@@ -31,21 +35,21 @@ public class ContentService {
     private final MemberRepository memberRepository;
     private final ContentLogService contentLogService;
     private final ReferenceRepository referenceRepository;
+    private final ContentLikeRepository contentLikeRepository;
 
     /**
      * 페르소나 코드를 통해 해당 페르소나의 모든 생성된 컨텐츠를 조회합니다.
      * @param code 페르소나 코드
      * @return
      */
-    public List<ContentDto> getContent(String username, String code){
+    public List<ContentStatDto> getContent(String username, String code){
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
 
-        List<Content> contents = contentRepository.findByPersonaAndIsActive(persona,true);
+        List<ContentStatDto> contents = contentRepository.findByPersonaAndIsActive(persona,true);
+        contents.forEach(c -> {c.setPersona(PersonaDto.fromEntity(persona));});
 
-        return new ArrayList<ContentDto>(contents.stream().map(
-                ContentDto::fromEntity
-            ).toList());
+        return contents;
 
     }
 
@@ -74,5 +78,24 @@ public class ContentService {
         contentLogService.createContentLog(member,reference);
 
         return null;
+    }
+
+    /**
+     * 컨텐츠의 북마크를 생성하거나 삭제합니다.
+     * @param id 해당 컨텐츠
+     * @param like 북마크 상태
+     */
+    public void updateLike(Long id, Boolean like) {
+
+        Content content = contentRepository.findById(id).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+
+        if(like){
+            ContentLike contentLike = ContentLike.builder()
+                    .content(content)
+                    .build();
+            contentLikeRepository.save(contentLike);
+        }else {
+            contentLikeRepository.deleteContentLikeByContent(content);
+        }
     }
 }

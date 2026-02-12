@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 
 # 1. 음성 분석 파일에서 함수 가져오기
-from pyaudio_analysis_test import generate_voice_keywords 
+from audio_analysis import generate_voice_keywords 
 
 # 2. 랭체인 관련 모듈
 from langchain_openai import ChatOpenAI

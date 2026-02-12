@@ -1,7 +1,10 @@
 import os
-from dotenv import load_dotenv
 import base64
 import mimetypes
+import httpx
+import asyncio  # 비동기 실행을 위해 필요
+from dotenv import load_dotenv
+from io import BytesIO
 
 # 1. 음성 분석 파일에서 함수 가져오기
 from pyaudio_analysis_test import generate_voice_keywords 
@@ -11,32 +14,55 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-def get_base64_image_data(image_path):
-    mime_type, _ = mimetypes.guess_type(image_path)
-    if mime_type is None: mime_type = 'image/jpeg'
-    with open(image_path, "rb") as f:
-        return f"data:{mime_type};base64,{base64.b64encode(f.read()).decode('utf-8')}"
-
 class PersonaPipeline:
     def __init__(self):
-
-        current_dir = os.path.dirname(os.path.abspath(__file__)) # tests 폴더
-        parent_dir = os.path.dirname(current_dir)                # AI 폴더 (상위)
+        # 경로 설정 및 dotenv 로드 (복구됨!)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_dir)
         dotenv_path = os.path.join(parent_dir, '.env')
-
-        # 명시적으로 경로를 지정해서 로드
         load_dotenv(dotenv_path)
+
         api_key = os.getenv("OPENAI_API_KEY")
-        
         if not api_key:
-            raise ValueError(f"API 키 로드 실패! 시도한 경로: {dotenv_path}")
+            raise ValueError(f"API 키 로드 실패! 경로 확인: {dotenv_path}")
 
         self.llm = ChatOpenAI(
-            model="gpt-5-mini", 
+            model="gpt-4o-mini", # 현재는 4o-mini가 가장 안정적이야!
             api_key=api_key, 
             temperature=0.7,
         )
         self.parser = StrOutputParser()
+
+    # URL에서 이미지를 가져와 바로 Base64로 만드는 함수
+    async def get_base64_from_url(self, image_url):
+        async with httpx.AsyncClient() as client:
+            response = await client.get(image_url)
+            if response.status_code == 200:
+                content_type = response.headers.get("Content-Type", "image/jpeg")
+                encoded_string = base64.b64encode(response.content).decode('utf-8')
+                return f"data:{content_type};base64,{encoded_string}"
+            else:
+                raise ValueError(f"이미지 다운로드 실패: {response.status_code}")
+
+    # 음성 URL을 받아서 분석하는 함수 (임시 저장 로직 포함)
+    async def get_voice_keywords_from_url(self, audio_url):
+        async with httpx.AsyncClient() as client:
+            response = await client.get(audio_url)
+            if response.status_code == 200:
+                # 임시 파일로 저장 (분석 함수가 경로를 요구할 경우)
+                temp_filename = "temp_audio.wav"
+                with open(temp_filename, "wb") as f:
+                    f.write(response.content)
+                
+                # 기존 분석 함수 실행
+                keywords = generate_voice_keywords(temp_filename)
+                
+                # 분석 후 임시 파일 삭제
+                if os.path.exists(temp_filename):
+                    os.remove(temp_filename)
+                return keywords
+            else:
+                return "음성 분석 실패 (다운로드 오류)"
 
     # Step 4를 별도의 메서드로 분리
     def get_image_generation_prompt(self, identity_report, visual_analysis, user_pref):
@@ -73,12 +99,12 @@ class PersonaPipeline:
             "user_pref": user_pref
         })
 
-    def run_e2e_test(self, audio_path, image_path, user_pref):
+    async def run_e2e_test(self, audio_url, image_url, user_pref):
         print("🎙️ [Step 1] 음성 분석 중...")
-        voice_kwd = generate_voice_keywords(audio_path)
+        voice_kwd = await self.get_voice_keywords_from_url(audio_url)
         
         print("\n📸 [Step 2] 이미지 인상 분석 중...")
-        img_base64 = get_base64_image_data(image_path)
+        img_base64 = await self.get_base64_from_url(image_url)
         visual_prompt = ChatPromptTemplate.from_messages([
             ("system", "당신은 긍정 심리학 기반의 이미지 메이킹 전문가입니다. 사용자의 외모적 특징을 아주 매력적이고 긍정적인 '크리에이터의 자질'로 승화시켜 3문장으로 분석하세요."),
             ("human", [{"type": "image_url", "image_url": {"url": img_base64}}])
@@ -89,7 +115,7 @@ class PersonaPipeline:
         print("\n🌈 [Step 3] 통합 페르소나 리포트 및 컬러 추출 중...")
         identity_prompt = ChatPromptTemplate.from_messages([
             ("system", "제공된 음성, 외모, 선호 데이터를 통합하여 이 사람만의 독보적인 '디지털 페르소나'를 정의하고, 그에 어울리는 5가지 HEX 컬러 코드를 JSON 형식으로 출력하세요."),
-            ("human", f"음성 분석: {voice_kwd}\n외모 분석: {visual_analysis}\n사용자 선호: {user_pref}")
+            ("human", f"음성: {voice_kwd}\n외모: {visual_analysis}\n사용자 선호: {user_pref}")
         ])
         identity_report = (identity_prompt | self.llm | self.parser).invoke({})
         print(f"결과: {identity_report}")
@@ -97,37 +123,23 @@ class PersonaPipeline:
         print("\n✨ [Step 4] 최종 이미지 생성용 프롬프트 도출 중...")
         # 위에서 만든 메소드 호출
         final_prompt = self.get_image_generation_prompt(identity_report, visual_analysis, user_pref)
-        
         return final_prompt
 
 # --- 실제 테스트 실행 ---
 if __name__ == "__main__":
     pipeline = PersonaPipeline()
-
-    # 1. 현재 실행 중인 파일(persona_pipeline.py)의 절대 경로
-    base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # 2. base_dir(tests 폴더)에서 한 단계 위로 가서 data/perA 폴더로 연결!
-    audio_file = os.path.abspath(os.path.join(base_dir, "..", "data", "perA", "음성2.wav"))
-    image_file = os.path.abspath(os.path.join(base_dir, "..", "data", "perA", "image2.jpg"))
-
-    print(f"DEBUG: 찾는 오디오 경로 -> {audio_file}")
-    print(f"DEBUG: 찾는 이미지 경로 -> {image_file}")
-
-
+    #백엔드로부터 받는 링크
+    test_audio = os.getenv("TEST_AUDIO_URL") 
+    test_image = os.getenv("TEST_IMAGE_URL")
+    
     preference = """
         - Scene: Indoor studio setting, quiet and static atmosphere
         - Aesthetic: Minimalist Noir, deep shadows, moody interior with indirect lighting
         - Lighting: High contrast (Chiaroscuro), low saturation, dim ambient light, elegant backlighting
         - Composition: Static upper-body or bust shot, focused portrait with minimal movement
         """
-
-    if os.path.exists(audio_file) and os.path.exists(image_file):
-        final_result = pipeline.run_e2e_test(audio_file, image_file, preference)
-        
-        print("\n" + "="*50)
-        print("🔥 최종 Stable Diffusion 프롬프트:")
-        print(final_result)
-        print("="*50)
-    else:
-        print("❌ 에러: 파일을 찾을 수 없습니다. 경로를 다시 확인해주세요.")
+    
+    # 비동기 함수 실행을 위한 코드
+    result = asyncio.run(pipeline.run_e2e_test(test_audio, test_image, preference))
+    print(result)

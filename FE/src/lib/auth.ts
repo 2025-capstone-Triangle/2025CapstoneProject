@@ -13,7 +13,7 @@ export type SignUpPayload = {
   password: string;
   email: string;
   birth: string;
-  sex: "FEMALE" | "MALE";
+  sex: "FEMALE" | "MALE" | "ETC";
   is_creator: boolean;
 };
 
@@ -44,6 +44,36 @@ export async function checkDuplicate(payload: CheckPayload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function requestEmailCode(email: string) {
+  return apiRequest<Record<string, never>>("/api/v1/check-email", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyEmailCode(email: string, code: string) {
+  return apiRequest<Record<string, never>>("/api/v1/verify-code", {
+    method: "POST",
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export function getSavedAuth() {
+  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as SignInResponse;
+  } catch {
+    return null;
+  }
+}
+
+export function isAuthenticated() {
+  const auth = getSavedAuth();
+  return Boolean(auth?.accessToken);
 }
 
 export function saveAuth(data: SignInResponse) {

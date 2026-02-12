@@ -1,5 +1,6 @@
 import { X, Home, Sparkles, Bookmark, User, Settings, HelpCircle, LogOut, LogIn } from 'lucide-react';
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
+import { clearAuth, isAuthenticated } from '../../lib/auth';
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -14,9 +15,7 @@ export function HamburgerMenu({ isOpen, onClose, onNavigate, currentPage }: Hamb
   const closeTimeoutRef = useRef<number | null>(null);
   
   useEffect(() => {
-    // Check login status from localStorage
-    const user = localStorage.getItem('user');
-    setIsLoggedIn(!!user);
+    setIsLoggedIn(isAuthenticated());
   }, [isOpen]);
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export function HamburgerMenu({ isOpen, onClose, onNavigate, currentPage }: Hamb
   }, [onNavigate, handleClose]);
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('user');
+    clearAuth();
     setIsLoggedIn(false);
     handleNavigate('home');
   }, [handleNavigate]);

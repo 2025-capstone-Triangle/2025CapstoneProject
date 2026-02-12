@@ -36,7 +36,7 @@ public class Content extends BaseEntity {
     private Persona persona;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reference_id", nullable = false)
+    @JoinColumn(name = "reference_id")
     private Reference reference;
 
     @Column(nullable = false)

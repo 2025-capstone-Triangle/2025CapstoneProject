@@ -1,6 +1,7 @@
 package com.a.persona.app.model.persona.domain;
 
 import com.a.persona.app.model.common.BaseEntity;
+import com.a.persona.app.model.content.domain.Content;
 import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
@@ -59,4 +60,7 @@ public class Persona extends BaseEntity {
     private Boolean isSaved = false;
 
     private String code;
+
+    private Long thumbnailId;
+
 }

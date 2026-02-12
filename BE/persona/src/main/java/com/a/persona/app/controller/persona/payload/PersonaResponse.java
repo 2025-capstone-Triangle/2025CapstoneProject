@@ -1,6 +1,9 @@
 package com.a.persona.app.controller.persona.payload;
 
+import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.member.domain.Member;
+import com.a.persona.app.model.member.dto.MemberDto;
+import com.a.persona.app.model.persona.dto.PersonaDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,5 +38,21 @@ public class PersonaResponse {
     Boolean isActive;
 
     String code;
-    
+
+    ContentDto thumbnail;
+
+    public static PersonaResponse from(PersonaDto dto) {
+        return PersonaResponse.builder()
+                .id(dto.getId())
+                .name(dto.getName())
+                .profile(dto.getProfile())
+                .keywords(dto.getKeywords() != null ? new HashSet<>(dto.getKeywords()) : new HashSet<>())
+                .colors(dto.getColors() != null ? new HashSet<>(dto.getColors()) : new HashSet<>())
+                .createdAt(dto.getCreatedAt())
+                .updatedAt(dto.getUpdatedAt())
+                .isActive(dto.getIsActive())
+                .code(dto.getCode())
+                .thumbnail(dto.getThumbnail())
+                .build();
+    }
 }

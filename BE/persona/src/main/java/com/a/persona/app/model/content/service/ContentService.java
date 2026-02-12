@@ -45,9 +45,11 @@ public class ContentService {
     public List<ContentStatDto> getContent(String username, String code){
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        Content thumbnail = contentRepository.findByIdAndIsActive(persona.getThumbnailId(), true);
+
 
         List<ContentStatDto> contents = contentRepository.findByPersonaAndIsActive(persona,true);
-        contents.forEach(c -> {c.setPersona(PersonaDto.fromEntity(persona));});
+        contents.forEach(c -> {c.setPersona(PersonaDto.fromEntity(persona, thumbnail));});
 
         return contents;
 

@@ -8,8 +8,10 @@ import com.a.persona.infra.response.CommonApiResponse;
 import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,34 +51,14 @@ public class PersonaController {
         if(code==null){
             List<PersonaDto> personas = personaService.findPersonas(userDetails.getUsername());
             List<PersonaResponse> responses = personas.stream().map(
-                    personaDto -> PersonaResponse.builder()
-                            .id(personaDto.getId())
-                            .name(personaDto.getName())
-                            .profile(personaDto.getProfile())
-                            .keywords(personaDto.getKeywords())
-                            .colors(personaDto.getColors())
-                            .createdAt(personaDto.getCreatedAt())
-                            .updatedAt(personaDto.getUpdatedAt())
-                            .isActive(personaDto.getIsActive())
-                            .code(personaDto.getCode())
-                            .build()
+                    PersonaResponse::from
             ).toList();
             return ResponseEntity.ok(CommonApiResponse.success(responses));
         }
 
         // 단건 조회
         PersonaDto personaDto = personaService.findPersona(userDetails.getUsername(), code);
-        List<PersonaResponse> responses = List.of(PersonaResponse.builder()
-                .id(personaDto.getId())
-                .name(personaDto.getName())
-                .profile(personaDto.getProfile())
-                .keywords(personaDto.getKeywords())
-                .colors(personaDto.getColors())
-                .createdAt(personaDto.getCreatedAt())
-                .updatedAt(personaDto.getUpdatedAt())
-                .isActive(personaDto.getIsActive())
-                .code(personaDto.getCode())
-                .build());
+        List<PersonaResponse> responses = List.of(PersonaResponse.from(personaDto));
 
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
@@ -121,17 +103,7 @@ public class PersonaController {
             return ResponseEntity.ok(CommonApiResponse.noContent());
         }
 
-        PersonaResponse response = PersonaResponse.builder()
-                .id(personaDto.getId())
-                .name(personaDto.getName())
-                .profile(personaDto.getProfile())
-                .keywords(personaDto.getKeywords())
-                .colors(personaDto.getColors())
-                .createdAt(personaDto.getCreatedAt())
-                .updatedAt(personaDto.getUpdatedAt())
-                .isActive(personaDto.getIsActive())
-                .code(personaDto.getCode())
-                .build();
+        PersonaResponse response = PersonaResponse.from(personaDto);
         return ResponseEntity.ok(CommonApiResponse.success(response));
     }
 
@@ -141,30 +113,31 @@ public class PersonaController {
      * @param personaSaveRequest 페르소나
      */
     @PatchMapping("/save-new")
-    @Operation(summary = "페르소나 저장", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
-            "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
+    @Operation(summary = "페르소나 저장", description = "해당 코드의 페르소나를 저장합니다. <br>" +
+            "이름이나 대표 이미지 수정 시, 관련 내용을 적어주세요. 수정 안 하면 값을 보내지 않아도 됩니다.<br>" +
+            "thumbnail에는 해당하는 content의 id를 적어주시면 됩니다.")
     public ResponseEntity<CommonApiResponse<Void>> savePersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PersonaSaveRequest personaSaveRequest
+            @Valid @RequestBody PersonaSaveRequest personaSaveRequest
             ) {
-        personaService.savePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
+        personaService.savePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName(), personaSaveRequest.getThumbnail());
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 
     /**
-     * 페르소나 이름 수정
+     * 페르소나 수정
      * @param userDetails 저장할 유저
      * @param personaSaveRequest 수정할 페르소나의 코드 및 새로운 이름
      */
     @PatchMapping("")
     @Operation(summary = "페르소나 수정", description = "코드에 해당하는 페르소나의 이름을 수정합니다. <br>" +
-            "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다.")
+            "thumbnail에는 해당하는 content의 id를 적어주시면 됩니다.")
     public ResponseEntity<CommonApiResponse<Void>> updatePersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PersonaSaveRequest personaSaveRequest
+            @Valid @RequestBody PersonaSaveRequest personaSaveRequest
     ) {
-        personaService.updatePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
+        personaService.updatePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName(), personaSaveRequest.getThumbnail());
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
@@ -179,9 +152,9 @@ public class PersonaController {
             "내가 생각하기에 그 페르소나 결과 페이지로 넘어가서 이름도 편집할 수 있게 해 둠")
     public ResponseEntity<CommonApiResponse<Void>> saveSharedPersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody PersonaSaveRequest personaSaveRequest
+            @Valid @RequestBody PersonaSaveRequest personaSaveRequest
     ){
-        personaService.saveSharedPersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
+        personaService.saveSharedPersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName(), personaSaveRequest.getThumbnail());
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 

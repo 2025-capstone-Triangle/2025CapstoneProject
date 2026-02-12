@@ -9,4 +9,5 @@ import java.util.List;
 
 @Repository
 public interface ContentRepository extends JpaRepository<Content,Long>, ContentRepositoryCustom {
+    Content findByIdAndIsActive(Long id, Boolean isActive);
 }

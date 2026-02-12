@@ -13,12 +13,12 @@ VALUES
     (nextval('member_sequence'), 'admin1', '{bcrypt}$2a$10$eQswQEePE9YBRlCvoGjzvucjQZ1JJYdhVwob.gfLJ5I.swOpReeDC', 'admin02@persona.com', 'ROLE_ADMIN', '1995-01-01', 'MALE', false, now(), now(), true);
 
 -- 1. Persona 기본 정보 삽입 (member_id 10000, 10001 사용)
-INSERT INTO persona (id, name, profile, member_id, is_saved, created_at, updated_at, is_active, code)
+INSERT INTO persona (id, name, profile, member_id, is_saved, created_at, updated_at, is_active, code, thumbnail_id)
 VALUES
-    (nextval('persona_sequence'), '새벽의 예술가', 'https://s3.persona.com/profiles/artist_01.jpg', 10000, true, now(), now(), true, 'aaaaaaaaaa'),
-    (nextval('persona_sequence'), '냉철한 분석가', 'https://s3.persona.com/profiles/analyst_02.jpg', 10000, false, now(), now(), true, 'bbbbbbbbbb'),
-    (nextval('persona_sequence'), '햇살 머금은 모험가', 'https://s3.persona.com/profiles/adventurer_03.jpg', 10001, true, now(), now(), true, 'cccccccccc'),
-    (nextval('persona_sequence'), '도심 속 미니멀리스트', 'https://s3.persona.com/profiles/minimal_04.jpg', 10001, true, now(), now(), true, 'dddddddddd');
+    (nextval('persona_sequence'), '새벽의 예술가', 'https://s3.persona.com/profiles/artist_01.jpg', 10000, true, now(), now(), true, 'aaaaaaaaaa',10001),
+    (nextval('persona_sequence'), '냉철한 분석가', 'https://s3.persona.com/profiles/analyst_02.jpg', 10000, false, now(), now(), true, 'bbbbbbbbbb',10004),
+    (nextval('persona_sequence'), '햇살 머금은 모험가', 'https://s3.persona.com/profiles/adventurer_03.jpg', 10001, true, now(), now(), true, 'cccccccccc',10000),
+    (nextval('persona_sequence'), '도심 속 미니멀리스트', 'https://s3.persona.com/profiles/minimal_04.jpg', 10001, true, now(), now(), true, 'dddddddddd',10000);
 
 -- 2. Persona 키워드 삽입 (위에서 생성된 ID 10000, 10001, 10002, 10003 가정)
 INSERT INTO persona_keywords (persona_id, keyword)
@@ -59,6 +59,11 @@ INSERT INTO reference (id, name, img, prompt, is_active, created_at, updated_at)
 VALUES (nextval('reference_sequence'), 'Natural Earth', 'https://s3.persona.com/refs/nature_04.jpg',
         'A person in beige linen clothing, warm sunset light through forest trees, organic and peaceful vibe, film grain texture',
         true, NOW(), NOW());
+
+INSERT INTO content (id, persona_id, reference_id, img, type, description, is_active, created_at, updated_at)
+VALUES (nextval('content_sequence'), 10000, null, 'https://s3.persona.com/outputs/user01_urban_feed.jpg',
+        'FEED', '도시적인 무드의 인스타그램 피드 컨텐츠입니다.', true, NOW(), NOW());
+
 
 -- 1. Urban Monochrome 페르소나의 인스타 피드형 컨텐츠 (4:5)
 INSERT INTO content (id, persona_id, reference_id, img, type, description, is_active, created_at, updated_at)

@@ -1,5 +1,7 @@
 package com.a.persona.app.model.persona.service;
 
+import com.a.persona.app.model.content.domain.Content;
+import com.a.persona.app.model.content.repo.ContentRepository;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
@@ -31,9 +33,9 @@ public class PersonaService {
     private final PersonaRepository personaRepository;
     private final MemberRepository memberRepository;
     private final AmazonS3Manager s3Manager;
-    private final ModelMapper modelMapper;
     private final AmazonConfig amazonConfig;
     private final PersonaLogService personaLogService;
+    private final ContentRepository contentRepository;
 
 
     /**
@@ -49,7 +51,10 @@ public class PersonaService {
 
         return new ArrayList<PersonaDto>(
                     personas.stream().map(
-                            PersonaDto::fromEntity
+                            persona -> {
+                                Content thumbnail = contentRepository.findByIdAndIsActive(persona.getId(),true);
+                                return PersonaDto.fromEntity(persona, thumbnail);
+                            }
                 ).toList()
         );
     }
@@ -63,7 +68,8 @@ public class PersonaService {
     public PersonaDto findPersona(String username, String code) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        return PersonaDto.fromEntity(persona);
+        Content content = contentRepository.findByIdAndIsActive(persona.getThumbnailId(),true);
+        return PersonaDto.fromEntity(persona, content);
     }
 
     /**
@@ -83,13 +89,16 @@ public class PersonaService {
      * @param username 유저 아이디
      * @param code 페르소나 코드
      * @param name 페르소나 이름
+     * @param thumbnail 대표 컨텐츠 아이디
      */
-    public void savePersona(String username, String code, String name) {
+    public void savePersona(String username, String code, String name, Long thumbnail) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         persona.setIsSaved(true);
         if(name!=null)
             persona.setName(name);
+        if(thumbnail!=null)
+            persona.setThumbnailId(thumbnail);
         personaRepository.save(persona);
     }
 
@@ -160,11 +169,13 @@ public class PersonaService {
      * @param code 수정할 페르소나 코드
      * @param name 수정할 페르소나의 새로운 이름!
      */
-    public void updatePersona(String username, String code, String name) {
+    public void updatePersona(String username, String code, String name, Long thumbnail) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         if(name!=null)
             persona.setName(name);
+        if(thumbnail!=null)
+            persona.setThumbnailId(thumbnail);
         personaRepository.save(persona);
     }
 
@@ -174,10 +185,15 @@ public class PersonaService {
      * @param code 공유받은 페르소나 코드
      * @param name 혹시나 이름을 바꾼다면 이름
      */
-    public void saveSharedPersona(String username, String code, String name) {
+    public void saveSharedPersona(String username, String code, String name, Long thumbnail) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         // 기존 페르소나
         Persona sharedpersona = personaRepository.findPersonaByCodeAndIsActive(code,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+
+        if(name==null)
+            name = sharedpersona.getName();
+        if(thumbnail==null)
+            thumbnail = sharedpersona.getThumbnailId();
 
         // 기존의 페르소나를 복붙
         Persona newPersona = Persona.builder()
@@ -187,6 +203,7 @@ public class PersonaService {
                 .keywords(new HashSet<>(sharedpersona.getKeywords()))
                 .colors(new HashSet<>(sharedpersona.getColors()))
                 .isSaved(true)
+                .thumbnailId(thumbnail)
                 .build();
         String newCode;
         // 코드가 중복이 아니도록

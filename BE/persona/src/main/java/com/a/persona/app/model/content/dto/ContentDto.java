@@ -19,7 +19,7 @@ public class ContentDto {
 
     private Long id;
 
-    private PersonaDto persona;
+    private Long persona;
 
     private ReferenceDto reference;
 
@@ -33,7 +33,7 @@ public class ContentDto {
         return ContentDto.builder()
                 .id(content.getId())
                 // Persona 엔티티를 PersonaDto로 변환 (방금 만든 로직 활용)
-                .persona(content.getPersona() != null ? PersonaDto.fromEntity(content.getPersona()) : null)
+                .persona(content.getPersona() != null ? content.getPersona().getId() : null)
                 // Reference 엔티티를 ReferenceDto로 변환
                 .reference(content.getReference() != null ? ReferenceDto.fromEntity(content.getReference()) : null)
                 .img(content.getImg())

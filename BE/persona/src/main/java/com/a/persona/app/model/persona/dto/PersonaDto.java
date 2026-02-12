@@ -1,6 +1,8 @@
 package com.a.persona.app.model.persona.dto;
 
 import com.a.persona.app.model.common.BaseEntity;
+import com.a.persona.app.model.content.domain.Content;
+import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.dto.MemberDto;
 import com.a.persona.app.model.persona.domain.Persona;
@@ -42,7 +44,9 @@ public class PersonaDto{
 
     private String code;
 
-    public static PersonaDto fromEntity(Persona persona) {
+    private ContentDto thumbnail;
+
+    public static PersonaDto fromEntity(Persona persona, Content content) {
         return PersonaDto.builder()
                 .id(persona.getId())
                 .name(persona.getName())
@@ -56,6 +60,7 @@ public class PersonaDto{
                 .updatedAt(persona.getUpdatedAt())
                 .isActive(persona.getIsActive())
                 .code(persona.getCode())
+                .thumbnail(ContentDto.fromEntity(content))
                 .build();
     }
 }

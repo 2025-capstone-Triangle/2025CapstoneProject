@@ -1,5 +1,6 @@
 package com.a.persona.app.controller.content.payload;
 
+import com.a.persona.app.controller.persona.payload.PersonaResponse;
 import com.a.persona.app.model.content.code.ContentType;
 import com.a.persona.app.model.content.dto.ContentStatDto;
 import com.a.persona.app.model.persona.dto.PersonaDto;
@@ -19,7 +20,7 @@ public class ContentStatResponse {
 
     Long id;
 
-    PersonaDto persona;
+    PersonaResponse persona;
 
     ReferenceDto reference;
 
@@ -36,7 +37,7 @@ public class ContentStatResponse {
     public static ContentStatResponse from(ContentStatDto dto) {
         return ContentStatResponse.builder()
                 .id(dto.getId())
-                .persona(dto.getPersona())
+                .persona(PersonaResponse.from(dto.getPersona()))
                 .reference(dto.getReference())
                 .img(dto.getImg())
                 .type(dto.getType())

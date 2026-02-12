@@ -1,177 +1,344 @@
-import { useState } from 'react';
-import { StatusBar } from '../../../shared/layout/StatusBar';
-import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
-import { BackButton } from '../../../shared/layout/BackButton';
-import { Plus, ChevronRight, Heart, GripVertical } from 'lucide-react';
+﻿import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { CheckCircle2, ChevronRight, Heart, KeyRound, Loader2, Plus, RefreshCw } from "lucide-react";
+import { isAuthenticated } from "../../../lib/auth";
+import { BackButton } from "../../../shared/layout/BackButton";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+import {
+  clearPendingPersonaCode,
+  getPendingPersonaCode,
+  getPersonaByShareCode,
+  normalizePersonaCode,
+} from "../lib/personaShareCode";
+import { getPersonaList, saveSharedPersona, type PersonaResponse } from "../lib/personaApi";
 
 interface PersonaListPageProps {
   onPersonaClick?: (id: string) => void;
   onCreateNew?: () => void;
-  onTabChange?: (tab: 'home' | 'persona' | 'content') => void;
+  onTabChange?: (tab: "home" | "persona" | "content") => void;
   onBack?: () => void;
   onHome?: () => void;
 }
 
-interface Persona {
-  id: string;
+interface PersonaCardItem {
+  code: string;
   name: string;
   description: string;
   colors: string[];
+  profile: string;
   isFavorite: boolean;
 }
 
-const initialPersonas: Persona[] = [
-  {
-    id: '1',
-    name: '차분한 도시인',
-    description: '세련되고 도시적인 미니멀리즘',
-    colors: ['#000000', '#524A4A', '#808080', '#A69A91'],
-    isFavorite: true
-  },
-  {
-    id: '2',
-    name: '열정적인 크리에이터',
-    description: '창의적이고 자유로운 영혼',
-    colors: ['#EF466F', '#FF6B8A', '#FFB4C6', '#FFF0F3'],
-    isFavorite: false
-  },
-  {
-    id: '3',
-    name: '프로페셔널 리더',
-    description: '논리적이고 체계적인 전문가',
-    colors: ['#1a4d8f', '#2563a8', '#60a5fa', '#dbeafe'],
-    isFavorite: false
+const FAVORITE_STORAGE_KEY = "personaFavoriteCodes";
+const LOCAL_IMPORTED_STORAGE_KEY = "localImportedPersonas";
+
+function readFavoriteCodes() {
+  const raw = localStorage.getItem(FAVORITE_STORAGE_KEY);
+  if (!raw) return [] as string[];
+  try {
+    const parsed = JSON.parse(raw) as string[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
-];
+}
 
-export function PersonaListPage({ onPersonaClick, onCreateNew, onTabChange, onBack, onHome }: PersonaListPageProps) {
-  const [personas, setPersonas] = useState<Persona[]>(initialPersonas);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+function writeFavoriteCodes(codes: string[]) {
+  localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(codes));
+}
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPersonas(personas.map(p => 
-      p.id === id ? { ...p, isFavorite: !p.isFavorite } : p
-    ));
+function readLocalImportedPersonas() {
+  const raw = localStorage.getItem(LOCAL_IMPORTED_STORAGE_KEY);
+  if (!raw) return [] as PersonaCardItem[];
+  try {
+    const parsed = JSON.parse(raw) as PersonaCardItem[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalImportedPersonas(items: PersonaCardItem[]) {
+  localStorage.setItem(LOCAL_IMPORTED_STORAGE_KEY, JSON.stringify(items));
+}
+
+function mapPersonaToCard(item: PersonaResponse, favorites: Set<string>): PersonaCardItem {
+  return {
+    code: item.code,
+    name: item.name,
+    description: item.keywords?.length ? item.keywords.join(" · ") : "나만의 페르소나",
+    colors: item.colors?.length ? item.colors.slice(0, 4) : ["#000000", "#666666", "#999999", "#cccccc"],
+    profile: item.profile ?? "",
+    isFavorite: favorites.has(item.code),
+  };
+}
+
+export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }: PersonaListPageProps) {
+  const [personas, setPersonas] = useState<PersonaCardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [importCode, setImportCode] = useState("");
+  const [importError, setImportError] = useState("");
+  const [importMessage, setImportMessage] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+
+  const loadPersonas = async () => {
+    setLoading(true);
+    setLoadError("");
+
+    try {
+      const favoriteSet = new Set(readFavoriteCodes());
+      const serverPersonas = await getPersonaList();
+      const mapped = serverPersonas.map((item) => mapPersonaToCard(item, favoriteSet));
+      const localImported = readLocalImportedPersonas();
+      const merged = [...mapped];
+
+      for (const local of localImported) {
+        if (!merged.some((item) => item.code === local.code)) {
+          merged.push({ ...local, isFavorite: favoriteSet.has(local.code) });
+        }
+      }
+
+      setPersonas(merged);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "페르소나 목록을 불러오지 못했습니다.";
+      setLoadError(message);
+      setPersonas(readLocalImportedPersonas());
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
+  useEffect(() => {
+    loadPersonas();
+
+    const pendingCode = getPendingPersonaCode();
+    if (!pendingCode) return;
+
+    setImportCode(pendingCode);
+    setImportMessage("진단에서 받은 코드가 입력되어 있어요. 추가 버튼을 눌러 가져오세요.");
+  }, []);
+
+  const sortedPersonas = useMemo(() => {
+    return [...personas].sort((a, b) => {
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [personas]);
+
+  const toggleFavorite = (code: string, event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+
+    setPersonas((prev) => {
+      const next = prev.map((persona) =>
+        persona.code === code ? { ...persona, isFavorite: !persona.isFavorite } : persona,
+      );
+      const favoriteCodes = next.filter((item) => item.isFavorite).map((item) => item.code);
+      writeFavoriteCodes(favoriteCodes);
+      return next;
+    });
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (draggedIndex === null || draggedIndex === index) return;
-    
-    const newPersonas = [...sortedPersonas];
-    const draggedItem = newPersonas[draggedIndex];
-    
-    newPersonas.splice(draggedIndex, 1);
-    newPersonas.splice(index, 0, draggedItem);
-    
-    setPersonas(newPersonas);
-    setDraggedIndex(index);
+  const handleAddByCode = async () => {
+    setImportError("");
+    setImportMessage("");
+
+    if (!isAuthenticated()) {
+      setImportError("코드로 가져오기는 로그인 후 이용할 수 있어요.");
+      return;
+    }
+
+    if (!importCode.trim()) {
+      setImportError("페르소나 코드를 입력해 주세요.");
+      return;
+    }
+
+    const code = normalizePersonaCode(importCode);
+    if (personas.some((persona) => normalizePersonaCode(persona.code) === code)) {
+      setImportError("이미 추가된 페르소나 코드입니다.");
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      await saveSharedPersona(code, "공유 페르소나");
+      await loadPersonas();
+      setImportCode("");
+      setImportMessage("코드 페르소나가 내 목록에 저장되었습니다.");
+      const pendingCode = getPendingPersonaCode();
+      if (pendingCode && normalizePersonaCode(pendingCode) === code) {
+        clearPendingPersonaCode();
+      }
+      return;
+    } catch {
+      // Fallback: support local share code flow created in FE when diagnosis is done without login.
+      const local = getPersonaByShareCode(code);
+      if (!local) {
+        setImportError("유효하지 않은 코드예요. 다시 확인해 주세요.");
+        return;
+      }
+
+      const localItem: PersonaCardItem = {
+        code: local.code,
+        name: local.persona.name,
+        description: local.persona.description,
+        colors: local.persona.colors,
+        profile: "",
+        isFavorite: false,
+      };
+
+      const nextList = [localItem, ...personas];
+      setPersonas(nextList);
+      const localImported = readLocalImportedPersonas();
+      writeLocalImportedPersonas([localItem, ...localImported]);
+      setImportCode("");
+      setImportMessage("코드 페르소나가 로컬 목록에 추가되었습니다.");
+
+      const pendingCode = getPendingPersonaCode();
+      if (pendingCode && normalizePersonaCode(pendingCode) === code) {
+        clearPendingPersonaCode();
+      }
+    } finally {
+      setIsImporting(false);
+    }
   };
 
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
-  // Sort: favorites first, then by current order
-  const sortedPersonas = [...personas].sort((a, b) => {
-    if (a.isFavorite && !b.isFavorite) return -1;
-    if (!a.isFavorite && b.isFavorite) return 1;
-    return 0;
-  });
-
-  const favoriteCount = personas.filter(p => p.isFavorite).length;
+  const favoriteCount = personas.filter((persona) => persona.isFavorite).length;
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[80px]">      <DefaultTopBar title="My Persona" onTitleClick={onHome} />
+    <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[80px]">
+      <DefaultTopBar title="My Persona" onTitleClick={onHome} />
       <BackButton onClick={onBack} />
-      
+
       <div className="px-8 pt-8">
-        {/* Header */}
-        <div className="mb-8">
+        <div className="mb-7">
           <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[28px] text-black mb-2 leading-tight">
             저장된 페르소나
           </h2>
           <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">
-            총 {personas.length}개의 페르소나 {favoriteCount > 0 && `· ❤️ ${favoriteCount}개`}
+            총 {personas.length}개의 페르소나 {favoriteCount > 0 && `· 즐겨찾기 ${favoriteCount}개`}
           </p>
         </div>
 
-        {/* Persona Cards */}
-        <div className="space-y-3 mb-6">
-          {sortedPersonas.map((persona, index) => (
-            <div
-              key={persona.id}
-              className={`relative bg-[#f8f8f8] rounded-[16px] transition-all group hover:bg-[#f0f0f0] ${
-                draggedIndex === index ? 'opacity-50 scale-95' : ''
-              }`}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDragEnd={handleDragEnd}
-            >
-              <button
-                onClick={() => onPersonaClick?.(persona.id)}
-                className="w-full flex items-center gap-4 p-5"
-              >
-                {/* Drag Handle */}
-                <div className="flex-shrink-0 cursor-move touch-none" onClickCapture={(e) => e.stopPropagation()}>
-                  <GripVertical className="w-5 h-5 text-[#c0c0c0] group-hover:text-[#6b6b6b] transition-colors" />
-                </div>
-
-                {/* Profile Image */}
-                <div className="w-[70px] h-[70px] bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0] rounded-[12px] flex-shrink-0" />
-
-                {/* Info */}
-                <div className="flex-1 text-left">
-                  <h3 className="font-['NEXON_Football_Gothic'] font-bold text-[18px] text-black mb-1">
-                    {persona.name}
-                  </h3>
-                  <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b] mb-3">
-                    {persona.description}
-                  </p>
-                  
-                  {/* Color Palette */}
-                  <div className="flex gap-1.5">
-                    {persona.colors.map((color, colorIndex) => (
-                      <div
-                        key={colorIndex}
-                        className="w-5 h-5 rounded-full border border-white shadow-sm"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Favorite Button */}
-                <div
-                  onClick={(e) => toggleFavorite(persona.id, e)}
-                  className="p-2 hover:bg-white rounded-lg transition-colors flex-shrink-0 cursor-pointer"
-                >
-                  <Heart 
-                    className={`w-5 h-5 ${
-                      persona.isFavorite 
-                        ? 'text-red-500 fill-red-500' 
-                        : 'text-[#d0d0d0]'
-                    } transition-colors`}
-                  />
-                </div>
-
-                {/* Arrow Icon */}
-                <ChevronRight className="w-5 h-5 text-[#c0c0c0] group-hover:text-black transition-colors flex-shrink-0" />
-              </button>
+        <div className="mb-6 rounded-[20px] border border-[#ececec] bg-gradient-to-br from-[#fcfcfc] to-[#f7f7f7] p-5 shadow-[0_6px_20px_rgba(0,0,0,0.03)]">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-[#fff2f5] flex items-center justify-center flex-shrink-0">
+              <KeyRound className="w-5 h-5 text-[#EF466F]" />
             </div>
-          ))}
+            <div>
+              <h3 className="font-['NEXON_Football_Gothic'] text-[18px] text-black">코드로 페르소나 추가</h3>
+              <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666] leading-[1.5]">
+                공유 코드를 입력하면 내 페르소나 목록에 저장됩니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              value={importCode}
+              onChange={(event) => {
+                setImportCode(event.target.value.toUpperCase());
+                setImportError("");
+              }}
+              placeholder="PRS-XXXX-XXXX"
+              className="flex-1 h-[46px] rounded-[12px] border border-[#d9d9d9] bg-white px-4 font-['Noto_Sans_KR'] text-[13px] text-black placeholder:text-[#999] focus:outline-none focus:border-black"
+            />
+            <button
+              onClick={handleAddByCode}
+              disabled={isImporting}
+              className="h-[46px] px-4 rounded-[12px] bg-black text-white font-['Noto_Sans_KR'] text-[13px] font-semibold disabled:opacity-60"
+            >
+              {isImporting ? "저장중" : "추가"}
+            </button>
+          </div>
+
+          {importError && (
+            <p className="mt-2 font-['Noto_Sans_KR'] text-[12px] text-[#d92d20]">{importError}</p>
+          )}
+
+          {importMessage && (
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#eefaf3] px-3 py-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#0f9f53]" />
+              <span className="font-['Noto_Sans_KR'] text-[11px] text-[#0f9f53]">{importMessage}</span>
+            </div>
+          )}
         </div>
 
-        {/* Create New Button */}
+        {loading && (
+          <div className="h-[220px] flex items-center justify-center text-[#666] font-['Noto_Sans_KR'] text-[14px] gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            페르소나 불러오는 중
+          </div>
+        )}
+
+        {!loading && loadError && (
+          <div className="mb-6 rounded-[14px] border border-[#f0d0d0] bg-[#fff7f7] p-4">
+            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#bb3b3b] mb-2">{loadError}</p>
+            <button
+              onClick={loadPersonas}
+              className="h-[34px] px-3 rounded-[9px] bg-black text-white text-[12px] font-['Noto_Sans_KR'] inline-flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              다시 시도
+            </button>
+          </div>
+        )}
+
+        {!loading && sortedPersonas.length > 0 && (
+          <div className="space-y-3 mb-6">
+            {sortedPersonas.map((persona) => (
+              <div key={persona.code} className="relative bg-[#f8f8f8] rounded-[16px] transition-all group hover:bg-[#f0f0f0]">
+                <button onClick={() => onPersonaClick?.(persona.code)} className="w-full flex items-center gap-4 p-5">
+                  {persona.profile ? (
+                    <img
+                      src={persona.profile}
+                      alt={persona.name}
+                      className="w-[70px] h-[70px] rounded-[12px] object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-[70px] h-[70px] bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0] rounded-[12px] flex-shrink-0" />
+                  )}
+
+                  <div className="flex-1 text-left min-w-0">
+                    <h3 className="font-['NEXON_Football_Gothic'] font-bold text-[18px] text-black mb-1 truncate">
+                      {persona.name}
+                    </h3>
+                    <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b] mb-3 truncate">{persona.description}</p>
+
+                    <div className="flex gap-1.5">
+                      {persona.colors.map((color, colorIndex) => (
+                        <div
+                          key={colorIndex}
+                          className="w-5 h-5 rounded-full border border-white shadow-sm"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={(event) => toggleFavorite(persona.code, event)}
+                    className="p-2 hover:bg-white rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${persona.isFavorite ? "text-red-500 fill-red-500" : "text-[#d0d0d0]"} transition-colors`}
+                    />
+                  </div>
+
+                  <ChevronRight className="w-5 h-5 text-[#c0c0c0] group-hover:text-black transition-colors flex-shrink-0" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && sortedPersonas.length === 0 && (
+          <div className="mb-6 rounded-[16px] border border-[#ececec] bg-[#fafafa] p-6 text-center">
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">저장된 페르소나가 없습니다.</p>
+          </div>
+        )}
+
         <button
           onClick={onCreateNew}
           className="w-full border-2 border-dashed border-[#d0d0d0] rounded-[16px] h-[100px] flex items-center justify-center gap-3 hover:border-black hover:bg-[#fafafa] transition-all"
@@ -179,13 +346,9 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onTabChange, onBa
           <div className="w-10 h-10 rounded-full bg-[#f0f0f0] flex items-center justify-center">
             <Plus className="w-5 h-5 text-[#6b6b6b]" strokeWidth={2.5} />
           </div>
-          <span className="font-['Noto_Sans_KR'] font-medium text-[14px] text-[#6b6b6b]">
-            새 페르소나 만들기
-          </span>
+          <span className="font-['Noto_Sans_KR'] font-medium text-[14px] text-[#6b6b6b]">새 페르소나 만들기</span>
         </button>
       </div>
     </div>
   );
 }
-
-

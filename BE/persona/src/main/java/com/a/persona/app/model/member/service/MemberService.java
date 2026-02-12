@@ -47,6 +47,11 @@ public class MemberService {
      * @param signupRequest 새로운 멤버의 정보
      */
     public void createMember(SignupRequest signupRequest) {
+
+        if(isEmailExists(signupRequest.getEmail())) {
+            throw new CommonException(ResponseCode.CONFLICT);
+        }
+
         Member member = Member.builder()
                 .username(signupRequest.getUsername())
                 .password(passwordEncoder.encode(signupRequest.getPassword()))

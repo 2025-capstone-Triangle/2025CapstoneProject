@@ -9,7 +9,6 @@ import com.a.persona.app.model.member.service.MemberService;
 import com.a.persona.infra.response.CommonApiResponse;
 import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -62,8 +61,8 @@ public class AuthController {
     /**
      * 회원가입 요청을 처리합니다.
      *
-     * @param signupRequest
-     * @return 계정이 이미 존재하는 경우 {@code HttpStatus.CONFLICT}를, 그 외의 경우는 {@code HttpStatus.OK}
+     * @param signupRequest 회원가입 요청 정보
+     * @return 이메일이 이미 존재하는 경우 {@code HttpStatus.CONFLICT}를, 그 외의 경우는 {@code HttpStatus.OK}
      */
     @Operation(summary = "회원가입", description = "회원가입 요청을 처리합니다. <br>" +
             "사용자 생년월일은 YYYY-MM-DD 의 형식입니다." +
@@ -112,8 +111,7 @@ public class AuthController {
 
     /**
      * 이메일로 코드 전송
-     * @param emailRequest
-     * @return
+     * @param emailRequest 요청할 이메일
      */
     @PostMapping("/check-email")
     @Operation(summary = "이메일 코드 요청", description = "첨부된 이메일로 코드를 발송합니다.<br>")
@@ -121,6 +119,9 @@ public class AuthController {
             @RequestBody @Valid EmailRequest emailRequest
     ){
         String userEmail = emailRequest.getEmail();
+        if(memberService.isEmailExists(userEmail))
+            return ResponseEntity.status(ResponseCode.CONFLICT.status())
+                    .body(CommonApiResponse.error(ResponseCode.CONFLICT));
         try {
             // 이메일 발송
             mailService.sendVerificationEmail(userEmail);
@@ -133,8 +134,7 @@ public class AuthController {
 
     /**
      * 코드 발송 확인
-     * @param verifyEmailRequest
-     * @return
+     * @param verifyEmailRequest 이메일 코드 검증
      */
     @PostMapping("/verify-code")
     @Operation(summary = "코드 검증", description = "입력된 코드가 적절한지 검증합니다.<br>")

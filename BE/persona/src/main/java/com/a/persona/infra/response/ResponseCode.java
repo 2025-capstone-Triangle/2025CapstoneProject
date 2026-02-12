@@ -17,7 +17,7 @@ public enum ResponseCode {
   NOT_EXIST_PRE_AUTH_CREDENTIAL("4013", HttpStatus.OK, "No authentication credentials were found in the request."),
 
   NOT_FOUND("4040", HttpStatus.NOT_FOUND, "Not found."),
-
+    CONFLICT("4090", HttpStatus.CONFLICT, "Conflict"),
   INTERNAL_SERVER_ERROR("5000", HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error"),
   SECURITY_INCIDENT("6000", HttpStatus.OK, "An unusual login attempt has been detected.");
 

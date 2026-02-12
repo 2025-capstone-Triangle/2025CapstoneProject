@@ -16,7 +16,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 class PersonaPipeline:
     def __init__(self):
-        # 경로 설정 및 dotenv 로드 (복구됨!)
+        # 경로 설정 및 dotenv 로드
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
         dotenv_path = os.path.join(parent_dir, '.env')
@@ -27,7 +27,7 @@ class PersonaPipeline:
             raise ValueError(f"API 키 로드 실패! 경로 확인: {dotenv_path}")
 
         self.llm = ChatOpenAI(
-            model="gpt-4o-mini", # 현재는 4o-mini가 가장 안정적이야!
+            model="gpt-5-mini",
             api_key=api_key, 
             temperature=0.7,
         )

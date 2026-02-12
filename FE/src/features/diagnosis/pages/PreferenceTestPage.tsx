@@ -1,8 +1,30 @@
-import { useState } from 'react';
-import { StatusBar } from '../../../shared/layout/StatusBar';
-import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
-import { BackButton } from '../../../shared/layout/BackButton';
-import { ChevronRight } from 'lucide-react';
+import { useMemo, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { BackButton } from "../../../shared/layout/BackButton";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+import {
+  savePreferenceTestResult,
+  type PreferenceImageSelection,
+  type PreferenceToneAdjustment,
+} from "../lib/preferenceTest";
+import trait11 from "../../../assets/traitTest/1-1.png";
+import trait12 from "../../../assets/traitTest/1-2.png";
+import trait13 from "../../../assets/traitTest/1-3.png";
+import trait14 from "../../../assets/traitTest/1-4.png";
+import trait21 from "../../../assets/traitTest/2-1.png";
+import trait22 from "../../../assets/traitTest/2-2.png";
+import trait31 from "../../../assets/traitTest/3-1.png";
+import trait32 from "../../../assets/traitTest/3-2.png";
+import trait41 from "../../../assets/traitTest/4-1.png";
+import trait42 from "../../../assets/traitTest/4-2.png";
+import trait51 from "../../../assets/traitTest/5-1.png";
+import trait52 from "../../../assets/traitTest/5-2.png";
+import trait61 from "../../../assets/traitTest/6-1.png";
+import trait62 from "../../../assets/traitTest/6-2.png";
+import trait63 from "../../../assets/traitTest/6-3.png";
+import trait64 from "../../../assets/traitTest/6-4.png";
+import trait65 from "../../../assets/traitTest/6-5.png";
+import trait71 from "../../../assets/traitTest/7-1.png";
 
 interface PreferenceTestPageProps {
   onNext?: () => void;
@@ -10,223 +32,334 @@ interface PreferenceTestPageProps {
   onHome?: () => void;
 }
 
-// 7가지 질문 구조
-const questions = [
+interface QuestionOption {
+  id: string;
+  src: string;
+}
+
+interface ImageQuestion {
+  number: number;
+  options: QuestionOption[];
+}
+
+const START_GUIDE = `다음으로 제시되는 이미지들 중
+
+지금부터 여러 장의 이미지를 제시합니다.
+
+각 문항에서 가장 마음에 드는 이미지 1장을 선택해 주세요.
+
+처음 든 느낌대로 선택할수록 선호도가 더 정확하게 반영됩니다.`;
+
+const COMMON_QUESTION = "가장 마음에 드는 이미지를 선택해 주세요";
+
+const IMAGE_QUESTIONS: ImageQuestion[] = [
   {
-    id: 1,
-    title: '현실감의 정도',
-    question: '어떤 톤의 이미지를 볼 때 더 몰입되나요?',
-    type: 'text' as const,
+    number: 1,
     options: [
-      { id: 'A', label: '자연광 (외부/일상)', desc: '셀카, 풍경 사진, 비전문가 느낌' },
-      { id: 'B', label: '외부/연출', desc: '자연광이지만 연출된 느낌' },
-      { id: 'C', label: '실제 생활 공간 (실내/일상)', desc: '집, 카페 등 일상 공간' },
-      { id: 'D', label: '스튜디오 조명 (실내/연출)', desc: '증명사진, 웨딩사진, 전문가 느낌' }
-    ]
+      { id: "1-1", src: trait11 },
+      { id: "1-2", src: trait12 },
+      { id: "1-3", src: trait13 },
+      { id: "1-4", src: trait14 },
+    ],
   },
   {
-    id: 2,
-    title: '이미지의 밀도',
-    question: '시선이 머무는 이미지는 어떤 스타일인가요?',
-    type: 'image' as const,
+    number: 2,
     options: [
-      { id: 'A', label: '정돈된 미니멀리즘', desc: '여백이 많고 핵심 피사체만 강조' },
-      { id: 'B', label: '꽉 찬 맥시멀리즘', desc: '소품이 많고 정보량이 풍부함' }
-    ]
+      { id: "2-1", src: trait21 },
+      { id: "2-2", src: trait22 },
+    ],
   },
   {
-    id: 3,
-    title: '시간대와 광원',
-    question: '본인의 취향을 한 단어로 표현한다면?',
-    type: 'text' as const,
+    number: 3,
     options: [
-      { id: 'A', label: '화사하고 맑은', desc: '낮, 햇살, 밝고 긍정적인 에너지' },
-      { id: 'B', label: '차분하고 깊이 있는', desc: 'Sunset, 밤, 그림자가 짙은 분위기' }
-    ]
+      { id: "3-1", src: trait31 },
+      { id: "3-2", src: trait32 },
+    ],
   },
   {
-    id: 4,
-    title: '대비감',
-    question: '피사체와 배경의 대비는 어떤 것이 좋나요?',
-    type: 'text' as const,
+    number: 4,
     options: [
-      { id: 'A', label: '강한 대비', desc: '피사체가 명확히 두드러지는' },
-      { id: 'B', label: '부드러운 대비', desc: '피사체와 배경이 자연스럽게 어우러지는' }
-    ]
+      { id: "4-1", src: trait41 },
+      { id: "4-2", src: trait42 },
+    ],
   },
   {
-    id: 5,
-    title: '이미지의 생동감',
-    question: '사진에서 어떤 분위기가 느껴지길 원하시나요?',
-    type: 'text' as const,
+    number: 5,
     options: [
-      { id: 'A', label: '멈춰있는 고요함', desc: '정면 응시, 정적인 포즈, 안정감' },
-      { id: 'B', label: '움직이는 생동감', desc: '걷는 모습, 흩날림, 현장감' }
-    ]
+      { id: "5-1", src: trait51 },
+      { id: "5-2", src: trait52 },
+    ],
   },
   {
-    id: 6,
-    title: '색감 선호',
-    question: '어떤 계열의 색감이 좋으신가요?',
-    type: 'color' as const,
+    number: 6,
     options: [
-      { id: 'A', label: '웜톤', desc: '따뜻한 느낌' },
-      { id: 'B', label: '뉴트럴', desc: '중립적인 느낌' },
-      { id: 'C', label: '쿨톤', desc: '시원한 느낌' }
-    ]
+      { id: "6-1", src: trait61 },
+      { id: "6-2", src: trait62 },
+      { id: "6-3", src: trait63 },
+      { id: "6-4", src: trait64 },
+      { id: "6-5", src: trait65 },
+    ],
   },
-  {
-    id: 7,
-    title: '사진 비율',
-    question: '어떤 구도의 이미지가 더 마음에 드나요?',
-    type: 'ratio' as const,
-    options: [
-      { id: 'A', label: '클로즈업', desc: '얼굴 위주' },
-      { id: 'B', label: '흉상', desc: '상반신' },
-      { id: 'C', label: '반신', desc: '허리까지' },
-      { id: 'D', label: '전신', desc: '발끝까지' },
-      { id: 'E', label: '풀샷', desc: '여백 있는 전신' }
-    ]
-  }
 ];
 
-export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPageProps) {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [showSubQuestion, setShowSubQuestion] = useState(false);
+const TOTAL_STEPS = 7;
+const DEFAULT_TONE: PreferenceToneAdjustment = {
+  saturation: 50,
+  brightness: 50,
+  contrast: 50,
+  temperature: 50,
+};
 
-  const question = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
-
-  const handleAnswer = (answerId: string) => {
-    const newAnswers = { ...answers, [question.id]: answerId };
-    setAnswers(newAnswers);
-
-    // 색감 질문(6번)이면 서브 질문으로 이동
-    if (question.id === 6 && !showSubQuestion) {
-      setShowSubQuestion(true);
-    } else {
-      // 다음 질문으로
-      setTimeout(() => {
-        if (currentQuestion < questions.length - 1) {
-          setCurrentQuestion(currentQuestion + 1);
-          setShowSubQuestion(false);
-        } else {
-          onNext?.();
-        }
-      }, 300);
-    }
-  };
-
+function SliderField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+}) {
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
-      <BackButton onClick={onBack} />
-      
-      <div className="px-8">
-        {/* Progress */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">
-              {currentQuestion + 1} / {questions.length}
-            </span>
-            <span className="font-['Noto_Sans_KR'] text-[14px] text-black font-bold">
-              {Math.round(progress)}%
-            </span>
-          </div>
-          <div className="w-full h-2 bg-[#f0f0f0] rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-black transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Question */}
-        <div className="mb-8">
-          <div className="mb-3">
-            <span className="inline-block bg-black text-white px-3 py-1.5 rounded-full font-['Noto_Sans_KR'] text-[12px] font-semibold mb-3">
-              {question.title}
-            </span>
-          </div>
-          <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[24px] text-black leading-tight mb-2">
-            {question.question}
-          </h2>
-        </div>
-
-        {/* Options */}
-        {!showSubQuestion ? (
-          <div className="space-y-3 pb-8">
-            {question.options.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => handleAnswer(option.id)}
-                className={`w-full text-left p-5 rounded-[16px] border-2 transition-all ${
-                  answers[question.id] === option.id
-                    ? 'border-black bg-[#fafafa] shadow-md'
-                    : 'border-[#e5e5e5] bg-white hover:border-[#d0d0d0] hover:bg-[#fafafa]'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="font-['NEXON_Football_Gothic'] text-[16px] font-bold text-black mb-1">
-                      {option.label}
-                    </div>
-                    <div className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b] leading-relaxed">
-                      {option.desc}
-                    </div>
-                  </div>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                    answers[question.id] === option.id
-                      ? 'border-black bg-black'
-                      : 'border-[#d0d0d0]'
-                  }`}>
-                    {answers[question.id] === option.id && (
-                      <div className="w-2 h-2 bg-white rounded-full" />
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          // 색감 서브 질문 (채도)
-          <div className="space-y-3 pb-8">
-            <div className="mb-6">
-              <h3 className="font-['NEXON_Football_Gothic'] font-bold text-[20px] text-black mb-4">
-                채도는 어느 정도가 좋을까요?
-              </h3>
-            </div>
-            
-            {[
-              { id: 'high-bright', label: '선명하고 밝게', desc: '고채도 · 고명도' },
-              { id: 'high-dark', label: '선명하고 진하게', desc: '고채도 · 저명도' },
-              { id: 'low-bright', label: '차분하고 밝게', desc: '저채도 · 고명도' },
-              { id: 'low-dark', label: '차분하고 깊게', desc: '저채도 · 저명도' }
-            ].map((option) => (
-              <button
-                key={option.id}
-                onClick={() => handleAnswer(option.id)}
-                className="w-full text-left p-5 rounded-[16px] border-2 border-[#e5e5e5] bg-white hover:border-black hover:bg-[#fafafa] transition-all"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="font-['NEXON_Football_Gothic'] text-[16px] font-bold text-black mb-1">
-                      {option.label}
-                    </div>
-                    <div className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">
-                      {option.desc}
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-[#6b6b6b]" />
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+    <div className="rounded-[14px] border border-[#ececec] bg-white p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="font-['Noto_Sans_KR'] text-[13px] font-semibold text-black">{label}</p>
+        <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">{value}</p>
       </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full accent-black"
+      />
     </div>
   );
 }
 
+export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPageProps) {
+  const [hasStarted, setHasStarted] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [selectedOptionByQuestion, setSelectedOptionByQuestion] = useState<Record<number, string>>({});
+  const [toneAdjustment, setToneAdjustment] = useState<PreferenceToneAdjustment>(DEFAULT_TONE);
 
+  const isToneStep = stepIndex === TOTAL_STEPS - 1;
+  const currentQuestion = IMAGE_QUESTIONS[stepIndex];
+  const progress = ((stepIndex + 1) / TOTAL_STEPS) * 100;
+
+  const selectedCount = useMemo(
+    () => Object.values(selectedOptionByQuestion).filter(Boolean).length,
+    [selectedOptionByQuestion],
+  );
+
+  const imageFilterStyle = useMemo(() => {
+    const saturation = Math.max(0, toneAdjustment.saturation / 50);
+    const brightness = Math.max(0, toneAdjustment.brightness / 50);
+    const contrast = Math.max(0, toneAdjustment.contrast / 50);
+
+    return {
+      filter: `saturate(${saturation}) brightness(${brightness}) contrast(${contrast})`,
+    };
+  }, [toneAdjustment]);
+
+  const temperatureOverlayStyle = useMemo(() => {
+    const delta = toneAdjustment.temperature - 50;
+    const isWarm = delta >= 0;
+    const opacity = Math.min(Math.abs(delta) / 50, 1) * 0.28;
+
+    return {
+      backgroundColor: isWarm ? "#ffb46e" : "#7aa8ff",
+      opacity,
+    };
+  }, [toneAdjustment.temperature]);
+
+  const canGoNext = isToneStep || Boolean(selectedOptionByQuestion[currentQuestion?.number ?? -1]);
+
+  const handleHeaderBack = () => {
+    if (!hasStarted) {
+      onBack?.();
+      return;
+    }
+
+    if (stepIndex > 0) {
+      setStepIndex((prev) => prev - 1);
+      return;
+    }
+
+    setHasStarted(false);
+  };
+
+  const handleSelectOption = (questionNumber: number, optionId: string) => {
+    setSelectedOptionByQuestion((prev) => ({ ...prev, [questionNumber]: optionId }));
+  };
+
+  const buildSelections = (): PreferenceImageSelection[] => {
+    return IMAGE_QUESTIONS.map((question) => ({
+      questionNumber: question.number,
+      selectedOptionId: selectedOptionByQuestion[question.number],
+      selectedImageKey: `traitTest/${selectedOptionByQuestion[question.number]}.png`,
+    }));
+  };
+
+  const handleNextStep = () => {
+    if (!canGoNext) return;
+
+    if (!isToneStep) {
+      setStepIndex((prev) => prev + 1);
+      return;
+    }
+
+    const imageSelections = buildSelections();
+    savePreferenceTestResult({
+      introMessage: START_GUIDE,
+      commonQuestion: COMMON_QUESTION,
+      imageSelections,
+      toneAdjustment,
+      completedAt: new Date().toISOString(),
+    });
+    onNext?.();
+  };
+
+  if (!hasStarted) {
+    return (
+      <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[84px]">
+        <DefaultTopBar onTitleClick={onHome} showNotification={false} />
+        <BackButton onClick={handleHeaderBack} />
+
+        <div className="px-8 pt-8">
+          <div className="inline-flex items-center rounded-full bg-black text-white px-3 py-1.5 font-['Noto_Sans_KR'] text-[12px] mb-4">
+            선호 테스트 안내
+          </div>
+          <div className="rounded-[18px] bg-[#f7f7f7] border border-[#ececec] p-5">
+            <p className="whitespace-pre-line font-['Noto_Sans_KR'] text-[14px] leading-[1.8] text-[#222]">{START_GUIDE}</p>
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-5 max-w-[390px] mx-auto">
+          <button
+            onClick={() => {
+              setStepIndex(0);
+              setHasStarted(true);
+            }}
+            className="w-full h-[52px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] font-semibold"
+          >
+            시작하기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[84px]">
+      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
+      <BackButton onClick={handleHeaderBack} />
+
+      <div className="px-8 pt-4">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">
+              {stepIndex + 1} / {TOTAL_STEPS}
+            </p>
+            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">선택 완료 {selectedCount}/6</p>
+          </div>
+          <div className="w-full h-2 rounded-full bg-[#efefef] overflow-hidden">
+            <div className="h-full bg-black transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="inline-flex items-center rounded-full bg-black text-white px-3 py-1.5 font-['Noto_Sans_KR'] text-[12px] mb-2">
+            {isToneStep ? "질문 7" : `질문 ${currentQuestion.number}`}
+          </div>
+          <h2 className="font-['NEXON_Football_Gothic'] text-[24px] text-black leading-[1.3] mb-1">
+            {isToneStep ? "무보정 사진을 원하는 색감으로 보정해 주세요" : COMMON_QUESTION}
+          </h2>
+          {!isToneStep && (
+            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">이미지 수가 달라도 같은 정렬 규칙으로 보여집니다.</p>
+          )}
+        </div>
+
+        {!isToneStep && currentQuestion && (
+          <div className="flex flex-wrap justify-center gap-3">
+            {currentQuestion.options.map((option) => {
+              const isSelected = selectedOptionByQuestion[currentQuestion.number] === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => handleSelectOption(currentQuestion.number, option.id)}
+                  className={`w-[calc(50%-6px)] min-w-[140px] max-w-[155px] rounded-[16px] overflow-hidden border-2 transition-all ${
+                    isSelected ? "border-black shadow-md" : "border-[#e5e5e5] hover:border-[#bdbdbd]"
+                  }`}
+                >
+                  <div className="aspect-[3/4] bg-[#f2f2f2]">
+                    <img src={option.src} alt={`question-${currentQuestion.number}-${option.id}`} className="w-full h-full object-cover" />
+                  </div>
+                  <div
+                    className={`h-[36px] flex items-center justify-center font-['Noto_Sans_KR'] text-[12px] ${
+                      isSelected ? "bg-black text-white" : "bg-white text-black"
+                    }`}
+                  >
+                    {option.id}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {isToneStep && (
+          <div className="space-y-4">
+            <div className="relative rounded-[20px] overflow-hidden border border-[#e5e5e5] bg-[#f4f4f4]">
+              <div className="aspect-[3/4]">
+                <img src={trait71} alt="tone-adjust-target" className="w-full h-full object-cover" style={imageFilterStyle} />
+                <div className="absolute inset-0 mix-blend-color pointer-events-none" style={temperatureOverlayStyle} />
+              </div>
+            </div>
+
+            <SliderField
+              label="채도"
+              value={toneAdjustment.saturation}
+              onChange={(next) => setToneAdjustment((prev) => ({ ...prev, saturation: next }))}
+            />
+            <SliderField
+              label="명도"
+              value={toneAdjustment.brightness}
+              onChange={(next) => setToneAdjustment((prev) => ({ ...prev, brightness: next }))}
+            />
+            <SliderField
+              label="대비"
+              value={toneAdjustment.contrast}
+              onChange={(next) => setToneAdjustment((prev) => ({ ...prev, contrast: next }))}
+            />
+            <SliderField
+              label="색 온도"
+              value={toneAdjustment.temperature}
+              onChange={(next) => setToneAdjustment((prev) => ({ ...prev, temperature: next }))}
+            />
+
+            <button
+              onClick={() => setToneAdjustment(DEFAULT_TONE)}
+              className="w-full h-[42px] rounded-[12px] bg-[#f5f5f5] border border-[#e5e5e5] text-[#333] font-['Noto_Sans_KR'] text-[12px] font-medium inline-flex items-center justify-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              보정값 초기화
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-5 max-w-[390px] mx-auto">
+        <button
+          onClick={handleNextStep}
+          disabled={!canGoNext}
+          className="w-full h-[52px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] font-semibold disabled:opacity-45"
+        >
+          {isToneStep ? "선호 테스트 완료" : "다음"}
+        </button>
+      </div>
+    </div>
+  );
+}
 

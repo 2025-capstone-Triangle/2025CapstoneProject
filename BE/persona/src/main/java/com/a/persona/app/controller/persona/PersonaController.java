@@ -93,10 +93,11 @@ public class PersonaController {
     @Operation(summary = "(미구현)페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다. <br>" +
             "진단 후, 페르소나의 id를 같이 보냅니다. 추후 페르소나 저장 시에 위 id를 함께 보내면 저장할 수 있습니다.<br>" +
-            "(이미지 파일은 jpg, 음성 파일은 wav로 통일)" +
+            "이목구비가 잘 드러난 profile에, 그 외의 사진 image에 첨부해주세요." +
             "json 파일로는 이미지나 음성 파일을 보낼 수 없어서 form data로 보내주세요")
     public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestPart("profile") MultipartFile profile,
             @RequestPart("image") List<MultipartFile> image,
             @RequestPart("voice") List<MultipartFile> voice,
             @RequestPart("preferenceType") String preferenceType
@@ -110,7 +111,7 @@ public class PersonaController {
                 username = userDetails.getUsername();
             
             // 페르소나 진단
-            personaDto = personaService.createPersona(username, image, voice, preferenceType);
+            personaDto = personaService.createPersona(username, profile ,image, voice, preferenceType);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }

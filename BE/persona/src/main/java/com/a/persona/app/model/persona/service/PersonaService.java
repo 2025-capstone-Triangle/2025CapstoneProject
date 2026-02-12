@@ -15,7 +15,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -103,7 +102,7 @@ public class PersonaService {
      * @return
      * @throws IOException
      */
-    public PersonaDto createPersona(String username, List<MultipartFile> image, List<MultipartFile> voice, String preferenceType) throws IOException {
+    public PersonaDto createPersona(String username, MultipartFile profile, List<MultipartFile> image, List<MultipartFile> voice, String preferenceType) throws IOException {
 
         Persona persona = new Persona();
 
@@ -118,6 +117,8 @@ public class PersonaService {
 
         // todo 파일 확장자 변경
 
+        // 프로필 이미지 업로드
+        String profileUrl = s3Manager.upload(List.of(profile), amazonConfig.getImagePath(), fileName).getFirst();
 
         // 이미지 파일 업로드 및 URL 리스트 반환
         List<String> pictureUrls = s3Manager.upload(image, amazonConfig.getImagePath(), fileName);

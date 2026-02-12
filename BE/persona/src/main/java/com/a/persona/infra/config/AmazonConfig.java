@@ -29,6 +29,9 @@ public class AmazonConfig {
     @Value("${cloud.aws.region.static}")
     private String region;
 
+    @Value("${cloud.aws.s3.path.profile}")
+    private String profilePath;
+
     @Value("${cloud.aws.s3.path.image}")
     private String imagePath;
 

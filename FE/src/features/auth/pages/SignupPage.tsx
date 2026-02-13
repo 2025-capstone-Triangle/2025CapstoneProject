@@ -3,6 +3,8 @@ import { AlertCircle, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import {
   checkDuplicate,
   requestEmailCode,
+  saveAuth,
+  signIn,
   signUp,
   verifyEmailCode,
   type SignUpPayload,
@@ -60,6 +62,42 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
   };
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const validateBirthValue = () => {
+    if (!birthYear || !birthMonth || !birthDay) {
+      return "생년월일을 입력해 주세요.";
+    }
+
+    if (!/^\d{4}$/.test(birthYear) || !/^\d{1,2}$/.test(birthMonth) || !/^\d{1,2}$/.test(birthDay)) {
+      return "올바른 생년월일 형식이 아닙니다.";
+    }
+
+    const year = Number(birthYear);
+    const month = Number(birthMonth);
+    const day = Number(birthDay);
+
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      return "올바른 생년월일 형식이 아닙니다.";
+    }
+
+    const date = new Date(year, month - 1, day);
+    const validDate =
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day;
+
+    if (!validDate) {
+      return "존재하지 않는 날짜입니다.";
+    }
+
+    const today = new Date();
+    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (date > normalizedToday) {
+      return "미래 날짜는 입력할 수 없습니다.";
+    }
+
+    return "";
+  };
 
   const handleAgreeAll = (checked: boolean) => {
     setAgreeAll(checked);
@@ -177,10 +215,8 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
 
   const handleFinalSignup = async () => {
     const nextErrors: Record<string, string> = {};
-
-    if (!birthYear || !birthMonth || !birthDay) {
-      nextErrors.birth = "생년월일을 입력해 주세요.";
-    }
+    const birthError = validateBirthValue();
+    if (birthError) nextErrors.birth = birthError;
 
     if (!gender) {
       nextErrors.gender = "성별을 선택해 주세요.";
@@ -201,9 +237,14 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
     setIsSubmitting(true);
     try {
       await signUp(payload);
+      const auth = await signIn({
+        username: payload.username,
+        password: payload.password,
+      });
+      saveAuth(auth);
       onSignup?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "회원가입에 실패했습니다.";
+      const message = err instanceof Error ? err.message : "회원가입/자동 로그인에 실패했습니다.";
       setSingleError("submit", message);
     } finally {
       setIsSubmitting(false);
@@ -265,6 +306,11 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
                   {errors.username}
                 </p>
               )}
+              {!errors.username && isUsernameChecked && (
+                <p className="mt-2 text-[12px] text-[#0f9f53] font-['Noto_Sans_KR']">
+                  사용 가능한 아이디입니다.
+                </p>
+              )}
             </div>
 
             <div>
@@ -297,6 +343,11 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
                   {errors.email}
                 </p>
               )}
+              {!errors.email && isCodeSent && !isCodeVerified && (
+                <p className="mt-2 text-[12px] text-[#0f9f53] font-['Noto_Sans_KR']">
+                  인증 코드를 발송했습니다. 메일함을 확인해 주세요.
+                </p>
+              )}
             </div>
 
             {isCodeSent && (
@@ -326,6 +377,11 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
                   <p className="mt-2 text-[12px] text-red-500 font-['Noto_Sans_KR'] flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
                     {errors.code}
+                  </p>
+                )}
+                {!errors.code && isCodeVerified && (
+                  <p className="mt-2 text-[12px] text-[#0f9f53] font-['Noto_Sans_KR']">
+                    이메일 인증이 완료되었습니다.
                   </p>
                 )}
               </div>
@@ -438,10 +494,17 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
 
           <button
             onClick={handleBasicNext}
-            className="w-full bg-black rounded-[16px] h-[54px] font-['NEXON_Football_Gothic'] text-[16px] text-white flex items-center justify-center mt-10 mb-6"
+            disabled={!agreeRequired}
+            className="w-full bg-black rounded-[16px] h-[54px] font-['NEXON_Football_Gothic'] text-[16px] text-white flex items-center justify-center mt-10 mb-2 disabled:opacity-45 disabled:cursor-not-allowed"
           >
             다음
           </button>
+
+          {!agreeRequired && (
+            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666] mb-4">
+              필수 이용약관 동의 후 다음 단계로 이동할 수 있어요.
+            </p>
+          )}
 
           <div className="text-center">
             <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b]">
@@ -496,7 +559,18 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
             <button onClick={() => setStep("gender")} className="px-8 h-[46px] bg-[#f5f5f5] rounded-[16px] text-[14px] text-[#6b6b6b]">
               건너뛰기
             </button>
-            <button onClick={() => setStep("gender")} className="px-8 h-[46px] bg-black rounded-[16px] text-[14px] text-white">
+            <button
+              onClick={() => {
+                const birthError = validateBirthValue();
+                if (birthError) {
+                  setSingleError("birth", birthError);
+                  return;
+                }
+                clearError("birth");
+                setStep("gender");
+              }}
+              className="px-8 h-[46px] bg-black rounded-[16px] text-[14px] text-white"
+            >
               다음
             </button>
           </div>

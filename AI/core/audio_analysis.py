@@ -189,7 +189,7 @@ def analyze_audio(audio_path):
                 "std": round(float(std_val), 4)
             }
             
-            # 터미널 확인용 출력 (개별 값 출력은 뺐어!)
+            # 터미널 확인용 출력
             print(f"{feature_name.upper():<15} | Mean: {mean_val:.4f} | Std: {std_val:.4f}")
 
         except KeyError:

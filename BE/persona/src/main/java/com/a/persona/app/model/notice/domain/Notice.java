@@ -3,13 +3,11 @@ package com.a.persona.app.model.notice.domain;
 import com.a.persona.app.model.common.BaseEntity;
 import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -72,7 +71,7 @@ public class PersonaController {
      * @return PersonaResponse
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "(미구현)페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
+    @Operation(summary = "페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다. <br>" +
             "진단 후, 페르소나의 id를 같이 보냅니다. 추후 페르소나 저장 시에 위 id를 함께 보내면 저장할 수 있습니다.<br>" +
             "이목구비가 잘 드러난 profile에, 그 외의 사진 image에 첨부해주세요." +
@@ -84,7 +83,7 @@ public class PersonaController {
             @RequestPart("voice") List<MultipartFile> voice,
             @RequestPart("preferenceType") String preferenceType
     ) {
-        PersonaDto personaDto = null;
+        PersonaDto personaDto;
         String username = null;
 
         try {
@@ -96,11 +95,6 @@ public class PersonaController {
             personaDto = personaService.createPersona(username, profile ,image, voice, preferenceType);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
-        }
-
-        // AI 연결 전 임시로
-        if(personaDto==null){
-            return ResponseEntity.ok(CommonApiResponse.noContent());
         }
 
         PersonaResponse response = PersonaResponse.from(personaDto);
@@ -120,7 +114,7 @@ public class PersonaController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PersonaSaveRequest personaSaveRequest
             ) {
-        personaService.savePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName(), personaSaveRequest.getThumbnail());
+        personaService.savePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
@@ -137,7 +131,7 @@ public class PersonaController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PersonaSaveRequest personaSaveRequest
     ) {
-        personaService.updatePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName(), personaSaveRequest.getThumbnail());
+        personaService.updatePersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
@@ -154,7 +148,7 @@ public class PersonaController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PersonaSaveRequest personaSaveRequest
     ){
-        personaService.saveSharedPersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName(), personaSaveRequest.getThumbnail());
+        personaService.saveSharedPersona(userDetails.getUsername(), personaSaveRequest.getCode(), personaSaveRequest.getName());
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 

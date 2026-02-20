@@ -1,4 +1,4 @@
-package com.a.persona.app.controller.admin.notify.payload;
+package com.a.persona.app.controller.admin.notice.payload;
 
 import com.a.persona.app.model.notice.dto.NoticeDto;
 import lombok.AllArgsConstructor;

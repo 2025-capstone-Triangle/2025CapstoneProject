@@ -1,7 +1,7 @@
-package com.a.persona.app.controller.admin.notify;
+package com.a.persona.app.controller.admin.notice;
 
-import com.a.persona.app.controller.admin.notify.payload.AdminNoticeRequest;
-import com.a.persona.app.controller.admin.notify.payload.AdminNoticeResponse;
+import com.a.persona.app.controller.admin.notice.payload.AdminNoticeRequest;
+import com.a.persona.app.controller.admin.notice.payload.AdminNoticeResponse;
 import com.a.persona.app.model.notice.service.AdminNoticeService;
 import com.a.persona.infra.response.CommonApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

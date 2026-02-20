@@ -36,7 +36,8 @@ public class Persona extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String profile;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -61,6 +62,7 @@ public class Persona extends BaseEntity {
 
     private String code;
 
-    private Long thumbnailId;
+    @Column(columnDefinition = "TEXT")
+    private String thumbnail;
 
 }

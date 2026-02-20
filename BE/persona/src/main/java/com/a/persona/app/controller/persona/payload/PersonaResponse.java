@@ -39,7 +39,7 @@ public class PersonaResponse {
 
     String code;
 
-    ContentDto thumbnail;
+    String thumbnail;
 
     public static PersonaResponse from(PersonaDto dto) {
         return PersonaResponse.builder()

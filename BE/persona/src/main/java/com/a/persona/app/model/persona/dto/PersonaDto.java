@@ -44,9 +44,9 @@ public class PersonaDto{
 
     private String code;
 
-    private ContentDto thumbnail;
+    private String thumbnail;
 
-    public static PersonaDto fromEntity(Persona persona, Content content) {
+    public static PersonaDto fromEntity(Persona persona) {
         return PersonaDto.builder()
                 .id(persona.getId())
                 .name(persona.getName())
@@ -60,7 +60,7 @@ public class PersonaDto{
                 .updatedAt(persona.getUpdatedAt())
                 .isActive(persona.getIsActive())
                 .code(persona.getCode())
-                .thumbnail(ContentDto.fromEntity(content))
+                .thumbnail(persona.getThumbnail())
                 .build();
     }
 }

@@ -29,6 +29,6 @@ public class NoticeService {
      * @return NoticeDto
      */
     public NoticeDto getNotice(Long id) {
-        return NoticeDto.fromEntity(noticeRepository.findByIdAndIsActive(id, true));
+        return NoticeDto.fromEntity(noticeRepository.findByIdAndIsActive(id, true).orElseThrow());
     }
 }

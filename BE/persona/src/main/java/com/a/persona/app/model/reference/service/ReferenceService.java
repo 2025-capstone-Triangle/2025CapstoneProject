@@ -30,7 +30,7 @@ public class ReferenceService {
     /**
      * 요즘 뜨는 컨텐츠들을 사용된 횟수와 북마크 여부와 함께 반환합니다.
      * @param username 사용자 이름
-     * @return
+     * @return List<ReferenceStatDto>
      */
     public List<ReferenceStatDto> getAllReferences(String username) {
         List<ReferenceStatDto> references = new ArrayList<>();

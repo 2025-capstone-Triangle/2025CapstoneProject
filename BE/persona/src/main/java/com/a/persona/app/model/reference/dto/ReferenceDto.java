@@ -24,6 +24,8 @@ public class ReferenceDto {
 
     private String prompt;
 
+    private String description;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -36,7 +38,7 @@ public class ReferenceDto {
                 .name(reference.getName())
                 .img(reference.getImg())
                 .prompt(reference.getPrompt())
-                // BaseEntity의 필드들도 잊지 말고 챙겨줍니다.
+                .description(reference.getDescription())
                 .createdAt(reference.getCreatedAt())
                 .updatedAt(reference.getUpdatedAt())
                 .isActive(reference.getIsActive())

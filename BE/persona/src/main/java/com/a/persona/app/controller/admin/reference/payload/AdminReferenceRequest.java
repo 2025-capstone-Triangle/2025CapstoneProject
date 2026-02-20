@@ -18,5 +18,5 @@ public class AdminReferenceRequest {
 
     String prompt;
 
-
+    String description;
 }

@@ -33,4 +33,6 @@ public class Reference extends BaseEntity {
 
     @Column(nullable = false)
     private String prompt;
+
+    private String description;
 }

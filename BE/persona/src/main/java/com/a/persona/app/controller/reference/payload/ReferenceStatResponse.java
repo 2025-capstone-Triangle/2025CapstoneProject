@@ -18,6 +18,8 @@ public class ReferenceStatResponse {
 
     Boolean isLiked;
 
+    String description;
+
     LocalDateTime createdAt;
 
     Long usedCount;
@@ -27,7 +29,8 @@ public class ReferenceStatResponse {
                 .id(dto.getId())
                 .name(dto.getName())
                 .img(dto.getImg())
-                .isLiked(dto.getIsLiked()) // Boolean 매핑
+                .isLiked(dto.getIsLiked())
+                .description(dto.getDescription())
                 .usedCount(dto.getUsedCount())
                 .createdAt(dto.getCreatedAt())
                 .build();

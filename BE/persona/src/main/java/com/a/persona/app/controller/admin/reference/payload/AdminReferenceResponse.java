@@ -21,6 +21,8 @@ public class AdminReferenceResponse {
 
     String img;
 
+    String description;
+
     LocalDateTime createdAt;
 
     Long usedCount;
@@ -30,6 +32,7 @@ public class AdminReferenceResponse {
                 .id(dto.getId())
                 .name(dto.getName())
                 .img(dto.getImg())
+                .description(dto.getDescription())
                 .usedCount(dto.getUsedCount())
                 .createdAt(dto.getCreatedAt())
                 .build();

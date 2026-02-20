@@ -16,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Tag(name="레퍼런스", description = "요즘 뜨는 컨텐츠 관련 API입니다.")
@@ -35,7 +34,7 @@ public class ReferenceController {
     public ResponseEntity<CommonApiResponse<List<ReferenceStatResponse>>> getReference(
             @AuthenticationPrincipal UserDetails userDetails
     ){
-        List<ReferenceStatDto> dtos = new ArrayList<>();
+        List<ReferenceStatDto> dtos;
         if(userDetails == null){
             dtos = referenceService.getAllReferences(null);
         }

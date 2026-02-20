@@ -37,21 +37,21 @@ VALUES
     (10003, '#F5F5F5'), (10003, '#9E9E9E'); -- 화이트/그레이 계열
 
 -- 1. 무채색의 도시적인 남성 페르소나
-INSERT INTO reference (id, name, img, prompt, is_active, created_at, updated_at)
+INSERT INTO reference (id, name, img, prompt, description, is_active, created_at, updated_at)
 VALUES (nextval('reference_sequence'), 'Urban Monochrome', 'https://s3.persona.com/refs/urban_01.jpg',
-        'A sophisticated man in a charcoal grey suit, standing in a foggy Seoul city background, cinematic lighting, 8k resolution, monochrome style',
+        'A sophisticated man in a charcoal grey suit, standing in a foggy Seoul city background, cinematic lighting, 8k resolution, monochrome style', '도시적인 무드의 인스타그램 피드 컨텐츠입니다.',
         true, NOW(), NOW());
 
 -- 2. 미니멀한 화이트톤의 여성 페르소나
-INSERT INTO reference (id, name, img, prompt, is_active, created_at, updated_at)
+INSERT INTO reference (id, name, img, prompt, description, is_active, created_at, updated_at)
 VALUES (nextval('reference_sequence'), 'Minimal White', 'https://s3.persona.com/refs/minimal_02.jpg',
-        'A calm woman wearing an ivory silk blouse, minimalist modern interior background, soft natural sunlight, clean and elegant atmosphere',
+        'A calm woman wearing an ivory silk blouse, minimalist modern interior background, soft natural sunlight, clean and elegant atmosphere','도시적인 무드의 인스타그램 피드 컨텐츠입니다.',
         true, NOW(), NOW());
 
 -- 3. 사이버펑크 스타일의 네온 페르소나
-INSERT INTO reference (id, name, img, prompt, is_active, created_at, updated_at)
+INSERT INTO reference (id, name, img, prompt, description, is_active, created_at, updated_at)
 VALUES (nextval('reference_sequence'), 'Neon Midnight', 'https://s3.persona.com/refs/neon_03.jpg',
-        'A futuristic persona with neon blue accents, dark techwear outfit, rainy night street in Tokyo with vibrant reflections, highly detailed',
+        'A futuristic persona with neon blue accents, dark techwear outfit, rainy night street in Tokyo with vibrant reflections, highly detailed','도시적인 무드의 인스타그램 피드 컨텐츠입니다.',
         true, NOW(), NOW());
 
 -- 4. 자연친화적인 얼스톤(Earth-tone) 페르소나
@@ -60,23 +60,23 @@ VALUES (nextval('reference_sequence'), 'Natural Earth', 'https://s3.persona.com/
         'A person in beige linen clothing, warm sunset light through forest trees, organic and peaceful vibe, film grain texture',
         true, NOW(), NOW());
 
-INSERT INTO content (id, persona_id, reference_id, img, type, description, is_active, created_at, updated_at)
+INSERT INTO content (id, persona_id, reference_id, img, type, is_active, created_at, updated_at)
 VALUES (nextval('content_sequence'), 10000, null, 'https://s3.persona.com/outputs/user01_urban_feed.jpg',
-        'FEED', '도시적인 무드의 인스타그램 피드 컨텐츠입니다.', true, NOW(), NOW());
+        'FEED',  true, NOW(), NOW());
 
 
 -- 1. Urban Monochrome 페르소나의 인스타 피드형 컨텐츠 (4:5)
-INSERT INTO content (id, persona_id, reference_id, img, type, description, is_active, created_at, updated_at)
+INSERT INTO content (id, persona_id, reference_id, img, type, is_active, created_at, updated_at)
 VALUES (nextval('content_sequence'), 10000, 10000, 'https://s3.persona.com/outputs/user01_urban_feed.jpg',
-        'FEED', '도시적인 무드의 인스타그램 피드 컨텐츠입니다.', true, NOW(), NOW());
+        'FEED', true, NOW(), NOW());
 
 -- 2. Urban Monochrome 페르소나의 스토리 컨텐츠 (9:16)
-INSERT INTO content (id, persona_id, reference_id, img, type, description, is_active, created_at, updated_at)
+INSERT INTO content (id, persona_id, reference_id, img, type, is_active, created_at, updated_at)
 VALUES (nextval('content_sequence'), 10000, 10000, 'https://s3.persona.com/outputs/user01_urban_story.jpg',
-        'STORY', '세로 풀스크린용 스토리/릴스 컨텐츠입니다.', true, NOW(), NOW());
+        'STORY', true, NOW(), NOW());
 
 -- 3. Minimal White 페르소나의 기본 정사각형 컨텐츠 (1:1)
-INSERT INTO content (id, persona_id, reference_id, img, type, description, is_active, created_at, updated_at)
+INSERT INTO content (id, persona_id, reference_id, img, type,  is_active, created_at, updated_at)
 VALUES (nextval('content_sequence'), 10001, 10001, 'https://s3.persona.com/outputs/user02_minimal_sq.jpg',
-        'SQUARE', '미니멀한 감성을 담은 정사각형 기본 컨텐츠입니다.', true, NOW(), NOW());
+        'SQUARE', true, NOW(), NOW());
 

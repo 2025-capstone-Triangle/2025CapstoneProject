@@ -58,8 +58,7 @@ public class AdminReferenceService {
      * @param prompt 레퍼런스로 이미지를 생성하기 위한 프롬프트
      * @throws IOException upload 예외
      */
-    public void createReference(MultipartFile image, String name, String prompt) throws IOException {
-        // todo jpg로 통일
+    public void createReference(MultipartFile image, String name, String prompt, String description) throws IOException {
         String uuid = UUID.randomUUID().toString();
         String fileName = "reference_"+uuid;
         String imageUrl = s3Manager.upload(List.of(image), amazonConfig.getReferencePath(), fileName).getFirst();
@@ -68,6 +67,7 @@ public class AdminReferenceService {
                 .name(name)
                 .prompt(prompt)
                 .img(imageUrl)
+                .description(description)
                 .build();
 
         referenceRepository.save(reference);
@@ -81,7 +81,7 @@ public class AdminReferenceService {
      * @param prompt 수정할 프롬프트
      * @throws IOException 업로드 예외
      */
-    public void updateReference(Long id, MultipartFile image, String name, String prompt) throws IOException {
+    public void updateReference(Long id, MultipartFile image, String name, String prompt, String description) throws IOException {
 
         Reference reference = referenceRepository.findById(id).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
 
@@ -97,6 +97,9 @@ public class AdminReferenceService {
         }
         if(prompt != null){
             reference.setPrompt(prompt);
+        }
+        if(description != null){
+            reference.setDescription(description);
         }
         referenceRepository.save(reference);
     }

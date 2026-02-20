@@ -21,6 +21,8 @@ public class ReferenceStatDto {
 
     Boolean isLiked;
 
+    String description;
+
     LocalDateTime createdAt;
 
     Long usedCount;

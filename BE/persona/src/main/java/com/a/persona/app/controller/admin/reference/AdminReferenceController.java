@@ -56,11 +56,12 @@ public class AdminReferenceController {
     public ResponseEntity<CommonApiResponse<Void>> createReference(
         @RequestPart("image") MultipartFile image,
         @RequestPart("name") String name,
-        @RequestPart("prompt") String prompt
+        @RequestPart("prompt") String prompt,
+        @RequestPart(value = "description", required = false) String description
     ) {
 
         try {
-            adminReferenceService.createReference(image, name, prompt);
+            adminReferenceService.createReference(image, name, prompt, description);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
@@ -77,11 +78,12 @@ public class AdminReferenceController {
             @PathVariable Long id,
             @RequestPart(value = "image", required = false) MultipartFile image,
             @RequestPart(value = "name", required = false) String name,
-            @RequestPart(value = "prompt", required = false) String prompt
+            @RequestPart(value = "prompt", required = false) String prompt,
+            @RequestPart(value = "description", required = false) String description
     ) {
 
         try {
-            adminReferenceService.updateReference(id, image, name, prompt);
+            adminReferenceService.updateReference(id, image, name, prompt, description);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }

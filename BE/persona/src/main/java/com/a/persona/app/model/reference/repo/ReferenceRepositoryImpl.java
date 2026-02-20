@@ -30,6 +30,7 @@ public class ReferenceRepositoryImpl implements ReferenceRepositoryCustom {
                         reference.name,
                         reference.img,
                         Expressions.asBoolean(false),
+                        reference.description,
                         reference.createdAt,
                         // 사용 횟수 계산 (서브쿼리)
                         ExpressionUtils.as(
@@ -57,6 +58,7 @@ public class ReferenceRepositoryImpl implements ReferenceRepositoryCustom {
                                 .where(referenceLike.reference.eq(reference)
                                         .and(referenceLike.member.username.eq(username)))
                                 .exists(),
+                        reference.description,
                         reference.createdAt,
                         // 사용 횟수 계산 (서브쿼리)
                         ExpressionUtils.as(
@@ -79,6 +81,7 @@ public class ReferenceRepositoryImpl implements ReferenceRepositoryCustom {
                         reference.name,
                         reference.img,
                         Expressions.asBoolean(false),
+                        reference.description,
                         reference.createdAt,
                         // 사용 횟수 계산 (서브쿼리)
                         ExpressionUtils.as(

@@ -30,9 +30,13 @@ public class Notice extends BaseEntity{
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(nullable = false)
+    private Boolean isPinned;
 
+    @Column(nullable = false)
+    private Boolean isDraft;
 
 }

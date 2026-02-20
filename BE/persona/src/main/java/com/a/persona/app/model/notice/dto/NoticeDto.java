@@ -20,6 +20,10 @@ public class NoticeDto {
 
     private String content;
 
+    private Boolean isPinned;
+
+    private Boolean isDraft;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -32,6 +36,8 @@ public class NoticeDto {
                 .id(notice.getId())
                 .title(notice.getTitle())
                 .content(notice.getContent())
+                .isPinned(notice.getIsPinned())
+                .isDraft(notice.getIsDraft())
                 .createdAt(notice.getCreatedAt())
                 .updatedAt(notice.getUpdatedAt())
                 .isActive(notice.getIsActive())

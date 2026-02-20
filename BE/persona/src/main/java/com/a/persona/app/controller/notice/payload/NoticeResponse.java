@@ -1,4 +1,4 @@
-package com.a.persona.app.controller.notify.payload;
+package com.a.persona.app.controller.notice.payload;
 
 import com.a.persona.app.model.notice.dto.NoticeDto;
 import lombok.AllArgsConstructor;
@@ -17,6 +17,8 @@ public class NoticeResponse {
     Long id;
     String title;
     String content;
+    Boolean isPinned;
+    Boolean isDraft;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 
@@ -25,6 +27,8 @@ public class NoticeResponse {
                 .id(dto.getId())
                 .title(dto.getTitle())
                 .content(dto.getContent())
+                .isDraft(dto.getIsDraft())
+                .isPinned(dto.getIsPinned())
                 .createdAt(dto.getCreatedAt())
                 .updatedAt(dto.getUpdatedAt())
                 .build();

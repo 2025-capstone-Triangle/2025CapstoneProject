@@ -16,7 +16,6 @@ public class AdminNoticeResponse {
 
     Long id;
     String title;
-    String author;
     String content;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
@@ -25,7 +24,6 @@ public class AdminNoticeResponse {
         return AdminNoticeResponse.builder()
                 .id(dto.getId())
                 .title(dto.getTitle())
-                .author(dto.getAuthor())
                 .content(dto.getContent())
                 .createdAt(dto.getCreatedAt())
                 .updatedAt(dto.getUpdatedAt())

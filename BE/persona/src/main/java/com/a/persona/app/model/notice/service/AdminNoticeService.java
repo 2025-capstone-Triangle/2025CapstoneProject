@@ -43,13 +43,11 @@ public class AdminNoticeService {
      * @param title 공지 제목
      * @param content 공지 내용
      */
-    public void createNotice(String title, String content, String adminId) {
-        Member author = memberRepository.findByUsername(adminId).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
+    public void createNotice(String title, String content) {
 
         Notice notice = Notice.builder()
                 .title(title)
                 .content(content)
-                .member(author)
                 .build();
         noticeRepository.save(notice);
     }

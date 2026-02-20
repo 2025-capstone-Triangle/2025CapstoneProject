@@ -53,11 +53,10 @@ public class AdminNoticeController {
     @Operation(summary = "공지사항 등록", description = "공지사항을 전체/단건 조회합니다.<br>" +
             "공지사항의 id와 함께 요청할 경우, 해당하는 공지사항 단건 조회도 가능합니다.")
     public ResponseEntity<CommonApiResponse<Void>> getNotice(
-            @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody AdminNoticeRequest adminNoticeRequest
 
     ) {
-        adminNoticeService.createNotice(adminNoticeRequest.getTitle(), adminNoticeRequest.getContent(),userDetails.getUsername());
+        adminNoticeService.createNotice(adminNoticeRequest.getTitle(), adminNoticeRequest.getContent());
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 

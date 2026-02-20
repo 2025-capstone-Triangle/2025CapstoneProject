@@ -20,8 +20,6 @@ public class NoticeDto {
 
     private String content;
 
-    private String author;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -34,7 +32,6 @@ public class NoticeDto {
                 .id(notice.getId())
                 .title(notice.getTitle())
                 .content(notice.getContent())
-                .author("관리자")
                 .createdAt(notice.getCreatedAt())
                 .updatedAt(notice.getUpdatedAt())
                 .isActive(notice.getIsActive())

@@ -3,6 +3,7 @@ package com.a.persona.app.model.member.domain;
 import com.a.persona.app.model.auth.code.Role;
 import com.a.persona.app.model.common.BaseEntity;
 import com.a.persona.app.model.member.code.Sex;
+import com.a.persona.app.model.member.code.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -58,4 +59,7 @@ public class Member extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean is_creator;
+
+    @Enumerated(EnumType.STRING)
+    private Status status =  Status.ACTIVE;
 }

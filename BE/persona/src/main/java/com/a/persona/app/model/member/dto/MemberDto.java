@@ -1,8 +1,8 @@
 package com.a.persona.app.model.member.dto;
 
 import com.a.persona.app.model.auth.code.Role;
-import com.a.persona.app.model.common.BaseEntity;
 import com.a.persona.app.model.member.code.Sex;
+import com.a.persona.app.model.member.code.Status;
 import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,6 +39,8 @@ public class MemberDto {
 
     private Boolean isActive;
 
+    private Status status;
+
     public static MemberDto fromEntity(Member member) {
         return MemberDto.builder()
                 .id(member.getId())
@@ -53,6 +55,7 @@ public class MemberDto {
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
                 .isActive(member.getIsActive())
+                .status(member.getStatus())
                 .build();
     }
 }

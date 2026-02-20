@@ -19,6 +19,4 @@ public class ContentResponse {
     String img;
 
     ContentType type;
-
-    String description;
 }

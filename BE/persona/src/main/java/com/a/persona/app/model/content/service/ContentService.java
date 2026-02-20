@@ -70,7 +70,6 @@ public class ContentService {
                 .persona(persona)
                 .reference(reference)
                 .img("임시") // todo ai 연결 후 수정
-                .description("임시")
                 .type(contentRequest.getType())
                 .build();
         

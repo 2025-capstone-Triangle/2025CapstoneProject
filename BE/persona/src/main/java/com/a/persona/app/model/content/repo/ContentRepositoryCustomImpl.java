@@ -34,7 +34,6 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
                                 reference.id, reference.name, reference.img, reference.prompt, reference.createdAt, reference.updatedAt, reference.isActive),
                         content.img,
                         content.type,
-                        content.description,
                         content.createdAt,
                         JPAExpressions.selectOne()
                                 .from(contentLike)

@@ -24,8 +24,6 @@ public class ContentStatDto {
 
     private ContentType type;
 
-    private String description;
-
     private LocalDateTime createdAt;
 
     private Boolean isLiked;

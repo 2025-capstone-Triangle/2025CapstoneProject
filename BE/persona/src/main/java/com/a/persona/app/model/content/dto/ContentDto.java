@@ -27,8 +27,6 @@ public class ContentDto {
 
     private ContentType type;
 
-    private String description;
-
     public static ContentDto fromEntity(Content content) {
         return ContentDto.builder()
                 .id(content.getId())
@@ -38,7 +36,6 @@ public class ContentDto {
                 .reference(content.getReference() != null ? ReferenceDto.fromEntity(content.getReference()) : null)
                 .img(content.getImg())
                 .type(content.getType())
-                .description(content.getDescription())
                 .build();
     }
 }

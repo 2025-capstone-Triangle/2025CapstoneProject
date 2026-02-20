@@ -28,8 +28,6 @@ public class ContentStatResponse {
 
     ContentType type;
 
-    String description;
-
     LocalDateTime createdAt;
 
     Boolean isLiked;
@@ -41,7 +39,6 @@ public class ContentStatResponse {
                 .reference(dto.getReference())
                 .img(dto.getImg())
                 .type(dto.getType())
-                .description(dto.getDescription())
                 .createdAt(dto.getCreatedAt())
                 .isLiked(dto.getIsLiked())
                 .build();

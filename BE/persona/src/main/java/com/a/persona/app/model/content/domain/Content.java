@@ -46,6 +46,4 @@ public class Content extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ContentType type;
 
-    private String description;
-
 }

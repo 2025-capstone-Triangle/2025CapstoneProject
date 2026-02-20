@@ -18,7 +18,7 @@ public class NoticeService {
      * @return List<NoticeDto>
      */
     public List<NoticeDto> getAllNotice() {
-        return noticeRepository.findByIsActive(true).stream().map(
+        return noticeRepository.findByIsActiveAndIsDraft(true, false).stream().map(
                 NoticeDto::fromEntity
         ).toList();
     }
@@ -30,5 +30,17 @@ public class NoticeService {
      */
     public NoticeDto getNotice(Long id) {
         return NoticeDto.fromEntity(noticeRepository.findByIdAndIsActive(id, true).orElseThrow());
+    }
+
+    /**
+     * 고정된 공지사항만을 조회합니다.
+     * @return List<NoticeDto>
+     */
+    public List<NoticeDto> getPinnedNotice() {
+
+        return noticeRepository.findByIsActiveAndIsPinned(true, true).stream().map(
+                NoticeDto::fromEntity
+        ).toList();
+
     }
 }

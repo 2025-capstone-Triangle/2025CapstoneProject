@@ -1,7 +1,7 @@
-package com.a.persona.app.controller.notify;
+package com.a.persona.app.controller.notice;
 
 
-import com.a.persona.app.controller.notify.payload.NoticeResponse;
+import com.a.persona.app.controller.notice.payload.NoticeResponse;
 import com.a.persona.app.model.notice.service.NoticeService;
 import com.a.persona.infra.response.CommonApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +33,6 @@ public class NoticeController {
             @RequestParam(required = false) Long id
     ) {
         List<NoticeResponse> responses;
-
         if(id == null){
             responses = noticeService.getAllNotice().stream().map(
                     NoticeResponse::from
@@ -45,4 +44,15 @@ public class NoticeController {
         return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
 
+    // pinned된 공지만 받기
+    @GetMapping
+    @Operation(summary = "고정된 공지사항 조회", description = "고정된 공지사항을 조회합니다.<br>")
+    public ResponseEntity<CommonApiResponse<List<NoticeResponse>>> getPinnedNotice() {
+
+        List<NoticeResponse> responses = noticeService.getPinnedNotice().stream().map(
+                NoticeResponse::from
+        ).toList();
+
+        return ResponseEntity.ok(CommonApiResponse.success(responses));
+    }
 }

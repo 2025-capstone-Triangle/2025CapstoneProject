@@ -38,6 +38,9 @@ public class AmazonConfig {
     @Value("${cloud.aws.s3.path.voice}")
     private String voicePath;
 
+    @Value("cloud.aws.s3.path.reference")
+    private String referencePath;
+
     @PostConstruct
     public void init() {
         this.awsCredentials = new BasicAWSCredentials(accessKey, secretKey);

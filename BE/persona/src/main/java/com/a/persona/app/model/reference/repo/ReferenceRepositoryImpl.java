@@ -69,4 +69,29 @@ public class ReferenceRepositoryImpl implements ReferenceRepositoryCustom {
                 .where(reference.isActive.eq(true))
                 .fetch();
     }
+
+    @Override
+    public List<ReferenceStatDto> findByIdAndIsActive(Long id, boolean b) {
+
+        return queryFactory
+                .select(Projections.constructor(ReferenceStatDto.class,
+                        reference.id,
+                        reference.name,
+                        reference.img,
+                        Expressions.asBoolean(false),
+                        reference.createdAt,
+                        // 사용 횟수 계산 (서브쿼리)
+                        ExpressionUtils.as(
+                                JPAExpressions.select(contentLog.count())
+                                        .from(contentLog)
+                                        .where(contentLog.reference.eq(reference)),
+                                "usedCount")
+                ))
+                .from(reference)
+                .where(reference.isActive.eq(b)
+                        .and(reference.id.eq(id))
+                )
+                .fetch();
+
+    }
 }

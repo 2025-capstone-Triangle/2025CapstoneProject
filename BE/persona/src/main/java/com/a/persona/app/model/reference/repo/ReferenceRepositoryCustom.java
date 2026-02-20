@@ -8,4 +8,6 @@ public interface ReferenceRepositoryCustom {
     List<ReferenceStatDto> findByIsActive(boolean b);
 
     List<ReferenceStatDto> findByIsActiveAndLike(boolean b, String username);
+
+    List<ReferenceStatDto> findByIdAndIsActive(Long id ,boolean b);
 }

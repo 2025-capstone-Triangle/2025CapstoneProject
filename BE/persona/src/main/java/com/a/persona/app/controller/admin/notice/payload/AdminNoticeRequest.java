@@ -10,5 +10,9 @@ public class AdminNoticeRequest {
     String title;
     @NotEmpty
     String content;
+    @NotEmpty
+    Boolean isPinned;
+    @NotEmpty
+    Boolean isDraft;
 
 }

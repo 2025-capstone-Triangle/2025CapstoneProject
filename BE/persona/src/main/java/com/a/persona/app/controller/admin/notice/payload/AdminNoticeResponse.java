@@ -17,6 +17,8 @@ public class AdminNoticeResponse {
     Long id;
     String title;
     String content;
+    Boolean isPinned;
+    Boolean isDraft;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 
@@ -25,6 +27,8 @@ public class AdminNoticeResponse {
                 .id(dto.getId())
                 .title(dto.getTitle())
                 .content(dto.getContent())
+                .isPinned(dto.getIsPinned())
+                .isDraft(dto.getIsDraft())
                 .createdAt(dto.getCreatedAt())
                 .updatedAt(dto.getUpdatedAt())
                 .build();

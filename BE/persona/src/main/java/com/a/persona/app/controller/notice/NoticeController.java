@@ -45,7 +45,7 @@ public class NoticeController {
     }
 
     // pinned된 공지만 받기
-    @GetMapping
+    @GetMapping("/pinned")
     @Operation(summary = "고정된 공지사항 조회", description = "고정된 공지사항을 조회합니다.<br>")
     public ResponseEntity<CommonApiResponse<List<NoticeResponse>>> getPinnedNotice() {
 

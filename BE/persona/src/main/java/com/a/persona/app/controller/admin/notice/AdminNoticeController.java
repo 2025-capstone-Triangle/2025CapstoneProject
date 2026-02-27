@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,7 +54,7 @@ public class AdminNoticeController {
             @Valid @RequestBody AdminNoticeRequest adminNoticeRequest
 
     ) {
-        adminNoticeService.createNotice(adminNoticeRequest.getTitle(), adminNoticeRequest.getContent());
+        adminNoticeService.createNotice(adminNoticeRequest);
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 
@@ -67,7 +65,7 @@ public class AdminNoticeController {
             @Valid @RequestBody AdminNoticeRequest adminNoticeRequest,
             @PathVariable Long id
     ) {
-        adminNoticeService.updateNotice(id, adminNoticeRequest.getTitle(), adminNoticeRequest.getContent());
+        adminNoticeService.updateNotice(id, adminNoticeRequest);
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 

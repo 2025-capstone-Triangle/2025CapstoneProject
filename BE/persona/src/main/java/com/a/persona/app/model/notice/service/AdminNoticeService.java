@@ -1,7 +1,6 @@
 package com.a.persona.app.model.notice.service;
 
-import com.a.persona.app.model.member.domain.Member;
-import com.a.persona.app.model.member.repo.MemberRepository;
+import com.a.persona.app.controller.admin.notice.payload.AdminNoticeRequest;
 import com.a.persona.app.model.notice.domain.Notice;
 import com.a.persona.app.model.notice.dto.NoticeDto;
 import com.a.persona.app.model.notice.repo.NoticeRepository;
@@ -17,7 +16,6 @@ import java.util.List;
 public class AdminNoticeService {
 
     private  final NoticeRepository noticeRepository;
-    private final MemberRepository memberRepository;
 
     /**
      * 모든 공지사항을 조회합니다.
@@ -40,14 +38,15 @@ public class AdminNoticeService {
 
     /**
      * 새로운 공지사항을 생성합니다.
-     * @param title 공지 제목
-     * @param content 공지 내용
+     * @param adminNoticeRequest 생성되도록 요청된 공지사항 정보
      */
-    public void createNotice(String title, String content) {
+    public void createNotice(AdminNoticeRequest adminNoticeRequest) {
 
         Notice notice = Notice.builder()
-                .title(title)
-                .content(content)
+                .title(adminNoticeRequest.getTitle())
+                .content(adminNoticeRequest.getContent())
+                .isPinned(adminNoticeRequest.getIsPinned())
+                .isDraft(adminNoticeRequest.getIsDraft())
                 .build();
         noticeRepository.save(notice);
     }
@@ -55,13 +54,14 @@ public class AdminNoticeService {
     /**
      * 공지사항을 수정합니다.
      * @param id 해당 공지사항 아이디
-     * @param title 제목
-     * @param content 내용
+     * @param adminNoticeRequest 수정될 공지사항 정보
      */
-    public void updateNotice(Long id, String title, String content) {
+    public void updateNotice(Long id, AdminNoticeRequest adminNoticeRequest) {
         Notice notice = noticeRepository.findByIdAndIsActive(id, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
-        notice.setTitle(title);
-        notice.setContent(content);
+        notice.setTitle(adminNoticeRequest.getTitle());
+        notice.setContent(adminNoticeRequest.getContent());
+        notice.setIsPinned(adminNoticeRequest.getIsPinned());
+        notice.setIsDraft(adminNoticeRequest.getIsDraft());
         noticeRepository.save(notice);
     }
 

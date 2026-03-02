@@ -62,6 +62,14 @@ pip install langchain-core
 pip install mediapipe
 ```
 
+#### D. Cloud 업로드 관련 라이브러리
+
+클라우드에 결과 데이터를 업로드하기 위한 라이브러리입니다.
+
+```bash
+pip install boto3
+```
+
 -----
 
 ### 3\. API 키 설정 (LangChain 연동)

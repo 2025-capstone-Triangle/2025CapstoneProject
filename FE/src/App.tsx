@@ -24,9 +24,10 @@ import { HelpPage } from "./features/support/pages/HelpPage";
 import { LoginPage } from "./features/auth/pages/LoginPage";
 import { SignupPage } from "./features/auth/pages/SignupPage";
 import { ForgotPasswordPage } from "./features/auth/pages/ForgotPasswordPage";
+import { AdminConsolePage } from "./features/admin/pages/AdminConsolePage";
 import { saveNewPersona } from "./features/persona/lib/personaApi";
 import { getPendingPersonaCode } from "./features/persona/lib/personaShareCode";
-import { isAuthenticated } from "./lib/auth";
+import { clearAuth, isAuthenticated } from "./lib/auth";
 
 type Page =
   | "home"
@@ -53,7 +54,8 @@ type Page =
   | "content-result"
   | "saved-templates"
   | "settings"
-  | "help";
+  | "help"
+  | "admin";
 
 const UNAUTH_ALLOWED_PAGES = new Set<Page>([
   "home",
@@ -194,6 +196,11 @@ export default function App() {
     handleNavigate("home");
   };
 
+  const handleAdminLoginComplete = () => {
+    setPageHistory((prev) => [...prev, "admin"]);
+    setCurrentPage("admin");
+  };
+
   const handleDiagnosisSave = async ({ code, name }: { code: string; name: string }) => {
     const saved = await saveNewPersona(code, name);
     const savedPersona = saved.find((item) => item.code === code) ?? saved[0];
@@ -210,7 +217,24 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white">
       {currentPage === "login" && (
-        <LoginPage onLogin={handleLoginComplete} onNavigate={handleNavigate} onBack={handleBack} />
+        <LoginPage
+          onLogin={handleLoginComplete}
+          onAdminLogin={handleAdminLoginComplete}
+          onNavigate={handleNavigate}
+          onBack={handleBack}
+        />
+      )}
+
+      {currentPage === "admin" && (
+        <AdminConsolePage
+          adminId="admin"
+          onBackHome={handleNavigateToHome}
+          onLogout={() => {
+            clearAuth();
+            setPageHistory(["home"]);
+            setCurrentPage("login");
+          }}
+        />
       )}
 
       {currentPage === "signup" && (

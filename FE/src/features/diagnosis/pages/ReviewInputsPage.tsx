@@ -6,6 +6,7 @@ import {
   getPreferenceTestResult,
   stageDiagnosisPreferencePayload,
 } from "../lib/preferenceTest";
+import { getStagedVoiceRecordingMeta } from "../lib/voiceRecording";
 
 interface ReviewInputsPageProps {
   onConfirm?: () => void;
@@ -17,6 +18,7 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
   const [submitError, setSubmitError] = useState("");
   const [stagedMessage, setStagedMessage] = useState("");
   const preferenceResult = useMemo(() => getPreferenceTestResult(), []);
+  const voiceMeta = useMemo(() => getStagedVoiceRecordingMeta(), []);
 
   const handleConfirm = () => {
     setSubmitError("");
@@ -80,9 +82,24 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
           <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">음성 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">선택 사항</span>
+              <span className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">
+                {voiceMeta ? "준비됨" : "선택 사항"}
+              </span>
             </div>
-            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">업로드한 입력은 이후 동일 payload에 추가 가능합니다.</p>
+            {voiceMeta ? (
+              <div className="space-y-1">
+                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] break-all">
+                  {voiceMeta.fileName}
+                </p>
+                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
+                  {voiceMeta.durationSec}초 / {(voiceMeta.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+            ) : (
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
+                업로드한 입력은 이후 동일 payload에 추가 가능합니다.
+              </p>
+            )}
           </div>
         </div>
 

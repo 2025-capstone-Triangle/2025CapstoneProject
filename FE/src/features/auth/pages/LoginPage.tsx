@@ -1,6 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle, ChevronLeft } from 'lucide-react';
-import { signIn, saveAuth } from '../../../lib/auth';
+import { getMemberInfo, signIn, saveAuth } from '../../../lib/auth';
 
 interface LoginPageProps {
   onLogin?: () => void;
@@ -24,43 +24,40 @@ export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPa
     setUserIdError('');
     setPasswordError('');
 
-    // Temporary local admin bypass
-    if (userId.trim() === 'admin' && password === 'admin') {
-      saveAuth({
-        accessToken: 'local-admin-session',
-        grantType: 'Bearer',
-        expiresIn: 60 * 60 * 24,
-      }, {
-        username: 'admin',
-      });
-      onAdminLogin?.();
-      return;
-    }
-
     // Validation
     if (!userId.trim()) {
-      setUserIdError('아이디를 입력해주세요.');
+      setUserIdError('?�이?��? ?�력?�주?�요.');
       return;
     }
     if (!password) {
-      setPasswordError('비밀번호를 입력해주세요.');
+      setPasswordError('비�?번호�??�력?�주?�요.');
       return;
     }
     if (password.length < 6) {
-      setPasswordError('비밀번호는 6자 이상이어야 합니다.');
+      setPasswordError('비�?번호??6???�상?�어???�니??');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const data = await signIn({ username: userId, password });
-      saveAuth(data, { username: userId.trim() });
-      onLogin?.();
+      const normalized = userId.trim();
+      try {
+        const member = await getMemberInfo();
+        saveAuth(data, { username: member.username ?? normalized, email: member.email });
+      } catch {
+        saveAuth(data, { username: normalized });
+      }
+      if (normalized === 'admin') {
+        onAdminLogin?.();
+      } else {
+        onLogin?.();
+      }
     } catch (err) {
       const message =
         err instanceof Error && err.message
           ? err.message
-          : '아이디 또는 비밀번호가 올바르지 않습니다.';
+          : '?�이???�는 비�?번호가 ?�바르�? ?�습?�다.';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -93,7 +90,7 @@ export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPa
             Person:a
           </h1>
           <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">
-            나만의 디지털 페르소나
+            ?�만???��????�르?�나
           </p>
         </div>
 
@@ -103,6 +100,7 @@ export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPa
             type="text"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
+            onKeyDown={handleKeyPress}
             placeholder="아이디"
             className="w-full h-[52px] bg-[#f8f8f8] rounded-[16px] px-5 font-['Noto_Sans_KR'] text-[14px] text-black placeholder:text-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-black"
           />
@@ -111,38 +109,45 @@ export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPa
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handleKeyPress}
               placeholder="비밀번호"
-              className="w-full h-[52px] bg-[#f8f8f8] rounded-[16px] px-5 font-['Noto_Sans_KR'] text-[14px] text-black placeholder:text-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-black"
-              onKeyPress={handleKeyPress}
+              className="w-full h-[52px] bg-[#f8f8f8] rounded-[16px] px-5 pr-12 font-['Noto_Sans_KR'] text-[14px] text-black placeholder:text-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-black"
             />
             <button
               type="button"
-              className="absolute right-5 top-1/2 transform -translate-y-1/2"
               onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6b6b6b] hover:text-black"
+              aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
+
+          {(error || userIdError || passwordError) && (
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="w-4 h-4" />
+              <span className="font-['Noto_Sans_KR'] text-[13px]">
+                {error || userIdError || passwordError}
+              </span>
+            </div>
+          )}
+
+          <button
+            onClick={handleLogin}
+            disabled={isSubmitting}
+            className="w-full h-[52px] rounded-[16px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] disabled:opacity-60"
+          >
+            {isSubmitting ? '로그인 중...' : '로그인'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onAdminLogin?.()}
+            className="w-full h-[52px] rounded-[16px] border border-black text-black font-['Noto_Sans_KR'] text-[14px]"
+          >
+            관리자 페이지 (임시)
+          </button>
         </div>
-
-        {/* Login Button */}
-        <button
-          onClick={handleLogin}
-          disabled={isSubmitting}
-          className="w-full bg-black rounded-[16px] h-[52px] font-['Noto_Sans_KR'] font-semibold text-[15px] text-white flex items-center justify-center shadow-md mb-4"
-        >
-          {isSubmitting ? '로그인 중...' : '로그인'}
-        </button>
-
-        {/* Error Messages */}
-        {(error || userIdError || passwordError) && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-[12px] flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <span className="font-['Noto_Sans_KR'] text-[13px] text-red-700">
-              {error || userIdError || passwordError}
-            </span>
-          </div>
-        )}
 
         {/* Forgot Password */}
         <div className="text-center mb-6">
@@ -150,36 +155,36 @@ export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPa
             onClick={() => onNavigate?.('forgot-password')}
             className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b] hover:text-black transition-colors"
           >
-            비밀번호를 잊으셨나요?
+            비�?번호�??�으?�나??
           </button>
         </div>
 
         {/* Divider */}
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 h-px bg-[#e5e5e5]" />
-          <span className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">또는</span>
+          <span className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">?�는</span>
           <div className="flex-1 h-px bg-[#e5e5e5]" />
         </div>
 
         {/* Social Login */}
         <div className="space-y-3 mb-8">
           <button className="w-full bg-white border-2 border-[#e5e5e5] rounded-[16px] h-[52px] font-['Noto_Sans_KR'] text-[14px] text-black flex items-center justify-center">
-            Google로 계속하기
+            Google�?계속?�기
           </button>
           <button className="w-full bg-[#FEE500] rounded-[16px] h-[52px] font-['Noto_Sans_KR'] text-[14px] text-black flex items-center justify-center">
-            카카오로 계속하기
+            카카?�로 계속?�기
           </button>
         </div>
 
         {/* Signup Link */}
         <div className="text-center">
           <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b]">
-            계정이 없으신가요?{' '}
+            계정???�으?��???{' '}
             <button
               onClick={() => onNavigate?.('signup')}
               className="font-semibold text-black underline"
             >
-              회원가입
+              ?�원가??
             </button>
           </p>
         </div>
@@ -187,5 +192,6 @@ export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPa
     </div>
   );
 }
+
 
 

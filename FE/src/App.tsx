@@ -27,7 +27,7 @@ import { ForgotPasswordPage } from "./features/auth/pages/ForgotPasswordPage";
 import { AdminConsolePage } from "./features/admin/pages/AdminConsolePage";
 import { saveNewPersona } from "./features/persona/lib/personaApi";
 import { getPendingPersonaCode } from "./features/persona/lib/personaShareCode";
-import { clearAuth, isAuthenticated } from "./lib/auth";
+import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth } from "./lib/auth";
 
 type Page =
   | "home"
@@ -137,6 +137,56 @@ export default function App() {
     setActiveTab("home");
   }, [currentPage, loggedIn]);
 
+  useEffect(() => {
+    if (currentPage === "login" || currentPage === "signup") {
+      setLoginGateMessage(null);
+    }
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (loggedIn) {
+      setLoginGateMessage(null);
+      if (currentPage === "login") {
+        const auth = getSavedAuth();
+        if (auth?.username === "admin") {
+          setPageHistory(["admin"]);
+          setCurrentPage("admin");
+        } else {
+          setPageHistory(["home"]);
+          setCurrentPage("home");
+          setActiveTab("home");
+        }
+      }
+    }
+  }, [loggedIn, currentPage]);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const member = await getMemberInfo();
+        if (!cancelled) {
+          const auth = getSavedAuth();
+          if (!auth?.accessToken) return;
+          saveAuth(
+            {
+              accessToken: auth.accessToken,
+              grantType: auth.grantType ?? "Bearer",
+              expiresIn: auth.expiresIn ?? 0,
+            },
+            { username: member.username, email: member.email }
+          );
+        }
+      } catch {
+        // ignore - keep existing auth data
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loggedIn]);
+
   const handleBack = () => {
     if (pageHistory.length > 1) {
       const newHistory = [...pageHistory];
@@ -181,22 +231,33 @@ export default function App() {
   };
 
   const handleSignupComplete = () => {
+    setLoginGateMessage(null);
     if (getPendingPersonaCode()) {
       handleNavigate("persona-list");
       return;
     }
-    handleNavigate("home");
+    setPageHistory(["home"]);
+    setCurrentPage("home");
+    setActiveTab("home");
   };
 
   const handleLoginComplete = () => {
+    setLoginGateMessage(null);
     if (getPendingPersonaCode()) {
       handleNavigate("persona-list");
       return;
     }
-    handleNavigate("home");
+    setPageHistory(["home"]);
+    setCurrentPage("home");
+    setActiveTab("home");
   };
 
   const handleAdminLoginComplete = () => {
+    setLoginGateMessage(null);
+    saveAuth(
+      { accessToken: "dev-admin", grantType: "Bearer", expiresIn: 0 },
+      { username: "admin" }
+    );
     setPageHistory((prev) => [...prev, "admin"]);
     setCurrentPage("admin");
   };

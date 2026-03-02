@@ -46,6 +46,8 @@
         "sonner": "^2.0.3",
         "tailwind-merge": "*",
         "vaul": "^1.1.2"
+        ,
+        "@mediapipe/tasks-vision": "^0.10.8"
     },
     "devDependencies": {
         "@eslint/js": "^9.20.0",

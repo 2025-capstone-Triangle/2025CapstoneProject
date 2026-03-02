@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef } from 'react';
 import { StatusBar } from '../../../shared/layout/StatusBar';
 import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
-import { Upload } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { BackButton } from '../../../shared/layout/BackButton';
+import { checkFaceAnalyzable } from '../lib/faceLandmarkCheck';
 
 interface ImageInputPageProps {
   onNext?: () => void;
@@ -14,6 +15,8 @@ interface ImageInputPageProps {
 export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPageProps) {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [secondImage, setSecondImage] = useState<string | null>(null);
+  const [faceStatus, setFaceStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'error'>('idle');
+  const [faceMessage, setFaceMessage] = useState('');
   const firstInputRef = useRef<HTMLInputElement>(null);
   const secondInputRef = useRef<HTMLInputElement>(null);
 
@@ -22,6 +25,17 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
     reader.onloadend = () => {
       if (position === 'first') {
         setUploadedImage(reader.result as string);
+        setFaceStatus('checking');
+        setFaceMessage('�� �м� ���Դϴ�...');
+        checkFaceAnalyzable(file)
+          .then((result) => {
+            setFaceStatus(result.ok ? 'valid' : 'invalid');
+            setFaceMessage(result.reason);
+          })
+          .catch(() => {
+            setFaceStatus('error');
+            setFaceMessage('�� �м��� �����߽��ϴ�.');
+          });
       } else {
         setSecondImage(reader.result as string);
       }
@@ -29,13 +43,15 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
     reader.readAsDataURL(file);
   };
 
+  const canProceed = Boolean(uploadedImage) && faceStatus === 'valid';
+
   return (
     <div className="bg-white min-h-screen max-w-[390px] mx-auto">      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
       
       <div className="px-8 pt-8">
         <h2 className="font-['Noto_Sans_KR'] font-semibold text-[16px] text-black text-center mb-8">
-          얼굴이 잘 나온 사진을 넣어보세요
+          ?�굴?????�온 ?�진???�어보세??
         </h2>
 
         {/* Images Grid */}
@@ -60,7 +76,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                 <>
                   <img 
                     src={uploadedImage} 
-                    alt="업로드된 이미지" 
+                    alt="?�로?�된 ?��?지" 
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -75,7 +91,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                     <Upload className="w-7 h-7 text-[#6b6b6b]" />
                   </div>
                   <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">
-                    사진 1
+                    ?�진 1
                   </p>
                 </div>
               )}
@@ -102,7 +118,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                 <>
                   <img 
                     src={secondImage} 
-                    alt="업로드된 이미지 2" 
+                    alt="?�로?�된 ?��?지 2" 
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -115,7 +131,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                 <div className="flex flex-col items-center gap-3">
                   <span className="text-[56px] text-[#d0d0d0] leading-none">+</span>
                   <p className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">
-                    사진 2 (선택)
+                    ?�진 2 (?�택)
                   </p>
                 </div>
               )}
@@ -124,12 +140,29 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
         </div>
 
         {/* Info Text */}
-        <div className="bg-[#f8f8f8] rounded-[16px] p-5 mb-8">
-          <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] leading-[1.6] text-center">
-            얼굴이 정면으로 잘 나온 사진을 업로드하면<br />
-            더 정확한 분석이 가능합니다
+        <div className="bg-[#f8f8f8] rounded-[16px] p-5 mb-4">
+          <p className="font-[\'Noto_Sans_KR\'] text-[14px] text-[#6b6b6b] leading-[1.6] text-center">
+            얼굴이 정면으로 나온 사진을 업로드하면
+            <br />
+            더 정확한 분석이 가능합니다.
           </p>
         </div>
+        {uploadedImage ? (
+          <div
+            className={`rounded-[16px] px-4 py-3 text-[13px] font-['Noto_Sans_KR'] ${
+              faceStatus === 'valid'
+                ? 'bg-emerald-50 text-emerald-700'
+                : faceStatus === 'checking'
+                ? 'bg-slate-100 text-slate-600'
+                : 'bg-rose-50 text-rose-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {faceStatus === 'checking' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              <span>{faceMessage || '�� �м� ���¸� Ȯ���� �ּ���.'}</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Fixed Action Buttons */}
@@ -139,19 +172,21 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
             onClick={onSkip}
             className="bg-[#f0f0f0] rounded-[16px] h-[56px] px-8 font-['Noto_Sans_KR'] font-medium text-[15px] text-[#262626] hover:bg-[#e5e5e5] transition-colors"
           >
-            건너뛰기
+            건너?�기
           </button>
           <button
             onClick={onNext}
-            disabled={!uploadedImage}
+            disabled={!canProceed}
             className="flex-1 bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a1a1a] transition-colors"
           >
-            다음
+            ?�음
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+
 
 

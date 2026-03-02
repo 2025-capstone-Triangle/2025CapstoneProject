@@ -67,6 +67,15 @@ export async function verifyEmailCode(email: string, code: string) {
   });
 }
 
+export type MemberInfo = {
+  username?: string;
+  email?: string;
+};
+
+export async function getMemberInfo() {
+  return apiRequest<MemberInfo>("/api/v1/member");
+}
+
 export function getSavedAuth() {
   const raw = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!raw) return null;
@@ -84,7 +93,9 @@ export function isAuthenticated() {
 }
 
 export function saveAuth(data: SignInResponse, profile?: AuthProfile) {
+  const existing = getSavedAuth();
   const next: SavedAuth = {
+    ...(existing ?? {}),
     ...data,
     ...(profile ?? {}),
   };

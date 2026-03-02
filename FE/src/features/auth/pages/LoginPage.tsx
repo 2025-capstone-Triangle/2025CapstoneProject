@@ -4,37 +4,42 @@ import { signIn, saveAuth } from '../../../lib/auth';
 
 interface LoginPageProps {
   onLogin?: () => void;
+  onAdminLogin?: () => void;
   onNavigate?: (page: string) => void;
   onBack?: () => void;
 }
 
-export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
-  const [email, setEmail] = useState('');
+export function LoginPage({ onLogin, onAdminLogin, onNavigate, onBack }: LoginPageProps) {
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [userIdError, setUserIdError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleLogin = async () => {
     // Reset errors
     setError('');
-    setEmailError('');
+    setUserIdError('');
     setPasswordError('');
 
-    // Validation
-    if (!email) {
-      setEmailError('이메일을 입력해주세요.');
+    // Temporary local admin bypass
+    if (userId.trim() === 'admin' && password === 'admin') {
+      saveAuth({
+        accessToken: 'local-admin-session',
+        grantType: 'Bearer',
+        expiresIn: 60 * 60 * 24,
+      }, {
+        username: 'admin',
+      });
+      onAdminLogin?.();
       return;
     }
-    if (!validateEmail(email)) {
-      setEmailError('올바른 이메일 형식이 아닙니다.');
+
+    // Validation
+    if (!userId.trim()) {
+      setUserIdError('아이디를 입력해주세요.');
       return;
     }
     if (!password) {
@@ -48,14 +53,14 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
 
     setIsSubmitting(true);
     try {
-      const data = await signIn({ username: email, password });
-      saveAuth(data);
+      const data = await signIn({ username: userId, password });
+      saveAuth(data, { username: userId.trim() });
       onLogin?.();
     } catch (err) {
       const message =
         err instanceof Error && err.message
           ? err.message
-          : '이메일 또는 비밀번호가 올바르지 않습니다.';
+          : '아이디 또는 비밀번호가 올바르지 않습니다.';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -95,10 +100,10 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
         {/* Login Form */}
         <div className="space-y-4 mb-6">
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일"
+            type="text"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="아이디"
             className="w-full h-[52px] bg-[#f8f8f8] rounded-[16px] px-5 font-['Noto_Sans_KR'] text-[14px] text-black placeholder:text-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-black"
           />
           <div className="relative">
@@ -130,11 +135,11 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
         </button>
 
         {/* Error Messages */}
-        {(error || emailError || passwordError) && (
+        {(error || userIdError || passwordError) && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-[12px] flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <span className="font-['Noto_Sans_KR'] text-[13px] text-red-700">
-              {error || emailError || passwordError}
+              {error || userIdError || passwordError}
             </span>
           </div>
         )}

@@ -8,6 +8,13 @@ export type SignInResponse = {
   expiresIn: number;
 };
 
+export type AuthProfile = {
+  username?: string;
+  email?: string;
+};
+
+export type SavedAuth = SignInResponse & AuthProfile;
+
 export type SignUpPayload = {
   username: string;
   password: string;
@@ -65,7 +72,7 @@ export function getSavedAuth() {
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as SignInResponse;
+    return JSON.parse(raw) as SavedAuth;
   } catch {
     return null;
   }
@@ -76,8 +83,12 @@ export function isAuthenticated() {
   return Boolean(auth?.accessToken);
 }
 
-export function saveAuth(data: SignInResponse) {
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
+export function saveAuth(data: SignInResponse, profile?: AuthProfile) {
+  const next: SavedAuth = {
+    ...data,
+    ...(profile ?? {}),
+  };
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(next));
 }
 
 export function clearAuth() {

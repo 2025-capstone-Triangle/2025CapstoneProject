@@ -214,6 +214,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
   };
 
   const handleFinalSignup = async () => {
+    clearError("submit");
     const nextErrors: Record<string, string> = {};
     const birthError = validateBirthValue();
     if (birthError) nextErrors.birth = birthError;
@@ -223,7 +224,14 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
     }
 
     setErrors((prev) => ({ ...prev, ...nextErrors }));
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      if (nextErrors.birth) {
+        setStep("birthdate");
+      } else if (nextErrors.gender) {
+        setStep("gender");
+      }
+      return;
+    }
 
     const payload: SignUpPayload = {
       username: username.trim(),
@@ -237,14 +245,25 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
     setIsSubmitting(true);
     try {
       await signUp(payload);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "회원가입에 실패했습니다.";
+      setSingleError("submit", message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
       const auth = await signIn({
         username: payload.username,
         password: payload.password,
       });
-      saveAuth(auth);
+      saveAuth(auth, { username: payload.username, email: payload.email });
       onSignup?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "회원가입/자동 로그인에 실패했습니다.";
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "회원가입은 완료되었지만 자동 로그인에 실패했습니다. 로그인 화면에서 다시 시도해 주세요.";
       setSingleError("submit", message);
     } finally {
       setIsSubmitting(false);
@@ -638,6 +657,13 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
               일반 사용자
             </button>
           </div>
+
+          {errors.submit && (
+            <p className="text-[12px] text-red-500 font-['Noto_Sans_KR'] flex items-center justify-center gap-1 mb-6">
+              <AlertCircle className="w-3.5 h-3.5" />
+              {errors.submit}
+            </p>
+          )}
 
           <div className="flex gap-3 justify-center">
             <button onClick={handleFinalSignup} className="px-8 h-[46px] bg-[#f5f5f5] rounded-[16px] text-[14px] text-[#6b6b6b]">

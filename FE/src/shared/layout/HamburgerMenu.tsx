@@ -1,6 +1,6 @@
 import { X, Home, Sparkles, Bookmark, User, Settings, HelpCircle, LogOut, LogIn } from 'lucide-react';
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
-import { clearAuth, isAuthenticated } from '../../lib/auth';
+import { clearAuth, getSavedAuth, isAuthenticated } from '../../lib/auth';
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -9,15 +9,34 @@ interface HamburgerMenuProps {
   currentPage?: string;
 }
 
+function decodeJwtPayload(token: string | undefined) {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const normalized = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const json = atob(normalized);
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 export function HamburgerMenu({ isOpen, onClose, onNavigate, currentPage }: HamburgerMenuProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
+  const auth = getSavedAuth();
+  const tokenPayload = decodeJwtPayload(auth?.accessToken);
+  const isLoggedIn = Boolean(auth?.accessToken) && isAuthenticated();
+  const tokenUsername =
+    (typeof tokenPayload?.username === "string" && tokenPayload.username.trim()) ||
+    (typeof tokenPayload?.sub === "string" && tokenPayload.sub.trim()) ||
+    "";
+  const tokenEmail = typeof tokenPayload?.email === "string" ? tokenPayload.email.trim() : "";
+  const displayName = auth?.username?.trim() || tokenUsername || '사용자님';
+  const displayEmail = auth?.email?.trim() || tokenEmail;
   
-  useEffect(() => {
-    setIsLoggedIn(isAuthenticated());
-  }, [isOpen]);
-
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
@@ -49,7 +68,6 @@ export function HamburgerMenu({ isOpen, onClose, onNavigate, currentPage }: Hamb
 
   const handleLogout = useCallback(() => {
     clearAuth();
-    setIsLoggedIn(false);
     handleNavigate('home');
   }, [handleNavigate]);
 
@@ -107,11 +125,13 @@ export function HamburgerMenu({ isOpen, onClose, onNavigate, currentPage }: Hamb
               </div>
               <div>
                 <p className="font-['NEXON_Football_Gothic'] font-bold text-[16px] text-black">
-                  사용자님
+                  {displayName}
                 </p>
-                <p className="font-['Noto_Sans_KR'] text-[12px] text-gray-500">
-                  user@example.com
-                </p>
+                {displayEmail ? (
+                  <p className="font-['Noto_Sans_KR'] text-[12px] text-gray-500">
+                    {displayEmail}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>

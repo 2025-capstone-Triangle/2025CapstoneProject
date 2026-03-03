@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface MemberRepositoryCustom {
 
-    List<MemberStatDto> findStatAllByIsActive(boolean b);
+    List<MemberStatDto> findStatAllByIsActive(boolean b, Boolean isBlocked);
 
-    Optional<MemberStatDto> findStatByIdAndIsActive(Long id, boolean b);
+    Optional<MemberStatDto> findStatByIdAndIsActive(Long id, boolean b, Boolean isBlocked);
 }

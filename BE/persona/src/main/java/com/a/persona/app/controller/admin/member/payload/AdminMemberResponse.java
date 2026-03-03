@@ -37,10 +37,13 @@ public class AdminMemberResponse {
 
     private Status status;
 
+    private AdminBlockedResponse block;
+
     private LocalDateTime lastLoginAt;
 
 
     public static AdminMemberResponse from(MemberStatDto member) {
+
         return AdminMemberResponse.builder()
                 .id(member.getId())
                 .username(member.getUsername())
@@ -51,6 +54,7 @@ public class AdminMemberResponse {
                 .is_creator(member.getIs_creator())
                 .createdAt(member.getCreatedAt())
                 .status(member.getStatus())
+                .block(AdminBlockedResponse.from(member.getBlock()))
                 .lastLoginAt(member.getLastLoginAt())
                 .build();
     }

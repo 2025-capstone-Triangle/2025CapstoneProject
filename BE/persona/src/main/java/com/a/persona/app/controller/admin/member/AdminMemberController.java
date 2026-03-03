@@ -29,19 +29,21 @@ public class AdminMemberController {
     // 전체/ 단건 멤버 조회
     @GetMapping
     @Operation(summary = "멤버 조회", description = "멤버를 전체/단건 조회합니다.<br>" +
-            "멤버의 id와 함께 요청할 경우, 해당하는 멤버 단건 조회도 가능합니다.")
+            "멤버의 id와 함께 요청할 경우, 해당하는 멤버 단건 조회도 가능합니다.<br>" +
+            "차단한 멤버, 차단하지 않은 멤버만을 조회하고 싶을 땐 isBlocked를 사용하여 조회할 수 있습니다.")
     public ResponseEntity<CommonApiResponse<List<AdminMemberResponse>>> getMembers(
-            @RequestParam(required = false) Long id
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) Boolean isBlocked
             ){
 
         List<AdminMemberResponse> responses;
 
         if(id==null){
-            responses = adminMemberService.getAllMember().stream().map(
+            responses = adminMemberService.getAllMember(isBlocked).stream().map(
                     AdminMemberResponse::from
             ).toList();
         }else{
-            responses = List.of(AdminMemberResponse.from(adminMemberService.getMember(id)));
+            responses = List.of(AdminMemberResponse.from(adminMemberService.getMember(id, isBlocked)));
         }
             return ResponseEntity.ok(CommonApiResponse.success(responses));
     }
@@ -53,7 +55,7 @@ public class AdminMemberController {
     public ResponseEntity<CommonApiResponse<Void>> changeMemberStatus(
             @RequestBody AdminMemberStatusRequest adminMemberStatusRequest
         ) {
-            adminMemberService.changeMemberStatus(adminMemberStatusRequest.getId(), adminMemberStatusRequest.getStatus());
+            adminMemberService.changeMemberStatus(adminMemberStatusRequest.getId(), adminMemberStatusRequest.getStatus(),adminMemberStatusRequest.getReason());
             return ResponseEntity.ok(CommonApiResponse.noContent());
 
         }

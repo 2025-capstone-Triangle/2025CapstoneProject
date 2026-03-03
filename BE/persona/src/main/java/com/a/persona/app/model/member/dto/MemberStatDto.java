@@ -37,5 +37,8 @@ public class MemberStatDto {
 
     private Status status;
 
+    private MemberBlockDto block;
+
     private LocalDateTime lastLoginAt;
+
 }

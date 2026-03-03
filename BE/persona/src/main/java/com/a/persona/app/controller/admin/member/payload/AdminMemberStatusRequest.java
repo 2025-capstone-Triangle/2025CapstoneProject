@@ -7,4 +7,5 @@ import lombok.Data;
 public class AdminMemberStatusRequest {
     Long id;
     Status status;
+    String reason;
 }

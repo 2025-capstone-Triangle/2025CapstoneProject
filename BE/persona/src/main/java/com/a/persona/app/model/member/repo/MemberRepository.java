@@ -16,7 +16,5 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
 
     Optional<Member> findByUsernameAndIsActive(String username, Boolean isActive);
 
-    List<Member> findAllByIsActive(Boolean isActive);
-
     Optional<Member> findByIdAndIsActive(Long id, Boolean isActive);
 }

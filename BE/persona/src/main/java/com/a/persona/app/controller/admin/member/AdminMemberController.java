@@ -31,17 +31,17 @@ public class AdminMemberController {
     @Operation(summary = "멤버 조회", description = "멤버를 전체/단건 조회합니다.<br>" +
             "멤버의 id와 함께 요청할 경우, 해당하는 멤버 단건 조회도 가능합니다.")
     public ResponseEntity<CommonApiResponse<List<AdminMemberResponse>>> getMembers(
-            @RequestBody AdminMemberRequest adminMemberRequest
+            @RequestParam(required = false) Long id
             ){
 
         List<AdminMemberResponse> responses;
 
-        if(adminMemberRequest.getId()==null){
+        if(id==null){
             responses = adminMemberService.getAllMember().stream().map(
                     AdminMemberResponse::from
             ).toList();
         }else{
-            responses = List.of(AdminMemberResponse.from(adminMemberService.getMember(adminMemberRequest.getId())));
+            responses = List.of(AdminMemberResponse.from(adminMemberService.getMember(id)));
         }
             return ResponseEntity.ok(CommonApiResponse.success(responses));
     }

@@ -4,6 +4,7 @@ import com.a.persona.app.model.auth.code.Role;
 import com.a.persona.app.model.member.code.Sex;
 import com.a.persona.app.model.member.code.Status;
 import com.a.persona.app.model.member.dto.MemberDto;
+import com.a.persona.app.model.member.dto.MemberStatDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,7 +37,10 @@ public class AdminMemberResponse {
 
     private Status status;
 
-    public static AdminMemberResponse from(MemberDto member) {
+    private LocalDateTime lastLoginAt;
+
+
+    public static AdminMemberResponse from(MemberStatDto member) {
         return AdminMemberResponse.builder()
                 .id(member.getId())
                 .username(member.getUsername())
@@ -47,6 +51,7 @@ public class AdminMemberResponse {
                 .is_creator(member.getIs_creator())
                 .createdAt(member.getCreatedAt())
                 .status(member.getStatus())
+                .lastLoginAt(member.getLastLoginAt())
                 .build();
     }
 

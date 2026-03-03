@@ -2,7 +2,7 @@ package com.a.persona.app.model.member.service;
 
 import com.a.persona.app.model.member.code.Status;
 import com.a.persona.app.model.member.domain.Member;
-import com.a.persona.app.model.member.dto.MemberDto;
+import com.a.persona.app.model.member.dto.MemberStatDto;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.infra.error.exceptions.CommonException;
 import com.a.persona.infra.response.ResponseCode;
@@ -22,22 +22,20 @@ public class AdminMemberService {
 
     /**
      * 멤버를 전체 조회합니다.
-     * @return List<MemberDto>
+     * @return List<MemberStatDto>
      */
-    public List<MemberDto> getAllMember() {
-        return memberRepository.findAllByIsActive(true).stream().map(
-                MemberDto::fromEntity
-        ).toList();
+    public List<MemberStatDto> getAllMember() {
+        return memberRepository.findStatAllByIsActive(true);
     }
 
     /**
      * 아이디에 해당하는 멤버를 조회합니다.
      * @param id 멤버 아이디
-     * @return MemberDto
+     * @return MemberStatDto
      */
-    public MemberDto getMember(Long id) {
+    public MemberStatDto getMember(Long id) {
 
-        return MemberDto.fromEntity(memberRepository.findByIdAndIsActive(id, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND)));
+        return memberRepository.findStatByIdAndIsActive(id, true).orElseThrow(()->new CommonException(ResponseCode.NOT_FOUND));
     }
 
     /**

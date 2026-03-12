@@ -1,10 +1,12 @@
 import os
 import asyncio
-import base64
+import requests
 from dotenv import load_dotenv
-import boto3
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
+
+import boto3
+import base64
 
 class ImageGeneration:
     def __init__(self):
@@ -14,9 +16,17 @@ class ImageGeneration:
         load_dotenv(dotenv_path)
 
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_url = "https://api.openai.com/v1/images/generations"
         self.client = OpenAI(api_key=self.api_key)
-        
-        # 프롬프트 정제용 LLM (GPT-5 기반)
+
+        self.s3 = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+            region_name=os.getenv("AWS_REGION", "ap-northeast-2")
+        )
+        self.bucket_name = os.getenv("AWS_BUCKET")
+
         self.llm = ChatOpenAI(
             model="gpt-5-mini",
             api_key=self.api_key, 
@@ -24,7 +34,6 @@ class ImageGeneration:
         )
 
     def _build_base_prompt(self, answers, tones):
-        # 구도 매핑 보강
         framing_map = {
             1: "extreme close-up focusing on facial features", 
             2: "bust shot, upper body", 
@@ -39,78 +48,102 @@ class ImageGeneration:
         contrast = "high contrast" if answers.get('q5_contrast_type') == 1 else "soft and low contrast"
         temp = "warm golden hour lighting" if tones[3] > 50 else "cool cinematic blue lighting"
         
-        return f"A {framing} of the person in the provided image, {env}, {density}, {mood}, {contrast}, {temp}."
+        return f"A {framing} of the person, {env}, {density}, {mood}, {contrast}, {temp}."
 
     async def generate_profile_prompt(self, report, answers, tones):
         base_elements = self._build_base_prompt(answers, tones)
         
-        # 인스타 감성을 위한 기술적 키워드 추가 (Shot on iPhone, Cinematic lighting 등)
         prompt_refine_msg = f"""
         당신은 상업 사진 작가이자 AI 프롬프트 엔지니어입니다. 
-        입력된 인물의 얼굴과 신체 특징을 '복제' 수준으로 유지하며 인스타그램 감성 사진을 생성하기 위한 지시문을 작성하세요.
+        사용자의 정체성을 유지하면서 인스타그램 감성 사진을 생성하기 위한 영문 지시문을 작성하세요.
 
         [분석 데이터]
-        - 대상 인물: 제공된 input_image 속 인물
         - 구도 및 조명: {base_elements}
         - 인스타 무드: {report['name']}, {', '.join(report['keywords'])}
-        - 톤앤매너: {', '.join(report['color_palette'])}
+        - 핵심 컬러: {', '.join(report['color_palette'])}
 
         [지침]
-        1. "Replicate the exact facial structure" : 얼굴형, 눈의 기울기, 입술 두께를 사진과 똑같이 유지하세요.
-        2. "Consistent Identity" : AI가 인물을 재해석하지 못하게 하고, 사진 속 인물을 그대로 다른 장소에 데려다 놓은 것처럼 묘사하세요.
-        3. "Shot on high-end mirrorless" : 인스타 감성을 위해 f/1.8 조리개값과 자연스러운 필름 그레인을 추가하세요.
-        4. 'Photorealistic, Shot on iPhone 15 Pro, 4k, cinematic social media aesthetic' 키워드를 포함하세요.
-        5. 영어로 10문장 이내로 강하게 작성하세요.
+        1. "Extreme Identity Consistency": 원본 사진 속 인물의 얼굴형과 특징을 유지하세요.
+        2. "Instagram Aesthetic": Shot on iPhone 15 Pro, cinematic lighting 포함.
+        3. "Natural Texture": 실제 사진 같은 Grain과 질감 추가.
+        4. 영어로 작성하세요.
         """
         res = await self.llm.ainvoke(prompt_refine_msg)
         return res.content.strip()
 
-    def generate_persona_image_gpt5(self, prompt, user_image_url):
-        """GPT-5의 새로운 이미지 생성 도구를 사용해 Identity 유지 생성"""
+    def generate_persona_image(self, prompt, user_image_url=None):
+        """OpenAI API를 직접 호출하여 이미지 생성"""
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
+        # prompt를 조합할 때 user_image_url을 사용
+        enhanced_prompt = prompt
+        if user_image_url:
+            enhanced_prompt = f"Reference image: {user_image_url}. {prompt}"
+
+        payload = {
+            "model": "gpt-image-1", 
+            "prompt": enhanced_prompt,
+            "n": 1,
+            "size": "1024x1024",
+            "response_format": "b64_json"  #오류나면 얘 빼기
+        }
+
         try:
-            print(f"🎨 GPT-5 생성 시작 (Identity Reference 모드)")
-            
-            # GPT-5 responses api 호출
-            response = self.client.responses.create(
-                model="gpt-5",
-                input=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "input_text", 
-                                "text": f"Generate a high-end Instagram lifestyle photo. Core Requirement: The person's facial identity must be 100% identical to the reference image. Detailed Prompt: {prompt}"
-                            },
-                            {"type": "input_image", "image_url": user_image_url}
-                        ]
-                    }
-                ],
-                tools=[{"type": "image_generation", "action": "generate"}],
+            print(f"🎨 {payload['model']} 모델로 이미지 생성 요청 중...")
+            response = requests.post(self.api_url, headers=headers, json=payload)
+            data = response.json()
+            if response.status_code == 200:
+                # 만약 구조가 다르면 KeyError 대신 None을 리턴하도록 함
+                b64_data = data["data"][0].get("b64_json")
+                if b64_data:
+                    print("✨ 이미지 데이터(Base64) 획득 성공!")
+                    return b64_data
+                else:
+                    print(f"❌ 데이터를 찾을 수 없습니다. 응답 내용: {data}")
+                    return None
+            else:                # 400, 401, 500 등 에러 발생 시 출력
+                print(f"❌ API 오류: {response.status_code} - {data}")
+                return None
+        except Exception as e:
+            print(f"❌ 요청 중 에러 발생: {e}")
+            return None
+        
+    def upload_to_s3(self, b64_data, file_name):
+        """생성된 이미지 URL을 다운로드하여 S3에 직접 업로드 (put_object 방식)"""
+        try:
+            # 1. OpenAI 서버에서 이미지 다운로드
+            image_data = base64.b64decode(b64_data)
+            s3_path = f"generated_personas/{file_name}.png"
+
+            # 3. S3 업로드
+            self.s3.put_object(
+                Bucket=self.bucket_name,
+                Key=s3_path,
+                Body=image_data, # 디코딩된 바이너리 데이터
+                ContentType='image/png'
             )
 
-            # 결과 데이터(base64) 추출
-            image_call = next(output for output in response.output if output.type == "image_generation_call")
-            image_base64 = image_call.result
-            
-            # 파일로 저장 (테스트용)
-            output_filename = "generated_persona.png"
-            with open(output_filename, "wb") as f:
-                f.write(base64.b64decode(image_base64))
-            
-            print(f"✨ 이미지 생성 완료: {output_filename}")
-            return output_filename # 파일 경로 반환
+            # 4. 최종 S3 URL 생성
+            region = os.getenv("AWS_REGION", "ap-northeast-2")
+            final_url = f"https://{self.bucket_name}.s3.{region}.amazonaws.com/{s3_path}"
+            print(f"✅ S3 업로드 완료: {final_url}")
+            return final_url
 
         except Exception as e:
-            print(f"GPT-5 이미지 생성 에러: {e}")
+            print(f"❌ S3 업로드 에러: {e}")
             return None
+        
 
-# --- 실행부 (통합 테스트) ---
+# --- 실행부 ---
 async def main():
     generator = ImageGeneration()
     
     mock_report = {
         "name": "차분한 도시 산책자",
-        "summary": "세련된 도시의 밤을 즐기는 미니멀리스트",        "color_palette": ["#1A1A1A", "#E0E0E0"],
+        "color_palette": ["#1A1A1A", "#E0E0E0"],
         "keywords": ["Urban", "Midnight", "Minimal"]
     }
 
@@ -119,9 +152,15 @@ async def main():
         mock_report, test_payload["answers"], test_payload["q8_tone"]
     )
     
-    # 2. GPT-5 이미지 생성 (사용자 원본 이미지 URL 필요)
+    # 2. 이미지 생성 (이제 인자 개수가 2개로 일치해!)
     user_photo_url = os.getenv("TEST_IMAGE_URL")
-    image_file = generator.generate_persona_image_gpt5(final_prompt, user_photo_url)
+    generated_url = generator.generate_persona_image(final_prompt, user_photo_url)
+
+    # 3. S3 업로드 (결과가 있을 때만 실행)
+    if generated_url:
+        file_name = "user_test_result" 
+        final_s3_url = generator.upload_to_s3(generated_url, file_name)
+        return final_s3_url # 이 URL 백엔드로 넘겨주기
     
 if __name__ == "__main__":
     test_payload = {

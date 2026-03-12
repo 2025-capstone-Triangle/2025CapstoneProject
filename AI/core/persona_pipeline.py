@@ -171,7 +171,7 @@ class PersonaPipeline:
         self.analyzer = PersonaAnalyzer(self.api_key)
         self.generator = ImageGenerator(self.api_key)
 
-    async def run_e2e_test(self, audio_url, image_url, answers, q8_tone):
+    async def run_e2e_test(self, audio_url, image_url, answers):
         # 0. 음성 분석 & 외모 분석
         voice_kwd = await self.analyzer.get_voice_keywords_from_url(audio_url)
         img_base64 = await self.analyzer.get_base64_from_url(image_url)
@@ -183,8 +183,7 @@ class PersonaPipeline:
         # 2. 이미지 생성을 위한 텍스트 프롬프트 도출
         final_image_prompt = await self.generator.generate_profile_prompt(
         persona_report, 
-        answers, 
-        q8_tone
+        answers
     )
 
         # 3. DALL-E 3로 실제 이미지 생성

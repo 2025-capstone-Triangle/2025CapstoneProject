@@ -88,7 +88,6 @@ class ImageGeneration:
             "prompt": enhanced_prompt,
             "n": 1,
             "size": "1024x1024",
-            "response_format": "b64_json"  #오류나면 얘 빼기
         }
 
         try:
@@ -143,7 +142,7 @@ async def main():
     
     mock_report = {
         "name": "차분한 도시 산책자",
-        "color_palette": ["#1A1A1A", "#E0E0E0"],
+        "color_palette": ["#B16C6C", "#E0E0E0"],
         "keywords": ["Urban", "Midnight", "Minimal"]
     }
 
@@ -152,7 +151,7 @@ async def main():
         mock_report, test_payload["answers"], test_payload["q8_tone"]
     )
     
-    # 2. 이미지 생성 (이제 인자 개수가 2개로 일치해!)
+    # 2. 이미지 생성
     user_photo_url = os.getenv("TEST_IMAGE_URL")
     generated_url = generator.generate_persona_image(final_prompt, user_photo_url)
 

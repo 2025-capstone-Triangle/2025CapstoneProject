@@ -1,5 +1,6 @@
 package com.a.persona.app.controller.persona;
 
+import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
 import com.a.persona.app.controller.persona.payload.PersonaResponse;
 import com.a.persona.app.controller.persona.payload.PersonaSaveRequest;
 import com.a.persona.app.model.persona.dto.PersonaDto;
@@ -79,9 +80,10 @@ public class PersonaController {
     public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestPart("profile") MultipartFile profile,
-            @RequestPart("image") List<MultipartFile> image,
-            @RequestPart("voice") List<MultipartFile> voice,
-            @RequestPart("preferenceType") String preferenceType
+            @RequestPart("image") MultipartFile image,
+            @RequestPart("voice") MultipartFile voice,
+            @RequestPart("answer") LikeAnswerRequest preferenceType,
+            @RequestPart("q8_tone") List<Long> tone
     ) {
         PersonaDto personaDto;
         String username = null;
@@ -92,7 +94,7 @@ public class PersonaController {
                 username = userDetails.getUsername();
             
             // 페르소나 진단
-            personaDto = personaService.createPersona(username, profile ,image, voice, preferenceType);
+            personaDto = personaService.createPersona(username, profile ,image, voice, preferenceType, tone);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }

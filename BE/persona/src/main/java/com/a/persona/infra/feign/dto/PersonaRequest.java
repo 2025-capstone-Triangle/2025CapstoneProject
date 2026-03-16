@@ -1,9 +1,12 @@
 package com.a.persona.infra.feign.dto;
 
+import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -11,8 +14,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PersonaRequest {
 
-    String image_url;
-    String voice_url;
-    String user_pref;
+    LikeAnswerRequest answers;
+    List<Long> q8_tone;
+    String images;
+    String voice;
 
 }

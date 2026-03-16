@@ -27,17 +27,10 @@ public class AmazonS3Manager {
     private final AmazonS3Client amazonS3Client;
     private final AmazonConfig amazonConfig;
 
-    // 1. 리스트를 받아서 처리하는 메인 메서드
-    public List<String> upload(List<MultipartFile> multipartFiles, String dirName, String uuid) throws IOException {
-        List<String> uploadUrls = new ArrayList<>();
+    // 1. s3에 업로드 하는 메인 메서드
+    public String upload(MultipartFile multipartFile, String dirName, String uuid) throws IOException {
 
-        for (MultipartFile multipartFile : multipartFiles) {
-            // convert 과정 없이 바로 업로드 메서드 호출
-            String uploadUrl = uploadToS3(multipartFile, dirName, uuid);
-            uploadUrls.add(uploadUrl);
-        }
-
-        return uploadUrls;
+        return uploadToS3(multipartFile, dirName, uuid);
     }
 
     // 2. 개별 MultipartFile을 S3 스트림으로 쏘는 핵심 로직

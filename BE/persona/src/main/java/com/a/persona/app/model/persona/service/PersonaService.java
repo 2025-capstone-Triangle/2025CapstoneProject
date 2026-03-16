@@ -1,5 +1,6 @@
 package com.a.persona.app.model.persona.service;
 
+import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
@@ -105,7 +106,7 @@ public class PersonaService {
      * @return PersonaDto 
      * @throws IOException 업로드 예외
      */
-    public PersonaDto createPersona(String username, MultipartFile profile, List<MultipartFile> image, List<MultipartFile> voice, String preferenceType) throws IOException {
+    public PersonaDto createPersona(String username, MultipartFile profile, MultipartFile image, MultipartFile voice, LikeAnswerRequest preferenceType, List<Long> tone) throws IOException {
 
         Member member = null;
         if(username!=null){
@@ -117,29 +118,30 @@ public class PersonaService {
         String fileName = username+"_"+uuid;
 
         // 프로필 이미지 업로드
-        String profileUrl = s3Manager.upload(List.of(profile), amazonConfig.getImagePath(), fileName).getFirst();
+        String profileUrl = s3Manager.upload(profile, amazonConfig.getImagePath(), fileName);
 
         // 이미지 파일 업로드 및 URL 리스트 반환
-        List<String> pictureUrls = s3Manager.upload(image, amazonConfig.getImagePath(), fileName);
+        String pictureUrl = s3Manager.upload(image, amazonConfig.getImagePath(), fileName);
 
         // 이미지 파일 업로드 및 URL 리스트 반환
-        List<String> voiceUrls = s3Manager.upload(voice, amazonConfig.getVoicePath(), fileName);
-
-        // todo 추후에 list로 바뀌면 수정하긔~
+        String voiceUrl = s3Manager.upload(voice, amazonConfig.getVoicePath(), fileName);
+        
         PersonaRequest request = PersonaRequest.builder()
-                .user_pref(preferenceType)
-                .image_url(pictureUrls.getFirst())
-                .voice_url(voiceUrls.getFirst())
-                .build();
+                .answers(preferenceType)
+                .q8_tone(tone)
+                .images(pictureUrl)
+                .voice(voiceUrl).build();
 
         PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
+
+        // todo 프로필 만들 사진도 필요하긔
 
         String code;
         // 코드가 중복이 아니도록
         do {
             code = CodeGenerator.generateShareCode();
         } while (isExistCode(code));
-        // todo 이미지 파일 저장 presigned-url이 아니라 진짜 url
+        // todo 이미지 파일 저장 presigned-url을 만들 수 있는 그 코드? 를 저장하기
 
         Persona persona = Persona.builder()
                 .name(result.getReport().getName())
@@ -148,7 +150,7 @@ public class PersonaService {
                 .keywords(new HashSet<>(result.getReport().getKeywords()))
                 .colors(new HashSet<>(result.getReport().getColor_palette()))
                 .code(code)
-                .thumbnail(result.getImage_url())
+                //.thumbnail(result.getImage_url())
                 .build();
 
         personaRepository.save(persona);

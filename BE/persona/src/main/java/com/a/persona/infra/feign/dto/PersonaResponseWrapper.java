@@ -9,8 +9,8 @@ import java.util.List;
 @Data
 public class PersonaResponseWrapper {
 
+    private String status;
     private ReportData report;
-    private String image_url; // JSON의 언더바 형식을 그대로 맞춤
 
     @Getter
     @NoArgsConstructor

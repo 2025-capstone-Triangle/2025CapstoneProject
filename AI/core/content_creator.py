@@ -46,40 +46,75 @@ class ContentGeneration:
         options = vision.PoseLandmarkerOptions(base_options=base_options)
         self.landmarker = vision.PoseLandmarker.create_from_options(options)
 
-    def _build_base_prompt(self, answers, tones):
+    def _build_base_prompt(self, report, answers, tones):
+        # 1. 구도 (Framing) - 인스타 인기 구도 적용
         framing_map = {
-            1: "extreme close-up focusing on facial features", 
-            2: "bust shot, upper body", 
-            3: "half-body shot", 
-            4: "full-body shot, standing figure", 
-            5: "wide cinematic shot with person as a focal point"
+            1: "tightly framed extreme close-up focusing on expressive eyes and skin texture",
+            2: "cinematic bust shot, focusing on upper body and jewelry",
+            3: "half-body shot, natural pose with arms slightly in frame",
+            4: "full-body shot, standing naturally, capturing the outfit and silhouette",
+            5: "wide cinematic shot, person harmonized with the vast background environment"
         }
-        framing = framing_map.get(answers.get('q7_framing'), "portrait")
-        env = "outdoors" if answers.get('q1_environment') == 1 else "indoors"
-        density = "minimalist and clean" if answers.get('q3_minimal_maximal') == 1 else "maximalist with rich details"
-        mood = "bright and airy" if answers.get('q4_mood') == 1 else "moody and calm"
-        contrast = "high contrast" if answers.get('q5_contrast_type') == 1 else "soft and low contrast"
-        temp = "warm golden hour lighting" if tones[3] > 50 else "cool cinematic blue lighting"
         
-        return f"A {framing} of the person, {env}, {density}, {mood}, {contrast}, {temp}."
+        # 2. 장소 (Environment)
+        env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \
+              else "inside a minimalist, aesthetically pleasing studio or a modern interior with soft window light"
+        
+        # 3. 스타일 밀도 (Density)
+        density = "clean minimalist background, focus strictly on the subject" if answers.get('q3_minimal_maximal') == 1 \
+                  else "richly detailed environment with plants, books, and sophisticated props"
+        
+        # 4. 분위기 & 대비 (Mood & Contrast)
+        mood_str = "bright, airy, and high-key lighting with a fresh feel" if answers.get('q4_mood') == 1 \
+                   else "moody, calm, and slightly dark cinematic atmosphere"
+        contrast_str = "with deep shadows and striking highlights" if answers.get('q5_contrast_type') == 1 \
+                       else "with soft, low-contrast, and dreamy transitions"
+        
+        # 5. 톤/온도 (Temperature)
+        s_val, v_val, c_val, t_val = tones
+            # 1. 채도 (Saturation)
+        if s_val > 80: saturation = "vibrant, highly saturated colors, popping tones"
+        elif s_val < 30: saturation = "muted, desaturated, almost pastel-like color palette"
+        else: saturation = "natural color balance, realistic saturation"
 
+            # 2. 명도 (Value/Brightness)
+        if v_val > 80: brightness = "bright, overexposed aesthetic, high-key lighting"
+        elif v_val < 30: brightness = "underexposed, low-key lighting, dark and mysterious"
+        else: brightness = "well-lit, balanced exposure"
+
+            # 3. 대비 (Contrast)
+        if c_val > 80: contrast = "extreme contrast, deep black shadows and bright highlights"
+        elif c_val < 30: contrast = "soft, low contrast, hazy and dreamy look"
+        else: contrast = "standard cinematic contrast"
+
+            # 4. 색온도 (Temperature)
+        if t_val > 70: temp = "warm golden hour glow, amber and orange tint"
+        elif t_val < 30: temp = "cool blue hour tint, icy and crisp atmosphere"
+        else: temp = "neutral daylight white balance"
+
+        return (f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {saturation}, {brightness}, {contrast}, {temp}. {density}, {mood_str}, {contrast_str}, {temp}."
+                f"Overall visual style matches these specific attributes: "
+                f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100.")
     async def generate_profile_prompt(self, report, answers, tones):
-        base_elements = self._build_base_prompt(answers, tones)
+        base_elements = self._build_base_prompt(report, answers, tones)
         
         prompt_refine_msg = f"""
-        당신은 상업 사진 작가이자 AI 프롬프트 엔지니어입니다. 
-        사용자의 정체성을 유지하면서 인스타그램 감성 사진을 생성하기 위한 영문 지시문을 작성하세요.
+            당신은 전 세계적으로 유행하는 'K-Aesthetic'과 '인스타그램 감성'에 정통한 비주얼 디렉터입니다.
+            제공된 데이터를 바탕으로 DALL-E 3를 위한 '극사실주의' 프롬프트를 영어로 작성하세요.
 
-        [분석 데이터]
-        - 구도 및 조명: {base_elements}
-        - 인스타 무드: {report['name']}, {', '.join(report['keywords'])}
-        - 핵심 컬러: {', '.join(report['color_palette'])}
+            [데이터 분석]
+            - 구도/환경: {base_elements}
+            - 페르소나: {report['name']} ({', '.join(report['keywords'])})
+            - 핵심 색상: {', '.join(report['color_palette'])}
 
-        [지침]
-        1. "Extreme Identity Consistency": 원본 사진 속 인물의 얼굴형과 특징을 유지하세요.
-        2. "Instagram Aesthetic": Shot on iPhone 15 Pro, cinematic lighting 포함.
-        3. "Natural Texture": 실제 사진 같은 Grain과 질감 추가.
-        4. 영어로 작성하세요.
+            [필수 지침 - 반드시 지킬 것]
+            1. "Ethnic & Identity": 20대 한국 여성의 자연스러운 얼굴 특징을 반영하세요. 과한 성형 느낌이나 서구적인 이목구비는 피하세요.
+            2. "Skin & Texture": 도자기 같은 피부가 아니라, 실제 사람 피부 같은 미세한 모공과 솜털, 자연스러운 광채를 묘사하세요.
+            3. "Instagram Quality": 'Shot on iPhone 15 Pro, 4k, high resolution' 느낌을 강조하세요. 필터 낀 느낌이 아닌 생생한 생동감이 핵심입니다.
+            4. "Fashion": 유행하는 미니멀리즘 혹은 유니크한 K-패션을 입고 있는 모습으로 묘사하세요.
+            5. "No AI Artifacts": 손가락이나 배경 왜곡이 없도록 정교하게 지시하세요.
+            
+            최종 결과는 영어로만 출력하세요. "A high-quality realistic photo of..."로 시작하세요.
         """
         res = await self.llm.ainvoke(prompt_refine_msg)
         return res.content.strip()

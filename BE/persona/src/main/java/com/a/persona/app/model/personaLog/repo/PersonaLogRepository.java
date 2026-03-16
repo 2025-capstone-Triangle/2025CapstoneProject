@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PersonaLogRepository extends JpaRepository<PersonaLog,String> {
+public interface PersonaLogRepository extends JpaRepository<PersonaLog,String>, PersonaLogRepositoryCustom {
 }

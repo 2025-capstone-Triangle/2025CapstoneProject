@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ContentLogRepository extends JpaRepository<ContentLog,String> {
+public interface ContentLogRepository extends JpaRepository<ContentLog,String>, ContentLogRepositoryCustom {
 }

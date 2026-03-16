@@ -32,7 +32,7 @@ public class LoginLog {
     private Long id;
 
     @Builder.Default
-    @Column(name = "analysis_time")
+    @Column(name = "login_time")
     private LocalDateTime time = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)

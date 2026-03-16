@@ -15,7 +15,7 @@ content_creator = ContentGeneration()
 class DiagnosisRequest(BaseModel):
     """1. 페르소나 진단용 모델"""
     answers: dict
-    q8_tone: list[int]
+    q8_tone: list[int] = [0,0,0,0]
     images: str  # 원본 사진 URL
     voice: str   # 목소리 URL
 
@@ -23,7 +23,7 @@ class ContentCreateRequest(BaseModel):
     """2. 콘텐츠 생성용 모델"""
     report: dict       # 1번에서 저장된 페르소나 리포트 데이터
     answers: dict      # 질문 답변 데이터
-    q8_tone: list[int]      # 톤 데이터
+    q8_tone: list[int] = [0,0,0,0]      # 톤 데이터
     user_image_url: str # 원본 사진 URL (Identity 유지용)
     crop_type: int = 1 # 0: 1:1, 1: 4:5, 2: 9:16
 

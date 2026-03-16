@@ -3,6 +3,7 @@ import asyncio  # 비동기 실행을 위해 필요
 from dotenv import load_dotenv
 import base64
 import httpx
+import time
 
 import json
 import urllib.request
@@ -171,20 +172,46 @@ class PersonaPipeline:
         self.analyzer = PersonaAnalyzer(self.api_key)
         self.generator = ImageGenerator(self.api_key)
 
-    async def run_e2e_test(self, audio_url, image_url, answers):
+    def _build_base_prompt(self, answers, tones):
+        saturation = "vibrant and colorful" if tones[0] > 50 else "muted and desaturated colors"
+        brightness = "high-key lighting, bright" if tones[1] > 50 else "low-key lighting, dim"
+        contrast_val = "striking high contrast" if tones[2] > 50 else "soft and subtle contrast"
+        temperature = "warm golden hour light" if tones[3] > 50 else "cool cinematic blue light"
+
+        framing_map = {
+            1: "extreme close-up focusing on facial features", 
+            2: "bust shot, upper body", 
+            3: "half-body shot", 
+            4: "full-body shot, standing figure", 
+            5: "wide cinematic shot with person as a focal point"
+        }
+        # answers가 dict인지 str인지에 따라 대응 (안전하게 get 사용)
+        framing = framing_map.get(answers.get('q7_framing'), "portrait")
+        env = "outdoors" if answers.get('q1_environment') == 1 else "indoors"
+        density = "minimalist and clean" if answers.get('q3_minimal_maximal') == 1 else "maximalist with rich details"
+        mood = "bright and airy" if answers.get('q4_mood') == 1 else "moody and calm"
+        contrast = "high contrast" if answers.get('q5_contrast_type') == 1 else "soft and low contrast"
+        # tones[3]는 보통 온도/조명 톤이라고 가정
+        temp = "warm golden hour lighting" if (tones and len(tones) > 3 and tones[3] > 50) else "cool cinematic blue lighting"
+        
+        return (f"A {framing} of the person, {env}, {density} style. "
+                f"The image mood is {saturation}, {brightness}, {contrast_val}, with {temperature}.")
+    
+    async def run_e2e_test(self, audio_url, image_url, answers, tones):
         # 0. 음성 분석 & 외모 분석
         voice_kwd = await self.analyzer.get_voice_keywords_from_url(audio_url)
         img_base64 = await self.analyzer.get_base64_from_url(image_url)
         visual_analysis = await self.analyzer.analyze_visual_impression(img_base64)
 
-        # 1. 페르소나 리포트 생성
-        persona_report = await self.analyzer.analyze(voice_kwd, visual_analysis, str(answers))
-        
-        # 2. 이미지 생성을 위한 텍스트 프롬프트 도출
-        final_image_prompt = await self.generator.generate_profile_prompt(
-        persona_report, 
-        answers
-    )
+        # 1. 설문 답변(answers)을 텍스트 형태의 '선호(user_pref)'로 변환
+        user_pref_description = self._build_base_prompt(answers, tones)
+        print(f"📝 사용자 선호 요약: {user_pref_description}")
+
+        # 2. 페르소나 리포트 생성
+        persona_report = await self.analyzer.analyze(voice_kwd, visual_analysis, user_pref_description)
+
+        # 3. 이미지 생성을 위한 텍스트 프롬프트 도출
+        final_image_prompt = await self.generator.generate_profile_prompt(persona_report, visual_analysis)
 
         # 3. DALL-E 3로 실제 이미지 생성
         image_result_url = self.generator.generate_persona_image(final_image_prompt)
@@ -266,15 +293,17 @@ if __name__ == "__main__":
     test_audio = os.getenv("TEST_AUDIO_URL") 
     test_image = os.getenv("TEST_IMAGE_URL")
     
-    preference = """
-        - Scene: Indoor studio setting, quiet and static atmosphere
-        - Aesthetic: Minimalist Noir, deep shadows, moody interior with indirect lighting
-        - Lighting: High contrast (Chiaroscuro), low saturation, dim ambient light, elegant backlighting
-        - Composition: Static upper-body or bust shot, focused portrait with minimal movement
-        """
-    
+    test_answers = {
+        "q1_environment": 1,        # 1: Outdoors
+        "q3_minimal_maximal": 1,     # 1: Minimalist
+        "q4_mood": 2,               # 2: Moody/Calm
+        "q5_contrast_type": 1,      # 1: High Contrast
+        "q7_framing": 4             # 4: Full-body
+    }
+    test_tones = [34, 23, 56, 34]
+
     # 비동기 함수 실행을 위한 코드
-    result = asyncio.run(pipeline.run_e2e_test(test_audio, test_image, preference))
+    result = asyncio.run(pipeline.run_e2e_test(test_audio, test_image, test_answers, test_tones))
 
     # 1. 파일 저장 변수 선언
     report_data = result['report']
@@ -284,13 +313,16 @@ if __name__ == "__main__":
     final_s3_url = None
     if dalle_url:
         try:
-            temp_name = "temp_for_s3.png"
-            # S3에 올리기 위해 로컬에 임시 저장
+            # 타임스탬프로 유니크한 파일명 만들기
+            ts = int(time.time())
+            unique_name = f"persona_{ts}.png" 
+            temp_name = f"temp_{ts}.png"
+            
             urllib.request.urlretrieve(dalle_url, temp_name)
             
-            final_s3_url = uploader.upload_to_s3(temp_name, "persona_result.png")
+            # S3에 고유한 이름으로 업로드
+            final_s3_url = uploader.upload_to_s3(temp_name, unique_name)
             
-            # 임시 파일 삭제
             if os.path.exists(temp_name):
                 os.remove(temp_name)
         except Exception as e:

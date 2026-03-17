@@ -30,6 +30,15 @@ class ContentCreateRequest(BaseModel):
     user_image_url: str # Identity 유지를 위한 참조 이미지 URL
     crop_type: int = 1  # 0: 1:1(Profile), 1: 4:5(Post), 2: 9:16(Story)
 
+class TrendContentRequest(BaseModel):
+    """3. 트렌드 기반 콘텐츠 생성용 (새로 추가)"""
+    trend_prompt: str   # BE에서 주는 트렌드 텍스트 (예: "빨간 목도리...")
+    report: dict        # 페르소나 리포트
+    answers: dict       # 설문 데이터
+    q8_tone: List[int]  # 톤 데이터
+    user_image_url: str # 인물 참조 이미지
+    crop_type: int = 1
+
 # --- [API 엔드포인트] ---
 
 @app.post("/diagnose-persona")
@@ -111,6 +120,47 @@ async def generate_content(data: ContentCreateRequest):
         print(f"❌ 생성 에러 로그: {e}")
         raise HTTPException(status_code=500, detail=f"콘텐츠 생성 중 오류 발생: {str(e)}")
 
+@app.post("/generate-trend-content")
+async def generate_trend_content(data: TrendContentRequest):
+    """
+    [신규 기능] BE에서 받은 트렌드 프롬프트를 페르소나와 결합하여 생성
+    """
+    try:
+        # 1. 트렌드 프롬프트 + 유저 페르소나 결합
+        final_prompt = await content_creator.generate_profile_prompt(
+            "",
+            report=data.report,
+            answers=data.answers,
+            tones=data.q8_tone
+        )
+
+        # 2. 이미지 생성
+        b64_image = content_creator.generate_persona_image(
+            prompt=final_prompt,
+            user_image_url=data.user_image_url
+        )
+
+        if not b64_image:
+            raise HTTPException(status_code=500, detail="AI 이미지 생성 실패")
+
+        # 3. 크롭 & S3 업로드
+        crop_configs = {0: {"ratio": 1.0, "mode": "Profile"}, 1: {"ratio": 0.8, "mode": "Post"}, 2: {"ratio": 0.5625, "mode": "Story"}}
+        config = crop_configs.get(data.crop_type, crop_configs[1])
+        
+        cropped_cv_img = content_creator.apply_smart_crop(b64_image, aspect_ratio=config["ratio"], mode=config["mode"])
+        
+        file_name = f"trend_gen_{int(time.time())}"
+        final_url = content_creator.upload_cv2_to_s3(cropped_cv_img, file_name)
+
+        return {
+            "status": "success",
+            "generated_image_url": final_url,
+            "used_prompt": final_prompt
+        }
+    except Exception as e:
+        print(f"❌ 트렌드 생성 에러: {e}")
+        raise HTTPException(status_code=500, detail=f"트렌드 콘텐츠 생성 오류: {str(e)}")
+    
 if __name__ == "__main__":
     # 서버 실행 (IP 0.0.0.0으로 설정해야 외부/도커에서 접근 가능)
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,6 +1,7 @@
 package com.a.persona.app.model.persona.service;
 
 import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
+import com.a.persona.app.model.content.code.ContentType;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
@@ -12,8 +13,7 @@ import com.a.persona.app.model.personaLog.service.PersonaLogService;
 import com.a.persona.infra.config.AmazonConfig;
 import com.a.persona.infra.error.exceptions.NotFoundException;
 import com.a.persona.infra.feign.AiServerApi;
-import com.a.persona.infra.feign.dto.PersonaRequest;
-import com.a.persona.infra.feign.dto.PersonaResponseWrapper;
+import com.a.persona.infra.feign.dto.*;
 import com.a.persona.infra.nanoid.CodeGenerator;
 import com.a.persona.infra.response.ResponseCode;
 import com.a.persona.infra.s3.AmazonS3Manager;
@@ -141,7 +141,9 @@ public class PersonaService {
 
         // 이미지 파일 업로드 및 URL 리스트 반환
         String voiceUrl = s3Manager.upload(voice, amazonConfig.getVoicePath(), fileName);
-        
+
+
+        // AI 서버에 페르소나 진단 요청
         PersonaRequest request = PersonaRequest.builder()
                 .answers(preferenceType)
                 .q8_tone(tone)
@@ -149,8 +151,6 @@ public class PersonaService {
                 .voice(voiceUrl).build();
 
         PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
-
-        // todo 썸네일 만들 사진도 필요하긔
 
         String code;
         // 코드가 중복이 아니도록
@@ -166,7 +166,7 @@ public class PersonaService {
                 .keywords(new HashSet<>(result.getReport().getKeywords()))
                 .colors(new HashSet<>(result.getReport().getColor_palette()))
                 .code(code)
-                //.thumbnail(result.getImage_url())
+                .thumbnail(result.getImage_url())
                 .preference(preference)
                 .build();
 

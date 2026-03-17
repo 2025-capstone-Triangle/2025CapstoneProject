@@ -1,6 +1,5 @@
 package com.a.persona.app.controller.persona;
 
-import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
 import com.a.persona.app.controller.persona.payload.PersonaRequest;
 import com.a.persona.app.controller.persona.payload.PersonaResponse;
 import com.a.persona.app.controller.persona.payload.PersonaSaveRequest;
@@ -19,7 +18,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -74,8 +72,9 @@ public class PersonaController {
     @Operation(summary = "페르소나 진단", description = "현재 로그인한 사용자의 페르소나를 새로 진단합니다. <br>" +
             "저장 전, 결과 화면을 보여주기 위해 사용되는 API입니다. <br>" +
             "진단 후, 페르소나의 id를 같이 보냅니다. 추후 페르소나 저장 시에 위 id를 함께 보내면 저장할 수 있습니다.<br>" +
-            "이목구비가 잘 드러난 profile에, 그 외의 사진 image에 첨부해주세요." +
-            "json 파일로는 이미지나 음성 파일을 보낼 수 없어서 form data로 보내주세요")
+            "이목구비가 잘 드러난 profile에, 그 외의 사진 image에 첨부해주세요. <br>" +
+            "json 파일로는 이미지나 음성 파일을 보낼 수 없어서 form data로 보내주세요 <br>" +
+            "선호 테스트의 값이 들어가는 answer 안에 값을 넣을 때, json 파일을 안에 넣어주세요. ")
     public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
             @ModelAttribute PersonaRequest personaRequest
@@ -89,7 +88,7 @@ public class PersonaController {
                 username = userDetails.getUsername();
             
             // 페르소나 진단
-            personaDto = personaService.createPersona(username, personaRequest.getProfile(), personaRequest.getImage(), personaRequest.getVoice(), personaRequest.getLikeAnswerRequest(), personaRequest.getTone());
+            personaDto = personaService.createPersona(username, personaRequest.getProfile(), personaRequest.getImage(), personaRequest.getVoice(), personaRequest.getLikeAnswerRequest(), personaRequest.getQ8_tone());
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }

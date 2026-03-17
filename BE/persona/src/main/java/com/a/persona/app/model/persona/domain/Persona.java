@@ -1,14 +1,11 @@
 package com.a.persona.app.model.persona.domain;
 
 import com.a.persona.app.model.common.BaseEntity;
-import com.a.persona.app.model.content.domain.Content;
 import com.a.persona.app.model.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity

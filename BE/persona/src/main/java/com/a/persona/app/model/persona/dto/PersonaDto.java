@@ -1,9 +1,5 @@
 package com.a.persona.app.model.persona.dto;
 
-import com.a.persona.app.model.common.BaseEntity;
-import com.a.persona.app.model.content.domain.Content;
-import com.a.persona.app.model.content.dto.ContentDto;
-import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.dto.MemberDto;
 import com.a.persona.app.model.persona.domain.Persona;
 import jakarta.persistence.*;
@@ -13,9 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -34,7 +28,7 @@ public class PersonaDto{
 
     private Set<String> keywords = new HashSet<>();
 
-    private Set<String> colors = new HashSet<>();;
+    private Set<String> colors = new HashSet<>();
 
     private LocalDateTime createdAt;
 
@@ -45,6 +39,12 @@ public class PersonaDto{
     private String code;
 
     private String thumbnail;
+
+    private PreferenceDto preference;
+
+    private String summary;
+
+    private String traits;
 
     public static PersonaDto fromEntity(Persona persona) {
         return PersonaDto.builder()
@@ -61,6 +61,9 @@ public class PersonaDto{
                 .isActive(persona.getIsActive())
                 .code(persona.getCode())
                 .thumbnail(persona.getThumbnail())
+                .preference(PreferenceDto.fromEntity(persona.getPreference()))
+                .summary(persona.getSummary())
+                .traits(persona.getTraits())
                 .build();
     }
 }

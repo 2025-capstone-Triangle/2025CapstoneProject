@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -50,6 +51,7 @@ public class SecurityConfig {
                     ).permitAll()
                     .requestMatchers("/", "/error", "/favicon.ico", "/api/v1/check/**", "/api/v1/signin",
                         "/api/v1/signup", "/api/v1/auth/**", "/api/v1/check-email", "/api/v1/verify-code").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/persona").permitAll()
                     .requestMatchers("/api/**").authenticated()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().permitAll()

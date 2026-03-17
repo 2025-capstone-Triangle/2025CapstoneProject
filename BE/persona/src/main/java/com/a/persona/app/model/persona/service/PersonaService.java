@@ -4,8 +4,10 @@ import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
+import com.a.persona.app.model.persona.domain.Preference;
 import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
+import com.a.persona.app.model.persona.repo.PreferenceRepository;
 import com.a.persona.app.model.personaLog.service.PersonaLogService;
 import com.a.persona.infra.config.AmazonConfig;
 import com.a.persona.infra.error.exceptions.NotFoundException;
@@ -37,6 +39,7 @@ public class PersonaService {
     private final AmazonConfig amazonConfig;
     private final PersonaLogService personaLogService;
     private final AiServerApi aiServerApi;
+    private final PreferenceRepository preferenceRepository;
 
 
     /**
@@ -108,6 +111,19 @@ public class PersonaService {
      */
     public PersonaDto createPersona(String username, MultipartFile profile, MultipartFile image, MultipartFile voice, LikeAnswerRequest preferenceType, List<Long> tone) throws IOException {
 
+        Preference preference = Preference.builder()
+                .q1Environment(preferenceType.getQ1_environment())
+                .q2Style(preferenceType.getQ2_style())
+                .q3MinimalMaximal(preferenceType.getQ3_minimal_maximal())
+                .q4Mood(preferenceType.getQ4_mood())
+                .q5ContrastType(preferenceType.getQ5_contrast_type())
+                .q6Motion(preferenceType.getQ6_motion())
+                .q7Framing(preferenceType.getQ7_framing())
+                .q8Tone(tone)
+                .build();
+
+        preferenceRepository.save(preference);
+
         Member member = null;
         if(username!=null){
             member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
@@ -134,7 +150,7 @@ public class PersonaService {
 
         PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
 
-        // todo 프로필 만들 사진도 필요하긔
+        // todo 썸네일 만들 사진도 필요하긔
 
         String code;
         // 코드가 중복이 아니도록
@@ -151,11 +167,13 @@ public class PersonaService {
                 .colors(new HashSet<>(result.getReport().getColor_palette()))
                 .code(code)
                 //.thumbnail(result.getImage_url())
+                .preference(preference)
                 .build();
 
         personaRepository.save(persona);
         // 페르소나 생성 로그
         personaLogService.createPersonaLog(member,persona);
+
 
         return PersonaDto.fromEntity(persona);
     }

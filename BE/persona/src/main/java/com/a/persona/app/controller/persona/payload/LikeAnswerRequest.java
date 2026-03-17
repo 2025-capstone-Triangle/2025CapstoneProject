@@ -1,5 +1,8 @@
 package com.a.persona.app.controller.persona.payload;
 
+import lombok.Data;
+
+@Data
 public class LikeAnswerRequest {
     Long q1_environment;
     Long q2_style;

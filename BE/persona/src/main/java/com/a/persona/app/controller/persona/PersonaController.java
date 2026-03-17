@@ -1,6 +1,7 @@
 package com.a.persona.app.controller.persona;
 
 import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
+import com.a.persona.app.controller.persona.payload.PersonaRequest;
 import com.a.persona.app.controller.persona.payload.PersonaResponse;
 import com.a.persona.app.controller.persona.payload.PersonaSaveRequest;
 import com.a.persona.app.model.persona.dto.PersonaDto;
@@ -66,9 +67,7 @@ public class PersonaController {
     /**
      * 주어진 데이터로 페르소나를 진단합니다.
      * @param userDetails 진단할 사용자
-     * @param image 사용자 이미지
-     * @param voice 사용자 목소리
-     * @param preferenceType 사용자 선호 테스트 결과
+     * @param personaRequest 페르소나를 만들기 위해 필요한 정보
      * @return PersonaResponse
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -79,11 +78,7 @@ public class PersonaController {
             "json 파일로는 이미지나 음성 파일을 보낼 수 없어서 form data로 보내주세요")
     public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestPart("profile") MultipartFile profile,
-            @RequestPart("image") MultipartFile image,
-            @RequestPart("voice") MultipartFile voice,
-            @RequestPart("answer") LikeAnswerRequest preferenceType,
-            @RequestPart("q8_tone") List<Long> tone
+            @ModelAttribute PersonaRequest personaRequest
     ) {
         PersonaDto personaDto;
         String username = null;
@@ -94,7 +89,7 @@ public class PersonaController {
                 username = userDetails.getUsername();
             
             // 페르소나 진단
-            personaDto = personaService.createPersona(username, profile ,image, voice, preferenceType, tone);
+            personaDto = personaService.createPersona(username, personaRequest.getProfile(), personaRequest.getImage(), personaRequest.getVoice(), personaRequest.getLikeAnswerRequest(), personaRequest.getTone());
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }

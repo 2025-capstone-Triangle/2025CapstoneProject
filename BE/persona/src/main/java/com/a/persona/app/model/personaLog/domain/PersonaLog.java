@@ -36,11 +36,11 @@ public class PersonaLog{
     private LocalDateTime time = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "persona_id")
+    @JoinColumn(name = "persona_id", nullable = false)
     private Persona persona;
 
 

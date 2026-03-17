@@ -61,7 +61,7 @@ public class AdminReferenceService {
     public void createReference(MultipartFile image, String name, String prompt, String description) throws IOException {
         String uuid = UUID.randomUUID().toString();
         String fileName = "reference_"+uuid;
-        String imageUrl = s3Manager.upload(List.of(image), amazonConfig.getReferencePath(), fileName).getFirst();
+        String imageUrl = s3Manager.upload(image, amazonConfig.getReferencePath(), fileName);
 
         Reference reference = Reference.builder()
                 .name(name)
@@ -89,7 +89,7 @@ public class AdminReferenceService {
         if(image != null){
             String uuid = UUID.randomUUID().toString();
             String fileName = "reference_"+uuid;
-            String imageUrl = s3Manager.upload(List.of(image), amazonConfig.getReferencePath(), fileName).getFirst();
+            String imageUrl = s3Manager.upload(image, amazonConfig.getReferencePath(), fileName);
             reference.setImg(imageUrl);
         }
         if(name != null){

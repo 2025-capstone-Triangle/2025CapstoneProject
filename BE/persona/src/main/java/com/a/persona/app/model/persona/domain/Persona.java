@@ -41,7 +41,7 @@ public class Persona extends BaseEntity {
     private String profile;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id")
     private Member member;
 
     // 굳이 entity로 따로 만들지 않고 사용
@@ -64,5 +64,8 @@ public class Persona extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String thumbnail;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private Preference preference;
 
 }

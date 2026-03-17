@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 )
 public interface AiServerApi {
 
-    @PostMapping("/analyze-persona")
+    @PostMapping("/diagnose-persona")
     PersonaResponseWrapper analyzePersona(
             @RequestBody
             PersonaRequest request

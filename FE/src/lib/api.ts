@@ -1,6 +1,5 @@
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080";
+const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE = API_BASE_ENV ?? "";
 
 type ApiResponse<T> = {
   code: string;
@@ -31,6 +30,15 @@ function getAuth() {
   }
 }
 
+function buildApiUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) return path;
+  if (!API_BASE) return path;
+
+  const base = API_BASE.replace(/\/+$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
@@ -49,7 +57,7 @@ export async function apiRequest<T>(
     headers.set("Authorization", `${grantType} ${auth.accessToken}`);
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     ...options,
     headers,
   });

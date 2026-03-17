@@ -168,6 +168,7 @@ public class PersonaService {
                 .code(code)
                 .thumbnail(result.getImage_url())
                 .preference(preference)
+                .summary(result.getReport().getSummary())
                 .build();
 
         personaRepository.save(persona);

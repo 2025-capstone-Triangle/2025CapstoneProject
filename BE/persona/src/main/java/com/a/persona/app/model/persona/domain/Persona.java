@@ -68,4 +68,7 @@ public class Persona extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     private Preference preference;
 
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
 }

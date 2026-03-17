@@ -76,3 +76,11 @@ export function getStagedDiagnosisPreferencePayload() {
   }
 }
 
+export function buildPreferenceTypeLabel(result: PreferenceTestResult) {
+  const selected = result.imageSelections
+    .map((item) => item.selectedOptionId)
+    .filter(Boolean)
+    .join(",");
+  const { saturation, brightness, contrast, temperature } = result.toneAdjustment;
+  return `image:${selected}|tone:${saturation}-${brightness}-${contrast}-${temperature}`;
+}

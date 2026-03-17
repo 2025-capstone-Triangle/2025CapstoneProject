@@ -5,6 +5,7 @@ export interface ReferenceStatResponse {
   name: string;
   img: string;
   isLiked: boolean;
+  description?: string | null;
   createdAt: string;
   usedCount: number;
 }
@@ -24,4 +25,3 @@ export async function toggleReferenceLike(payload: ToggleLikePayload) {
     body: JSON.stringify(payload),
   });
 }
-

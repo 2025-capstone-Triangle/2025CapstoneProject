@@ -2,6 +2,7 @@ import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
 import { HamburgerMenu } from '../../../shared/layout/HamburgerMenu';
 import { ChevronRight, Bookmark } from 'lucide-react';
 import { useState } from 'react';
+import { getNoticeList, getPinnedNoticeList, type Notice } from '../../notice/lib/noticeApi';
 import imgShutterstock17810092852 from "figma:asset/15fabd854b7cb3b15474b1d58ae3661dd03a76db.png";
 import imgImage55 from "figma:asset/ac4448f9289ba74dc8e260cf2469fe907263ed9b.png";
 import imgImage56 from "figma:asset/265cd7ba4de44d517944d6e28fbe7a516c2c8937.png";
@@ -231,6 +232,26 @@ function ProductList() {
 
 export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [noticeLoading, setNoticeLoading] = useState(false);
+  const [noticeError, setNoticeError] = useState("");
+  const [noticeItems, setNoticeItems] = useState<Notice[]>([]);
+  const [pinnedNoticeItems, setPinnedNoticeItems] = useState<Notice[]>([]);
+
+  const openNotice = async () => {
+    setNoticeOpen(true);
+    setNoticeLoading(true);
+    setNoticeError("");
+    try {
+      const [all, pinned] = await Promise.all([getNoticeList(), getPinnedNoticeList()]);
+      setNoticeItems(all.filter((item) => !item.isDraft));
+      setPinnedNoticeItems(pinned.filter((item) => !item.isDraft));
+    } catch (err) {
+      setNoticeError(err instanceof Error ? err.message : "공지 조회 실패");
+    } finally {
+      setNoticeLoading(false);
+    }
+  };
 
   return (
     <div className="bg-gradient-to-b from-[#fafafa] to-white min-h-screen max-w-[390px] mx-auto relative overflow-hidden">
@@ -241,7 +262,7 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
       <DefaultTopBar
         title="Person:a"
         onMenuClick={() => setIsMenuOpen(true)}
-        onNotificationClick={() => alert('알림 기능 (준비중)')}
+        onNotificationClick={openNotice}
       />
 
       <div className="pt-2 relative">
@@ -263,6 +284,38 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
         onNavigate={onNavigate}
         currentPage="home"
       />
+
+      {noticeOpen ? (
+        <div className="fixed inset-0 z-50 bg-black/45 flex items-end justify-center p-5" onClick={() => setNoticeOpen(false)}>
+          <div className="w-full max-w-[360px] rounded-[24px] bg-white p-5 shadow-2xl border border-[#ececec]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-['NEXON_Football_Gothic'] text-[18px] text-black mb-3">공지사항</h3>
+            {noticeLoading ? (
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">불러오는 중...</p>
+            ) : noticeError ? (
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#d92d20]">{noticeError}</p>
+            ) : (
+              <div className="max-h-[360px] overflow-y-auto space-y-2">
+                {pinnedNoticeItems.map((item) => (
+                  <article key={`p-${item.id}`} className="rounded-[12px] border border-[#ffd9e3] bg-[#fff4f7] px-3 py-2">
+                    <p className="font-['Noto_Sans_KR'] text-[11px] text-[#EF466F] mb-1">고정 공지</p>
+                    <p className="font-['Noto_Sans_KR'] text-[13px] font-semibold text-black">{item.title}</p>
+                    <p className="font-['Noto_Sans_KR'] text-[12px] text-[#555] mt-1">{item.content}</p>
+                  </article>
+                ))}
+                {noticeItems.map((item) => (
+                  <article key={item.id} className="rounded-[12px] border border-[#efefef] bg-white px-3 py-2">
+                    <p className="font-['Noto_Sans_KR'] text-[13px] font-semibold text-black">{item.title}</p>
+                    <p className="font-['Noto_Sans_KR'] text-[12px] text-[#555] mt-1">{item.content}</p>
+                  </article>
+                ))}
+                {noticeItems.length === 0 && pinnedNoticeItems.length === 0 ? (
+                  <p className="font-['Noto_Sans_KR'] text-[12px] text-[#777]">등록된 공지가 없습니다.</p>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

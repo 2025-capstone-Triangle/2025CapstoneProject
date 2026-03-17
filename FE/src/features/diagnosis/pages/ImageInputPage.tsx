@@ -4,6 +4,7 @@ import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
 import { Loader2, Upload } from 'lucide-react';
 import { BackButton } from '../../../shared/layout/BackButton';
 import { checkFaceAnalyzable } from '../lib/faceLandmarkCheck';
+import { stageDiagnosisImageFiles } from '../lib/imageStaging';
 
 interface ImageInputPageProps {
   onNext?: () => void;
@@ -15,6 +16,8 @@ interface ImageInputPageProps {
 export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPageProps) {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [secondImage, setSecondImage] = useState<string | null>(null);
+  const [firstFile, setFirstFile] = useState<File | null>(null);
+  const [secondFile, setSecondFile] = useState<File | null>(null);
   const [faceStatus, setFaceStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'error'>('idle');
   const [faceMessage, setFaceMessage] = useState('');
   const firstInputRef = useRef<HTMLInputElement>(null);
@@ -24,6 +27,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
     const reader = new FileReader();
     reader.onloadend = () => {
       if (position === 'first') {
+        setFirstFile(file);
         setUploadedImage(reader.result as string);
         setFaceStatus('checking');
         setFaceMessage('�� �м� ���Դϴ�...');
@@ -37,8 +41,10 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
             setFaceMessage('�� �м��� �����߽��ϴ�.');
           });
       } else {
+        setSecondFile(file);
         setSecondImage(reader.result as string);
       }
+      stageDiagnosisImageFiles([file, ...(position === "first" ? (secondFile ? [secondFile] : []) : (firstFile ? [firstFile] : []))]);
     };
     reader.readAsDataURL(file);
   };

@@ -25,9 +25,12 @@ import { LoginPage } from "./features/auth/pages/LoginPage";
 import { SignupPage } from "./features/auth/pages/SignupPage";
 import { ForgotPasswordPage } from "./features/auth/pages/ForgotPasswordPage";
 import { AdminConsolePage } from "./features/admin/pages/AdminConsolePage";
-import { saveNewPersona } from "./features/persona/lib/personaApi";
+import { diagnosePersona, saveNewPersona, type PersonaResponse } from "./features/persona/lib/personaApi";
 import { getPendingPersonaCode } from "./features/persona/lib/personaShareCode";
-import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth } from "./lib/auth";
+import { getPreferenceTestResult, buildPreferenceTypeLabel } from "./features/diagnosis/lib/preferenceTest";
+import { getStagedDiagnosisImageFiles } from "./features/diagnosis/lib/imageStaging";
+import { getStagedVoiceRecordingFile } from "./features/diagnosis/lib/voiceRecording";
+import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth, signOut } from "./lib/auth";
 
 type Page =
   | "home"
@@ -84,14 +87,42 @@ function getLoginGateMessage(page: Page) {
   return "이 기능은 로그인 후 이용할 수 있어요.";
 }
 
+function decodeJwtPayload(token?: string) {
+  if (!token) return null;
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const base64 = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(base64)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isAdminAuth() {
+  const auth = getSavedAuth();
+  if (!auth?.accessToken) return false;
+  const payload = decodeJwtPayload(auth.accessToken);
+  const roleClaim = payload?.roles;
+  if (typeof roleClaim === "string" && roleClaim.includes("ROLE_ADMIN")) return true;
+  return auth.username === "admin";
+}
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("home");
+  const [currentPage, setCurrentPage] = useState<Page>(() =>
+    isAuthenticated() && isAdminAuth() ? "admin" : "home"
+  );
   const [activeTab, setActiveTab] = useState<"home" | "persona" | "content">("home");
-  const [pageHistory, setPageHistory] = useState<Page[]>(["home"]);
+  const [pageHistory, setPageHistory] = useState<Page[]>(() =>
+    isAuthenticated() && isAdminAuth() ? ["admin"] : ["home"]
+  );
   const [selectedRatio, setSelectedRatio] = useState<string>("4:5");
   const [isRegeneratingContent, setIsRegeneratingContent] = useState<boolean>(false);
   const [loginGateMessage, setLoginGateMessage] = useState<string | null>(null);
   const [selectedPersonaCode, setSelectedPersonaCode] = useState<string>("");
+  const [latestDiagnosisCode, setLatestDiagnosisCode] = useState<string>("");
+  const [latestDiagnosisResult, setLatestDiagnosisResult] = useState<PersonaResponse | null>(null);
 
   const loggedIn = isAuthenticated();
 
@@ -147,8 +178,7 @@ export default function App() {
     if (loggedIn) {
       setLoginGateMessage(null);
       if (currentPage === "login") {
-        const auth = getSavedAuth();
-        if (auth?.username === "admin") {
+        if (isAdminAuth()) {
           setPageHistory(["admin"]);
           setCurrentPage("admin");
         } else {
@@ -247,32 +277,50 @@ export default function App() {
       handleNavigate("persona-list");
       return;
     }
+    if (isAdminAuth()) {
+      setPageHistory(["admin"]);
+      setCurrentPage("admin");
+      return;
+    }
     setPageHistory(["home"]);
     setCurrentPage("home");
     setActiveTab("home");
   };
 
-  const handleAdminLoginComplete = () => {
-    setLoginGateMessage(null);
-    saveAuth(
-      { accessToken: "dev-admin", grantType: "Bearer", expiresIn: 0 },
-      { username: "admin" }
-    );
-    setPageHistory((prev) => [...prev, "admin"]);
-    setCurrentPage("admin");
-  };
-
   const handleDiagnosisSave = async ({ code, name }: { code: string; name: string }) => {
-    const saved = await saveNewPersona(code, name);
-    const savedPersona = saved.find((item) => item.code === code) ?? saved[0];
-
-    if (savedPersona?.code) {
-      setSelectedPersonaCode(savedPersona.code);
-    } else {
-      setSelectedPersonaCode(code);
-    }
+    const targetCode = latestDiagnosisCode || code;
+    await saveNewPersona(targetCode, name);
+    setSelectedPersonaCode(targetCode);
 
     handleNavigate("save-complete");
+  };
+
+  const runPersonaDiagnosis = async () => {
+    setLatestDiagnosisResult(null);
+    try {
+      const images = getStagedDiagnosisImageFiles();
+      const voice = getStagedVoiceRecordingFile();
+      const preference = getPreferenceTestResult();
+      if (!images.length || !voice || !preference) {
+        setLatestDiagnosisCode("");
+        setLatestDiagnosisResult(null);
+        return;
+      }
+      const result = await diagnosePersona({
+        profile: images[0],
+        images,
+        voices: [voice],
+        preferenceType: buildPreferenceTypeLabel(preference),
+      });
+      if (result?.code) {
+        setLatestDiagnosisResult(result);
+        setLatestDiagnosisCode(result.code);
+      }
+    } catch (error) {
+      console.error("[persona.diagnosis]", error);
+      setLatestDiagnosisCode("");
+      setLatestDiagnosisResult(null);
+    }
   };
 
   return (
@@ -280,7 +328,6 @@ export default function App() {
       {currentPage === "login" && (
         <LoginPage
           onLogin={handleLoginComplete}
-          onAdminLogin={handleAdminLoginComplete}
           onNavigate={handleNavigate}
           onBack={handleBack}
         />
@@ -290,7 +337,12 @@ export default function App() {
         <AdminConsolePage
           adminId="admin"
           onBackHome={handleNavigateToHome}
-          onLogout={() => {
+          onLogout={async () => {
+            try {
+              await signOut();
+            } catch {
+              // ignore signout API failures and clear client auth.
+            }
             clearAuth();
             setPageHistory(["home"]);
             setCurrentPage("login");
@@ -346,7 +398,10 @@ export default function App() {
 
       {currentPage === "review-inputs" && (
         <ReviewInputsPage
-          onConfirm={() => handleNavigateWithoutHistory("analyzing")}
+          onConfirm={() => {
+            handleNavigateWithoutHistory("analyzing");
+            void runPersonaDiagnosis();
+          }}
           onBack={handleBack}
           onHome={handleNavigateToHome}
         />
@@ -356,6 +411,7 @@ export default function App() {
 
       {currentPage === "diagnosis-result" && (
         <DiagnosisResultPage
+          result={latestDiagnosisResult}
           onSave={handleDiagnosisSave}
           onRecreate={() => handleNavigate("diagnosis-start")}
           onBack={handleBackSkipLoading}

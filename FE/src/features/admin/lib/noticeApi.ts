@@ -3,8 +3,9 @@ import { apiRequest } from "../../../lib/api";
 export type AdminNotice = {
   id: number;
   title: string;
-  author: string;
   content: string;
+  isPinned: boolean;
+  isDraft: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -12,6 +13,8 @@ export type AdminNotice = {
 type NoticePayload = {
   title: string;
   content: string;
+  isPinned: boolean;
+  isDraft: boolean;
 };
 
 export async function getAdminNotices(id?: number) {

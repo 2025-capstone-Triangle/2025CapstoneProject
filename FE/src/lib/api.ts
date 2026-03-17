@@ -8,6 +8,13 @@ type ApiResponse<T> = {
   data: T;
 };
 
+type ApiErrorResponse = {
+  code?: string;
+  status?: string;
+  message?: string;
+  data?: unknown;
+};
+
 const AUTH_STORAGE_KEY = "auth";
 
 function getAuth() {
@@ -31,7 +38,8 @@ export async function apiRequest<T>(
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
 
-  if (options.body && !headers.has("Content-Type")) {
+  const isFormDataBody = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (options.body && !isFormDataBody && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -46,13 +54,19 @@ export async function apiRequest<T>(
     headers,
   });
 
-  const payload = (await response.json()) as ApiResponse<T>;
+  const hasJsonBody = response.headers.get("content-type")?.includes("application/json");
+  const payload = (hasJsonBody ? ((await response.json()) as ApiResponse<T> | ApiErrorResponse) : null);
 
   if (!response.ok) {
-    const error = new Error(payload?.message || "Request failed");
-    (error as Error & { code?: string }).code = payload?.code;
+    const errorPayload = payload as ApiErrorResponse | null;
+    const error = new Error(errorPayload?.message || "Request failed");
+    (error as Error & { code?: string }).code = errorPayload?.code ?? errorPayload?.status;
     throw error;
   }
 
-  return payload.data;
+  if (!payload) {
+    return undefined as T;
+  }
+
+  return (payload as ApiResponse<T>).data;
 }

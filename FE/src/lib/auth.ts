@@ -68,12 +68,59 @@ export async function verifyEmailCode(email: string, code: string) {
 }
 
 export type MemberInfo = {
-  username?: string;
-  email?: string;
+  username: string;
+  email: string;
+  birth?: string | null;
+  sex?: "FEMALE" | "MALE" | "ETC" | null;
+  is_creator?: boolean | null;
 };
 
 export async function getMemberInfo() {
   return apiRequest<MemberInfo>("/api/v1/member");
+}
+
+export async function verifyMemberPassword(password: string) {
+  return apiRequest<Record<string, never>>("/api/v1/member/check", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function updateMemberProfile(payload: {
+  birth: string;
+  sex: "FEMALE" | "MALE" | "ETC";
+  is_creator: boolean;
+}) {
+  return apiRequest<Record<string, never>>("/api/v1/member", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateMemberEmail(email: string) {
+  return apiRequest<Record<string, never>>("/api/v1/member/email", {
+    method: "PATCH",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function updateMemberPassword(password: string) {
+  return apiRequest<Record<string, never>>("/api/v1/member/password", {
+    method: "PATCH",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function deleteMemberAccount() {
+  return apiRequest<Record<string, never>>("/api/v1/member", {
+    method: "DELETE",
+  });
+}
+
+export async function signOut() {
+  return apiRequest<Record<string, never>>("/api/v1/logout", {
+    method: "POST",
+  });
 }
 
 export function getSavedAuth() {

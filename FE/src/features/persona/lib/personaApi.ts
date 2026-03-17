@@ -10,6 +10,7 @@ export interface PersonaResponse {
   updatedAt: string;
   isActive: boolean;
   code: string;
+  thumbnail?: string | null;
 }
 
 export async function getPersonaList(code?: string) {
@@ -26,7 +27,7 @@ export async function saveSharedPersona(code: string, name: string) {
 }
 
 export async function renamePersona(code: string, name: string) {
-  return apiRequest<PersonaResponse[]>("/api/v1/persona", {
+  return apiRequest<Record<string, never>>("/api/v1/persona", {
     method: "PATCH",
     body: JSON.stringify({ code, name }),
   });
@@ -40,9 +41,26 @@ export async function removePersona(code: string) {
 }
 
 export async function saveNewPersona(code: string, name: string) {
-  return apiRequest<PersonaResponse[]>("/api/v1/persona/save-new", {
+  return apiRequest<Record<string, never>>("/api/v1/persona/save-new", {
     method: "PATCH",
     body: JSON.stringify({ code, name }),
   });
 }
 
+export async function diagnosePersona(payload: {
+  profile: File;
+  images: File[];
+  voices: File[];
+  preferenceType: string;
+}) {
+  const formData = new FormData();
+  formData.append("profile", payload.profile);
+  payload.images.forEach((image) => formData.append("image", image));
+  payload.voices.forEach((voice) => formData.append("voice", voice));
+  formData.append("preferenceType", payload.preferenceType);
+
+  return apiRequest<PersonaResponse>("/api/v1/persona", {
+    method: "POST",
+    body: formData,
+  });
+}

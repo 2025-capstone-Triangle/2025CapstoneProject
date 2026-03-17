@@ -121,13 +121,8 @@ export function PersonaDetailPage({
     setNameSaving(true);
 
     try {
-      const updatedList = await renamePersona(persona.code, nextName);
-      const updated = updatedList.find((item) => item.code === persona.code) ?? updatedList[0];
-      if (updated) {
-        setPersona(updated);
-      } else {
-        setPersona((prev) => (prev ? { ...prev, name: nextName } : prev));
-      }
+      await renamePersona(persona.code, nextName);
+      setPersona((prev) => (prev ? { ...prev, name: nextName } : prev));
       setShowEditNameModal(false);
     } catch (error) {
       setActionError(getErrorMessage(error, "이름 변경에 실패했습니다."));

@@ -1,21 +1,13 @@
 const BACKEND_BASE_URL = "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080";
 
 function buildTargetUrl(req) {
-  const parts = Array.isArray(req.query.path)
-    ? req.query.path
-    : req.query.path
-      ? [req.query.path]
-      : [];
+  const reqUrl = new URL(req.url || "/api", "http://localhost");
+  const normalizedPath = reqUrl.pathname.startsWith("/api")
+    ? reqUrl.pathname
+    : `/api${reqUrl.pathname.startsWith("/") ? reqUrl.pathname : `/${reqUrl.pathname}`}`;
 
-  const target = new URL(`/api/${parts.join("/")}`, BACKEND_BASE_URL);
-  for (const [key, value] of Object.entries(req.query)) {
-    if (key === "path") continue;
-    if (Array.isArray(value)) {
-      for (const item of value) target.searchParams.append(key, String(item));
-    } else if (value !== undefined) {
-      target.searchParams.set(key, String(value));
-    }
-  }
+  const target = new URL(normalizedPath, BACKEND_BASE_URL);
+  target.search = reqUrl.search;
   return target;
 }
 

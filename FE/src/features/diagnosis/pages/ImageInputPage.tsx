@@ -1,10 +1,13 @@
-﻿import { useState, useRef } from 'react';
-import { StatusBar } from '../../../shared/layout/StatusBar';
+import { useEffect, useRef, useState } from 'react';
 import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
 import { Loader2, Upload } from 'lucide-react';
 import { BackButton } from '../../../shared/layout/BackButton';
 import { checkFaceAnalyzable } from '../lib/faceLandmarkCheck';
-import { stageDiagnosisImageFiles } from '../lib/imageStaging';
+import {
+  clearStagedDiagnosisImageFiles,
+  getStagedDiagnosisImageFiles,
+  stageDiagnosisImageFiles,
+} from '../lib/imageStaging';
 
 interface ImageInputPageProps {
   onNext?: () => void;
@@ -14,153 +17,129 @@ interface ImageInputPageProps {
 }
 
 export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPageProps) {
+  const [firstFile, setFirstFile] = useState<File | null>(() => getStagedDiagnosisImageFiles()[0] ?? null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [secondImage, setSecondImage] = useState<string | null>(null);
-  const [firstFile, setFirstFile] = useState<File | null>(null);
-  const [secondFile, setSecondFile] = useState<File | null>(null);
   const [faceStatus, setFaceStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'error'>('idle');
   const [faceMessage, setFaceMessage] = useState('');
   const firstInputRef = useRef<HTMLInputElement>(null);
-  const secondInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (position: 'first' | 'second', file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (position === 'first') {
-        setFirstFile(file);
-        setUploadedImage(reader.result as string);
-        setFaceStatus('checking');
-        setFaceMessage('얼굴 분석 중입니다...');
-        checkFaceAnalyzable(file)
-          .then((result) => {
-            setFaceStatus(result.ok ? 'valid' : 'invalid');
-            setFaceMessage(result.reason);
-          })
-          .catch(() => {
-            setFaceStatus('error');
-            setFaceMessage('얼굴 분석에 실패했습니다.');
-          });
-      } else {
-        setSecondFile(file);
-        setSecondImage(reader.result as string);
-      }
-      stageDiagnosisImageFiles([file, ...(position === "first" ? (secondFile ? [secondFile] : []) : (firstFile ? [firstFile] : []))]);
-    };
-    reader.readAsDataURL(file);
+  const handleImageUpload = (file: File) => {
+    setFirstFile(file);
+  };
+
+  const handleSkip = () => {
+    setFirstFile(null);
+    setUploadedImage(null);
+    setFaceStatus('idle');
+    setFaceMessage('');
+    clearStagedDiagnosisImageFiles();
+    onSkip?.();
   };
 
   const canProceed = Boolean(uploadedImage) && faceStatus === 'valid';
 
+  useEffect(() => {
+    if (!firstFile) return;
+    stageDiagnosisImageFiles([firstFile]);
+  }, [firstFile]);
+
+  useEffect(() => {
+    if (!firstFile) {
+      setUploadedImage(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(firstFile);
+    setUploadedImage(previewUrl);
+    setFaceStatus('checking');
+    setFaceMessage('얼굴 분석 중입니다...');
+
+    let mounted = true;
+    checkFaceAnalyzable(firstFile)
+      .then((result) => {
+        if (!mounted) return;
+        setFaceStatus(result.ok ? 'valid' : 'invalid');
+        setFaceMessage(result.reason);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setFaceStatus('error');
+        setFaceMessage('얼굴 분석에 실패했습니다.');
+      });
+
+    return () => {
+      mounted = false;
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [firstFile]);
+
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
+    <div className="bg-white min-h-screen max-w-[390px] mx-auto">
+      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
-      
+
       <div className="px-8 pt-8">
         <h2 className="font-['Noto_Sans_KR'] font-semibold text-[16px] text-black text-center mb-8">
           얼굴이 나온 사진을 넣어보세요
         </h2>
 
-        {/* Images Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {/* First Image */}
-          <div>
-            <input
-              ref={firstInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleImageUpload('first', file);
-              }}
-            />
-            <button
-              onClick={() => firstInputRef.current?.click()}
-              className="w-full aspect-square rounded-[16px] overflow-hidden bg-gradient-to-br from-[#f8f8f8] to-[#e8e8e8] flex items-center justify-center relative group hover:from-[#f0f0f0] hover:to-[#e0e0e0] transition-all"
-            >
-              {uploadedImage ? (
-                <>
-                  <img 
-                    src={uploadedImage} 
-                    alt="업로드된 이미지" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-3">
-                      <Upload className="w-5 h-5 text-black" />
-                    </div>
+        <div className="mb-8">
+          <input
+            ref={firstInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImageUpload(file);
+            }}
+          />
+          <button
+            onClick={() => firstInputRef.current?.click()}
+            className="w-full aspect-square rounded-[16px] overflow-hidden bg-gradient-to-br from-[#f8f8f8] to-[#e8e8e8] flex items-center justify-center relative group hover:from-[#f0f0f0] hover:to-[#e0e0e0] transition-all"
+          >
+            {uploadedImage ? (
+              <>
+                <img
+                  src={uploadedImage}
+                  alt="업로드된 이미지"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-3">
+                    <Upload className="w-5 h-5 text-black" />
                   </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
-                    <Upload className="w-7 h-7 text-[#6b6b6b]" />
-                  </div>
-                  <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">
-                    이미지 1
-                  </p>
                 </div>
-              )}
-            </button>
-          </div>
-
-          {/* Second Image */}
-          <div>
-            <input
-              ref={secondInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleImageUpload('second', file);
-              }}
-            />
-            <button
-              onClick={() => secondInputRef.current?.click()}
-              className="w-full aspect-square rounded-[16px] overflow-hidden bg-[#f8f8f8] flex items-center justify-center relative group hover:bg-[#f0f0f0] transition-all border-2 border-dashed border-[#d0d0d0] hover:border-[#b0b0b0]"
-            >
-              {secondImage ? (
-                <>
-                  <img 
-                    src={secondImage} 
-                    alt="업로드된 이미지 2" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-3">
-                      <Upload className="w-5 h-5 text-black" />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <span className="text-[56px] text-[#d0d0d0] leading-none">+</span>
-                  <p className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">
-                    이미지 2 (선택)
-                  </p>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
+                  <Upload className="w-7 h-7 text-[#6b6b6b]" />
                 </div>
-              )}
-            </button>
-          </div>
+                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">
+                  프로필 이미지 1장 업로드
+                </p>
+              </div>
+            )}
+          </button>
         </div>
 
-        {/* Info Text */}
         <div className="bg-[#f8f8f8] rounded-[16px] p-5 mb-4">
-          <p className="font-[\'Noto_Sans_KR\'] text-[14px] text-[#6b6b6b] leading-[1.6] text-center">
+          <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] leading-[1.6] text-center">
             얼굴이 정면으로 나온 사진을 업로드하면
             <br />
             더 정확한 분석이 가능합니다.
           </p>
         </div>
+
         {uploadedImage ? (
           <div
             className={`rounded-[16px] px-4 py-3 text-[13px] font-['Noto_Sans_KR'] ${
               faceStatus === 'valid'
                 ? 'bg-emerald-50 text-emerald-700'
                 : faceStatus === 'checking'
-                ? 'bg-slate-100 text-slate-600'
-                : 'bg-rose-50 text-rose-700'
+                  ? 'bg-slate-100 text-slate-600'
+                  : 'bg-rose-50 text-rose-700'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -171,11 +150,10 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
         ) : null}
       </div>
 
-      {/* Fixed Action Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-6 max-w-[390px] mx-auto">
         <div className="flex gap-3">
           <button
-            onClick={onSkip}
+            onClick={handleSkip}
             className="bg-[#f0f0f0] rounded-[16px] h-[56px] px-8 font-['Noto_Sans_KR'] font-medium text-[15px] text-[#262626] hover:bg-[#e5e5e5] transition-colors"
           >
             건너뛰기
@@ -192,7 +170,3 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
     </div>
   );
 }
-
-
-
-

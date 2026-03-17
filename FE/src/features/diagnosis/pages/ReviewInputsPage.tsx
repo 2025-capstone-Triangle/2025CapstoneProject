@@ -6,6 +6,7 @@ import {
   getPreferenceTestResult,
   stageDiagnosisPreferencePayload,
 } from "../lib/preferenceTest";
+import { getStagedDiagnosisImageFiles } from "../lib/imageStaging";
 import { getStagedVoiceRecordingMeta } from "../lib/voiceRecording";
 
 interface ReviewInputsPageProps {
@@ -18,6 +19,7 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
   const [submitError, setSubmitError] = useState("");
   const [stagedMessage, setStagedMessage] = useState("");
   const preferenceResult = useMemo(() => getPreferenceTestResult(), []);
+  const imageFile = useMemo(() => getStagedDiagnosisImageFiles()[0] ?? null, []);
   const voiceMeta = useMemo(() => getStagedVoiceRecordingMeta(), []);
 
   const handleConfirm = () => {
@@ -32,9 +34,8 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
     const payload = buildDiagnosisPreferencePayload(preferenceResult);
     stageDiagnosisPreferencePayload(payload);
 
-    // API가 준비되면 이 payload를 그대로 전송하면 됩니다.
     console.info("[diagnosis.preference.payload]", payload);
-    setStagedMessage("전송 payload가 준비되었습니다.");
+    setStagedMessage("분석 요청 데이터가 준비되었습니다.");
     onConfirm?.();
   };
 
@@ -74,38 +75,43 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
           <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">이미지 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">선택 사항</span>
+              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#6b6b6b]">
+                {imageFile ? "완료" : "건너뜀"}
+              </span>
             </div>
-            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">업로드한 입력은 이후 동일 payload에 추가 가능합니다.</p>
+            {imageFile ? (
+              <div className="space-y-1">
+                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] break-all">{imageFile.name}</p>
+                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">{(imageFile.size / 1024).toFixed(1)} KB</p>
+              </div>
+            ) : (
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">이미지 업로드를 건너뛰었습니다.</p>
+            )}
           </div>
 
           <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">음성 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">
-                {voiceMeta ? "준비됨" : "선택 사항"}
+              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#6b6b6b]">
+                {voiceMeta ? "완료" : "건너뜀"}
               </span>
             </div>
             {voiceMeta ? (
               <div className="space-y-1">
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] break-all">
-                  {voiceMeta.fileName}
-                </p>
+                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] break-all">{voiceMeta.fileName}</p>
                 <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
                   {voiceMeta.durationSec}초 / {(voiceMeta.size / 1024).toFixed(1)} KB
                 </p>
               </div>
             ) : (
-              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                업로드한 입력은 이후 동일 payload에 추가 가능합니다.
-              </p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">음성 녹음을 건너뛰었습니다.</p>
             )}
           </div>
         </div>
 
         <div className="rounded-[16px] bg-[#f0f7ff] border border-[#d8e9ff] p-5 mb-4">
           <p className="font-['Noto_Sans_KR'] text-[13px] text-[#1a4d8f] leading-[1.7]">
-            확인 버튼을 누르면 선호 테스트 결과(질문 1~6 선택 이미지 + 질문 7 보정값)를 한 번에 묶어 전송 가능한 형태로 준비합니다.
+            확인 버튼을 누르면 현재 입력값으로 분석을 시작합니다.
           </p>
         </div>
 
@@ -124,4 +130,3 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
     </div>
   );
 }
-

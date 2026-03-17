@@ -50,7 +50,8 @@ async def diagnose_persona(data: DiagnosisRequest):
         # 진단 단계에서는 리포트 내용만 반환
         return {
             "status": "success", 
-            "report": result.get('report')
+            "report": result.get('report'),
+            "image_url": result.get('image_url')
         }
     except Exception as e:
         print(f"❌ 진단 에러 로그: {e}")

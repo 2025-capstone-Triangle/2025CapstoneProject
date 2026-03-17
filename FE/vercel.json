@@ -3,11 +3,7 @@
   "outputDirectory": "build",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080/api/$1"
-    },
-    {
-      "source": "/((?!.*\\..*).*)",
+      "source": "/((?!api/)(?!.*\\..*).*)",
       "destination": "/index.html"
     }
   ]

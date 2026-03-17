@@ -12,9 +12,5 @@ import java.util.Optional;
 public interface PersonaRepository extends JpaRepository<Persona, Long>, PersonaRepositoryCustom{
     List<Persona> findPersonasByMemberAndIsActive(Member member, Boolean isActive);
 
-    Optional<Persona> findPersonaByMemberAndIdAndIsActive(Member member, Long id, Boolean isActive);
-
-    Optional<Persona> findPersonaByMemberAndCodeAndIsActive(Member member, String code, Boolean isActive);
-
     boolean existsByCode(String code);
 }

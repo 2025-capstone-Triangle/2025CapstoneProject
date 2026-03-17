@@ -169,12 +169,15 @@ public class PersonaService {
                 .thumbnail(result.getImage_url())
                 .preference(preference)
                 .summary(result.getReport().getSummary())
+                .traits(result.getReport().getTraits())
                 .build();
 
         personaRepository.save(persona);
         // 페르소나 생성 로그
         personaLogService.createPersonaLog(member,persona);
 
+
+        log.info("{}",persona.getPreference().getQ8Tone());
 
         return PersonaDto.fromEntity(persona);
     }

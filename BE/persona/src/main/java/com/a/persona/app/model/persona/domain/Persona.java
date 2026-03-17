@@ -71,4 +71,7 @@ public class Persona extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(columnDefinition = "TEXT")
+    private String traits;
+
 }

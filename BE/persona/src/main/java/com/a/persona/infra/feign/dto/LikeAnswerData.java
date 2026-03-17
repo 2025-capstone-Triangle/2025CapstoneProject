@@ -1,6 +1,7 @@
 package com.a.persona.infra.feign.dto;
 
 import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
+import com.a.persona.app.model.persona.domain.Preference;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,4 +29,15 @@ public class LikeAnswerData {
                 .build();
     }
 
+    public static LikeAnswerData fromPreference(Preference preference) {
+        return LikeAnswerData.builder()
+                .q1_environment(preference.getQ1Environment())
+                .q2_style(preference.getQ2Style())
+                .q3_minimal_maximal(preference.getQ3MinimalMaximal())
+                .q4_mood(preference.getQ4Mood())
+                .q5_contrast_type(preference.getQ5ContrastType())
+                .q6_motion(preference.getQ6Motion())
+                .q7_framing(preference.getQ7Framing())
+                .build();
+    }
 }

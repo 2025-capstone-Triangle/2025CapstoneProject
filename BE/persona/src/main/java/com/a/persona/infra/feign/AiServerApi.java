@@ -1,5 +1,8 @@
 package com.a.persona.infra.feign;
 
+
+import com.a.persona.infra.feign.dto.AiContentRequest;
+import com.a.persona.infra.feign.dto.ContentResponse;
 import com.a.persona.infra.feign.dto.PersonaRequest;
 import com.a.persona.infra.feign.dto.PersonaResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -18,4 +21,9 @@ public interface AiServerApi {
             PersonaRequest request
     );
 
+
+    @PostMapping("generate-content")
+    ContentResponse createContent(
+        AiContentRequest request
+    );
 }

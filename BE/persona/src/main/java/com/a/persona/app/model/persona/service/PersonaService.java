@@ -176,9 +176,6 @@ public class PersonaService {
         // 페르소나 생성 로그
         personaLogService.createPersonaLog(member,persona);
 
-
-        log.info("{}",persona.getPreference().getQ8Tone());
-
         return PersonaDto.fromEntity(persona);
     }
 

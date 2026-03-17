@@ -74,10 +74,6 @@ public class ContentService {
             reference = referenceRepository.findById(contentRequest.getReferenceId()).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         }
 
-        for(Long i:persona.getPreference().getQ8Tone()){
-            log.info("{}",i);
-        }
-
 
         AiContentRequest request = AiContentRequest.builder()
                 .report(ReportData.builder()

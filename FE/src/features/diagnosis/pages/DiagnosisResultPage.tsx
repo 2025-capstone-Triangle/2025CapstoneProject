@@ -12,11 +12,7 @@ import { isAuthenticated } from "../../../lib/auth";
 import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import { type PersonaResponse } from "../../persona/lib/personaApi";
-import {
-  createPersonaShareCode,
-  setPendingPersonaCode,
-  type ShareablePersona,
-} from "../../persona/lib/personaShareCode";
+import { setPendingPersonaCode } from "../../persona/lib/personaShareCode";
 
 interface DiagnosisResultPageProps {
   result?: PersonaResponse | null;
@@ -26,14 +22,6 @@ interface DiagnosisResultPageProps {
   onHome?: () => void;
   onNavigateToSignup?: () => void;
   onNavigateToLogin?: () => void;
-}
-
-function randomCodeSegment() {
-  return Math.random().toString(36).slice(2, 6).toUpperCase();
-}
-
-function createSaveCode() {
-  return `PRS-${randomCodeSegment()}-${randomCodeSegment()}`;
 }
 
 function ensureHex(value: string) {
@@ -62,47 +50,62 @@ export function DiagnosisResultPage({
   const [saveError, setSaveError] = useState("");
 
   const keywords = useMemo(() => {
-    if (!result?.keywords?.length) return ["분석 결과", "스타일", "브랜딩"];
-    return result.keywords.slice(0, 3);
+    return (result?.keywords ?? []).slice(0, 3);
   }, [result]);
 
   const colors = useMemo(() => {
     const fromResult = (result?.colors ?? []).map(ensureHex).filter((value): value is string => Boolean(value));
-    if (fromResult.length) return fromResult;
-    return ["#111111", "#555555", "#999999", "#d1d5db"];
+    return fromResult;
   }, [result]);
 
-  const personaName = result?.name || "페르소나";
+  const personaName = result?.name || "";
   const personaCode = result?.code || "";
   const personaDescription = useMemo(() => {
-    if (!keywords.length) return "분석된 페르소나 결과입니다.";
-    return `${keywords.join(", ")} 키워드를 중심으로 정리된 사용자 맞춤 페르소나입니다. 콘텐츠 제작 시 이 톤을 유지하면 브랜딩 일관성에 도움이 됩니다.`;
+    if (!keywords.length) return "설명 데이터가 없습니다.";
+    return keywords.join(", ");
   }, [keywords]);
 
   const imageCandidates = useMemo(() => {
     const items = [result?.profile, result?.thumbnail].filter((item): item is string => Boolean(item));
-    return items.length ? items : [""];
+    return items;
   }, [result]);
 
-  const shareablePersona: ShareablePersona = useMemo(
-    () => ({
-      name: personaName,
-      description: personaDescription,
-      colors,
-    }),
-    [personaName, personaDescription, colors],
-  );
+  const selectedImage = imageCandidates[currentImageIndex] || imageCandidates[0] || "";
 
-  const selectedImage = imageCandidates[currentImageIndex] || imageCandidates[0];
+  if (!result) {
+    return (
+      <div className="bg-white min-h-screen max-w-[390px] mx-auto">
+        <DefaultTopBar onTitleClick={onHome} showNotification={false} />
+        <BackButton onClick={onBack} />
+        <div className="px-8 pt-10">
+          <div className="rounded-[16px] border border-[#f0d0d0] bg-[#fff7f7] p-5">
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#bb3b3b] mb-3">
+              진단 결과 데이터를 불러오지 못했습니다. 입력값을 확인한 뒤 다시 진단해 주세요.
+            </p>
+            <button
+              onClick={onRecreate}
+              className="h-[40px] px-4 rounded-[10px] bg-black text-white text-[13px] font-['Noto_Sans_KR']"
+            >
+              다시 진단하기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSaveClick = async () => {
     setSaveError("");
 
+    if (!personaCode) {
+      setSaveError("진단 코드가 없어 저장할 수 없습니다. 다시 진단해 주세요.");
+      return;
+    }
+
     if (isAuthenticated()) {
-      const code = personaCode || guestPersonaCode || createSaveCode();
       setIsSaving(true);
       try {
-        await onSave?.({ code, name: personaName });
+        await onSave?.({ code: personaCode, name: personaName });
       } catch (error) {
         const message = error instanceof Error ? error.message : "저장에 실패했습니다.";
         setSaveError(message);
@@ -112,8 +115,7 @@ export function DiagnosisResultPage({
       return;
     }
 
-    const code = guestPersonaCode || createPersonaShareCode(shareablePersona);
-    setGuestPersonaCode(code);
+    setGuestPersonaCode(personaCode);
     setCopyDone(false);
     setShowGuestCodeModal(true);
   };
@@ -196,13 +198,17 @@ export function DiagnosisResultPage({
           <div className="mb-2 flex items-center gap-2">
             <h2 className="font-['NEXON_Football_Gothic'] text-[22px] text-black">{personaName}</h2>
           </div>
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            {keywords.map((keyword) => (
-              <span key={keyword} className="bg-gradient-to-r from-[#f8f8f8] to-[#f0f0f0] px-4 py-2 rounded-full font-['NEXON_Football_Gothic'] text-[16px] text-black border border-[#e5e5e5]">
-                #{keyword}
-              </span>
-            ))}
-          </div>
+          {keywords.length > 0 ? (
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {keywords.map((keyword) => (
+                <span key={keyword} className="bg-gradient-to-r from-[#f8f8f8] to-[#f0f0f0] px-4 py-2 rounded-full font-['NEXON_Football_Gothic'] text-[16px] text-black border border-[#e5e5e5]">
+                  #{keyword}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] mb-4">키워드 데이터가 없습니다.</p>
+          )}
         </div>
 
         <div className="mb-8">
@@ -210,16 +216,22 @@ export function DiagnosisResultPage({
             <div className="w-1 h-5 bg-black rounded-full" />
             컬러 팔레트
           </h3>
-          <div className="bg-[#fafafa] rounded-[16px] p-5 flex items-center justify-around">
-            {colors.map((color, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedColor(index)}
-                className={`rounded-full transition-all shadow-md ${selectedColor === index ? "w-[48px] h-[48px] ring-4 ring-offset-4 ring-black/20" : "w-[40px] h-[40px] hover:scale-110"}`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
+          {colors.length > 0 ? (
+            <div className="bg-[#fafafa] rounded-[16px] p-5 flex items-center justify-around">
+              {colors.map((color, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedColor(index)}
+                  className={`rounded-full transition-all shadow-md ${selectedColor === index ? "w-[48px] h-[48px] ring-4 ring-offset-4 ring-black/20" : "w-[40px] h-[40px] hover:scale-110"}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#fafafa] rounded-[16px] p-5 border border-[#ececec]">
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">컬러 데이터가 없습니다.</p>
+            </div>
+          )}
         </div>
 
         <div className="mb-8">
@@ -259,7 +271,14 @@ export function DiagnosisResultPage({
               <div className="w-1 h-5 bg-black rounded-full" />
               추천 프로필
             </h3>
-            <button className="p-2 hover:bg-[#f0f0f0] rounded-full transition-colors" onClick={() => setCurrentImageIndex((prev) => (prev + 1) % imageCandidates.length)}>
+            <button
+              className="p-2 hover:bg-[#f0f0f0] rounded-full transition-colors"
+              onClick={() =>
+                setCurrentImageIndex((prev) =>
+                  imageCandidates.length > 0 ? (prev + 1) % imageCandidates.length : 0
+                )
+              }
+            >
               <RefreshCw className="w-4 h-4 text-black" />
             </button>
           </div>

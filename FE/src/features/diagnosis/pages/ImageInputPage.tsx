@@ -30,7 +30,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
         setFirstFile(file);
         setUploadedImage(reader.result as string);
         setFaceStatus('checking');
-        setFaceMessage('�� �м� ���Դϴ�...');
+        setFaceMessage('얼굴 분석 중입니다...');
         checkFaceAnalyzable(file)
           .then((result) => {
             setFaceStatus(result.ok ? 'valid' : 'invalid');
@@ -38,7 +38,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
           })
           .catch(() => {
             setFaceStatus('error');
-            setFaceMessage('�� �м��� �����߽��ϴ�.');
+            setFaceMessage('얼굴 분석에 실패했습니다.');
           });
       } else {
         setSecondFile(file);
@@ -57,7 +57,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
       
       <div className="px-8 pt-8">
         <h2 className="font-['Noto_Sans_KR'] font-semibold text-[16px] text-black text-center mb-8">
-          ?�굴?????�온 ?�진???�어보세??
+          얼굴이 나온 사진을 넣어보세요
         </h2>
 
         {/* Images Grid */}
@@ -82,7 +82,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                 <>
                   <img 
                     src={uploadedImage} 
-                    alt="?�로?�된 ?��?지" 
+                    alt="업로드된 이미지" 
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -97,7 +97,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                     <Upload className="w-7 h-7 text-[#6b6b6b]" />
                   </div>
                   <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">
-                    ?�진 1
+                    이미지 1
                   </p>
                 </div>
               )}
@@ -124,7 +124,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                 <>
                   <img 
                     src={secondImage} 
-                    alt="?�로?�된 ?��?지 2" 
+                    alt="업로드된 이미지 2" 
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -137,7 +137,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
                 <div className="flex flex-col items-center gap-3">
                   <span className="text-[56px] text-[#d0d0d0] leading-none">+</span>
                   <p className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">
-                    ?�진 2 (?�택)
+                    이미지 2 (선택)
                   </p>
                 </div>
               )}
@@ -165,7 +165,7 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
           >
             <div className="flex items-center gap-2">
               {faceStatus === 'checking' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              <span>{faceMessage || '�� �м� ���¸� Ȯ���� �ּ���.'}</span>
+              <span>{faceMessage || '얼굴 분석 상태를 확인해 주세요.'}</span>
             </div>
           </div>
         ) : null}
@@ -178,14 +178,14 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
             onClick={onSkip}
             className="bg-[#f0f0f0] rounded-[16px] h-[56px] px-8 font-['Noto_Sans_KR'] font-medium text-[15px] text-[#262626] hover:bg-[#e5e5e5] transition-colors"
           >
-            건너?�기
+            건너뛰기
           </button>
           <button
             onClick={onNext}
             disabled={!canProceed}
             className="flex-1 bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a1a1a] transition-colors"
           >
-            ?�음
+            다음
           </button>
         </div>
       </div>

@@ -6,7 +6,6 @@ import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import {
   clearPendingPersonaCode,
   getPendingPersonaCode,
-  getPersonaByShareCode,
   normalizePersonaCode,
 } from "../lib/personaShareCode";
 import { getPersonaList, saveSharedPersona, type PersonaResponse } from "../lib/personaApi";
@@ -29,7 +28,6 @@ interface PersonaCardItem {
 }
 
 const FAVORITE_STORAGE_KEY = "personaFavoriteCodes";
-const LOCAL_IMPORTED_STORAGE_KEY = "localImportedPersonas";
 
 function readFavoriteCodes() {
   const raw = localStorage.getItem(FAVORITE_STORAGE_KEY);
@@ -44,21 +42,6 @@ function readFavoriteCodes() {
 
 function writeFavoriteCodes(codes: string[]) {
   localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(codes));
-}
-
-function readLocalImportedPersonas() {
-  const raw = localStorage.getItem(LOCAL_IMPORTED_STORAGE_KEY);
-  if (!raw) return [] as PersonaCardItem[];
-  try {
-    const parsed = JSON.parse(raw) as PersonaCardItem[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocalImportedPersonas(items: PersonaCardItem[]) {
-  localStorage.setItem(LOCAL_IMPORTED_STORAGE_KEY, JSON.stringify(items));
 }
 
 function mapPersonaToCard(item: PersonaResponse, favorites: Set<string>): PersonaCardItem {
@@ -88,21 +71,11 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
     try {
       const favoriteSet = new Set(readFavoriteCodes());
       const serverPersonas = await getPersonaList();
-      const mapped = serverPersonas.map((item) => mapPersonaToCard(item, favoriteSet));
-      const localImported = readLocalImportedPersonas();
-      const merged = [...mapped];
-
-      for (const local of localImported) {
-        if (!merged.some((item) => item.code === local.code)) {
-          merged.push({ ...local, isFavorite: favoriteSet.has(local.code) });
-        }
-      }
-
-      setPersonas(merged);
+      setPersonas(serverPersonas.map((item) => mapPersonaToCard(item, favoriteSet)));
     } catch (err) {
       const message = err instanceof Error ? err.message : "페르소나 목록을 불러오지 못했습니다.";
       setLoadError(message);
-      setPersonas(readLocalImportedPersonas());
+      setPersonas([]);
     } finally {
       setLoading(false);
     }
@@ -170,35 +143,9 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
       if (pendingCode && normalizePersonaCode(pendingCode) === code) {
         clearPendingPersonaCode();
       }
-      return;
-    } catch {
-      // Fallback: support local share code flow created in FE when diagnosis is done without login.
-      const local = getPersonaByShareCode(code);
-      if (!local) {
-        setImportError("유효하지 않은 코드예요. 다시 확인해 주세요.");
-        return;
-      }
-
-      const localItem: PersonaCardItem = {
-        code: local.code,
-        name: local.persona.name,
-        description: local.persona.description,
-        colors: local.persona.colors,
-        profile: "",
-        isFavorite: false,
-      };
-
-      const nextList = [localItem, ...personas];
-      setPersonas(nextList);
-      const localImported = readLocalImportedPersonas();
-      writeLocalImportedPersonas([localItem, ...localImported]);
-      setImportCode("");
-      setImportMessage("코드 페르소나가 로컬 목록에 추가되었습니다.");
-
-      const pendingCode = getPendingPersonaCode();
-      if (pendingCode && normalizePersonaCode(pendingCode) === code) {
-        clearPendingPersonaCode();
-      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "코드 기반 추가에 실패했습니다.";
+      setImportError(message);
     } finally {
       setIsImporting(false);
     }

@@ -1,9 +1,12 @@
 const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
 const IS_HTTPS_PAGE = typeof window !== "undefined" && window.location.protocol === "https:";
+const IS_DEV = Boolean(import.meta.env.DEV);
 const API_BASE =
-  IS_HTTPS_PAGE && API_BASE_ENV?.startsWith("http://")
+  !IS_DEV
     ? ""
-    : (API_BASE_ENV ?? "");
+    : IS_HTTPS_PAGE && API_BASE_ENV?.startsWith("http://")
+      ? ""
+      : (API_BASE_ENV ?? "");
 
 type ApiResponse<T> = {
   code: string;

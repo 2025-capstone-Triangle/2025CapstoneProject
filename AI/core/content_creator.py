@@ -95,29 +95,26 @@ class ContentGeneration:
         return (f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {saturation}, {brightness}, {contrast}, {temp}. {density}, {mood_str}, {contrast_str}, {temp}."
                 f"Overall visual style matches these specific attributes: "
                 f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100.")
-    async def generate_profile_prompt(self, be_input, report, answers, tones):
+    async def generate_profile_prompt(self, report, answers, tones):
         base_elements = self._build_base_prompt(report, answers, tones)
         
         prompt_refine_msg = f"""
-            당신은 인스타그램 트렌드를 선도하는 비주얼 디렉터입니다. 
-            Back-end에서 넘어온 [트렌드 컨셉]을 바탕으로, 사용자의 [페르소나]와 [비주얼 취향]을 반영한 
-            최종 DALL-E 3용 프롬프트를 영어로 작성하세요.
+            당신은 전 세계적으로 유행하는 'K-Aesthetic'과 '인스타그램 감성'에 정통한 비주얼 디렉터입니다.
+            제공된 데이터를 바탕으로 DALL-E 3를 위한 '극사실주의' 프롬프트를 영어로 작성하세요.
 
-            [1. 트렌드 컨셉 (BE 수신)] 
-            : "{be_input}"
+            [데이터 분석]
+            - 구도/환경: {base_elements}
+            - 페르소나: {report['name']} ({', '.join(report['keywords'])})
+            - 핵심 색상: {', '.join(report['color_palette'])}
 
-            [2. 사용자의 페르소나 & 취향]
-            - 이름/키워드: {report['name']} ({', '.join(report['keywords'])})
-            - 선호 색상: {', '.join(report['color_palette'])}
-            - 기술적 스타일: {base_elements}
-
-            [작성 지침]
-            - BE의 [트렌드 컨셉]에 묘사된 상황(장소, 소품, 의상)을 최우선으로 반영하세요.
-            - 여기에 사용자의 [선호 색상]을 의상 포인트나 배경 조명에 자연스럽게 녹이세요.
-            - [기술적 스타일]에 명시된 채도, 명도, 구도 설정을 반드시 적용하세요.
-            - 인물은 20대 한국 여성의 자연스러운 모습으로, 'Shot on iPhone 15 Pro' 느낌의 고해상도 실사여야 합니다.
-
-            결과는 영어로만, "A high-quality realistic photo of..."로 시작해서 출력하세요.
+            [필수 지침 - 반드시 지킬 것]
+            1. "Ethnic & Identity": 20대 한국 여성의 자연스러운 얼굴 특징을 반영하세요. 과한 성형 느낌이나 서구적인 이목구비는 피하세요.
+            2. "Skin & Texture": 도자기 같은 피부가 아니라, 실제 사람 피부 같은 미세한 모공과 솜털, 자연스러운 광채를 묘사하세요.
+            3. "Instagram Quality": 'Shot on iPhone 15 Pro, 4k, high resolution' 느낌을 강조하세요. 필터 낀 느낌이 아닌 생생한 생동감이 핵심입니다.
+            4. "Fashion": 유행하는 미니멀리즘 혹은 유니크한 K-패션을 입고 있는 모습으로 묘사하세요.
+            5. "No AI Artifacts": 손가락이나 배경 왜곡이 없도록 정교하게 지시하세요.
+            
+            최종 결과는 영어로만 출력하세요. "A high-quality realistic photo of..."로 시작하세요.
         """
         res = await self.llm.ainvoke(prompt_refine_msg)
         return res.content.strip()
@@ -239,7 +236,7 @@ class ContentGeneration:
             return None
 
 # --- 실행부 ---
-async def main(trend_prompt, crop_type=1):
+async def main(crop_type=1):
     generator = ContentGeneration()
     
     crop_configs = {
@@ -258,10 +255,7 @@ async def main(trend_prompt, crop_type=1):
 
     print("1. 프롬프트 생성 중...")
     final_prompt = await generator.generate_profile_prompt(
-        trend_prompt,  # <-- 여기서 BE의 가변 프롬프트 - 트렌드 프롬프트 베이스를 받음
-        mock_report, 
-        test_payload["answers"], 
-        test_payload["q8_tone"]
+        mock_report, test_payload["answers"], test_payload["q8_tone"]
     )
     
     print("2. 이미지 생성 중...")
@@ -287,17 +281,12 @@ async def main(trend_prompt, crop_type=1):
     
 if __name__ == "__main__":
     test_image_url = os.getenv("TEST_IMAGE_URL")
-    
-    trend_concept = "A young woman wearing a vibrant red scarf standing in a tranquil snowy field, soft snowflakes falling around her"
 
     test_payload = {
-        "answers": {"q1_environment": 1, 
-                    "q3_minimal_maximal": 1, 
-                    "q4_mood": 2, 
-                    "q5_contrast_type": 1, 
-                    "q7_framing": 4},
+        "answers": {"q1_environment": 1, "q3_minimal_maximal": 1, "q4_mood": 2, "q5_contrast_type": 1, "q7_framing": 4},
         "q8_tone": [34, 23, 56, 34]
     }
     
     user_input_selection=2
-    asyncio.run(main(trend_prompt=trend_concept, crop_type=user_input_selection))
+
+    asyncio.run(main(crop_type=user_input_selection))

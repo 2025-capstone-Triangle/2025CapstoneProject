@@ -128,11 +128,13 @@ async def generate_trend_content(data: TrendContentRequest):
     """
     try:
         # 1. 트렌드 프롬프트 + 유저 페르소나 결합
+        # content_creator.py 정의: (self, be_input, report, answers, tones)
+        # 모든 인자를 키워드 인자로 명시하는 것이 가장 안전함!
         final_prompt = await content_creator.generate_profile_prompt(
-            trend_prompt=data.trend_prompt, # 첫 번째 인자 명시
-            report=data.report,             # 두 번째 인자 명시
-            answers=data.answers,           # 세 번째 인자 명시
-            tones=data.q8_tone              # 네 번째 인자 명시
+            be_input=data.trend_prompt,  # be_input 자리에 trend_prompt 전달
+            report=data.report,
+            answers=data.answers,
+            tones=data.q8_tone
         )
 
         # 2. 이미지 생성
@@ -144,12 +146,22 @@ async def generate_trend_content(data: TrendContentRequest):
         if not b64_image:
             raise HTTPException(status_code=500, detail="AI 이미지 생성 실패")
 
-        # 3. 크롭 & S3 업로드
-        crop_configs = {0: {"ratio": 1.0, "mode": "Profile"}, 1: {"ratio": 0.8, "mode": "Post"}, 2: {"ratio": 0.5625, "mode": "Story"}}
+        # 3. 크롭 설정 (데이터 모델의 crop_type 반영)
+        crop_configs = {
+            0: {"ratio": 1.0, "mode": "Profile"}, 
+            1: {"ratio": 0.8, "mode": "Post"}, 
+            2: {"ratio": 0.5625, "mode": "Story"}
+        }
         config = crop_configs.get(data.crop_type, crop_configs[1])
         
-        cropped_cv_img = content_creator.apply_smart_crop(b64_image, aspect_ratio=config["ratio"], mode=config["mode"])
+        # 4. 스마트 크롭 실행
+        cropped_cv_img = content_creator.apply_smart_crop(
+            b64_image, 
+            aspect_ratio=config["ratio"], 
+            mode=config["mode"]
+        )
         
+        # 5. S3 업로드
         file_name = f"trend_gen_{int(time.time())}"
         final_url = content_creator.upload_cv2_to_s3(cropped_cv_img, file_name)
 
@@ -159,7 +171,7 @@ async def generate_trend_content(data: TrendContentRequest):
             "used_prompt": final_prompt
         }
     except Exception as e:
-        print(f"❌ 트렌드 생성 에러: {e}")
+        print(f"❌ 트렌드 생성 에러 상세: {e}")
         raise HTTPException(status_code=500, detail=f"트렌드 콘텐츠 생성 오류: {str(e)}")
     
 if __name__ == "__main__":

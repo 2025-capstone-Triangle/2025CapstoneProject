@@ -7,8 +7,9 @@ import java.util.List;
 
 @Data
 @Builder
-public class AiContentRequest {
+public class AiTrendContentRequest {
 
+    String trend_prompt;
     ReportData report;
     LikeAnswerData answers;
     List<Long> q8_tone;

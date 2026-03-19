@@ -2,7 +2,10 @@ package com.a.persona.app.controller.reference;
 
 import com.a.persona.app.controller.reference.payload.ReferenceLikeReqeust;
 import com.a.persona.app.controller.reference.payload.ReferenceStatResponse;
+import com.a.persona.app.controller.reference.payload.TrendContentRequest;
+import com.a.persona.app.controller.reference.payload.TrendContentResponse;
 import com.a.persona.app.model.reference.dto.ReferenceStatDto;
+import com.a.persona.app.model.reference.dto.TrendContentDto;
 import com.a.persona.app.model.reference.service.ReferenceService;
 import com.a.persona.infra.response.CommonApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,4 +63,19 @@ public class ReferenceController {
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
+
+    @PostMapping
+    @Operation(summary = "(미구현)레퍼런스를 바탕으로 컨텐츠 생성", description = "요즘 뜨는 컨텐츠를 바탕으로 컨텐츠를 생성합니다.<br>" +
+            "persona 코드와, reference id를 입력하면 해당하는 레퍼런스와 페르소나를 참고하여 생성합니다.")
+    public ResponseEntity<CommonApiResponse<TrendContentResponse>> createTrendContent(
+            @AuthenticationPrincipal UserDetails userDetails,
+            TrendContentRequest request
+            ){
+
+             TrendContentDto dto = referenceService.createContent(userDetails.getUsername(), request.getCode(), request.getReferenceId(), request.getType());
+
+        return ResponseEntity.ok(CommonApiResponse.success(TrendContentResponse.fromDto(dto)));
+    }
+
+
 }

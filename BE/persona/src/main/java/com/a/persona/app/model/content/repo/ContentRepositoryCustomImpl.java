@@ -20,6 +20,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     private final QContent content = QContent.content;
+    private final QReference reference = QReference.reference;
     private final QContentLike contentLike = QContentLike.contentLike;
 
     @Override
@@ -28,6 +29,8 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
         return queryFactory
                 .select(Projections.constructor(ContentStatDto.class,
                         content.id,
+                        Projections.constructor(ReferenceDto.class,
+                                reference.id, reference.name, reference.img, reference.prompt, reference.prompt, reference.createdAt, reference.updatedAt, reference.isActive),
                         content.img,
                         content.type,
                         content.createdAt,
@@ -37,6 +40,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
                                 .exists()
                 ))
                 .from(content)
+                .leftJoin(content.reference, reference)
                 .where(content.persona.eq(persona)
                         .and(content.isActive.eq(true)))
                 .fetch();

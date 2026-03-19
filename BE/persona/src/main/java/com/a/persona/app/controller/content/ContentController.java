@@ -4,7 +4,6 @@ import com.a.persona.app.controller.content.payload.ContentLikeReqeust;
 import com.a.persona.app.controller.content.payload.ContentRequest;
 import com.a.persona.app.controller.content.payload.ContentResponse;
 import com.a.persona.app.controller.content.payload.ContentStatResponse;
-import com.a.persona.app.controller.reference.payload.ReferenceLikeReqeust;
 import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.content.dto.ContentStatDto;
 import com.a.persona.app.model.content.service.ContentService;
@@ -35,8 +34,7 @@ public class ContentController {
     // content 조회
     @GetMapping("")
     @Operation(summary = "content 조회", description = "선택한 페르소나의 생성된 모든 컨텐츠를 조회합니다. <br>" +
-            "페르소나 코드를 입력받습니다.<br>" +
-            "이거 페르소나랑 레퍼런스 정보 다 넘기는데 굳이 이럴 필요 없나여 아니면 일단 주는 게 편한가여?")
+            "페르소나 코드를 입력받습니다.<br>")
     public ResponseEntity<CommonApiResponse<List<ContentStatResponse>>> getCurrentContent(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String code

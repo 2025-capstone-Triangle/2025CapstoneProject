@@ -42,7 +42,6 @@ class PersonaAnalyzer:
         )
         self.parser = JsonOutputParser(pydantic_object=PersonaReport)
 
-
     # URL에서 이미지를 가져와 바로 Base64로 만드는 함수
     async def get_base64_from_url(self, image_url):
         async with httpx.AsyncClient() as client:
@@ -75,28 +74,43 @@ class PersonaAnalyzer:
                 return "음성 분석 실패 (다운로드 오류)"
     
     # 전반적인 이미지를 분석하는 함수
-    async def analyze_visual_impression(self, img_base64):
-        print("📸 긍정 심리학 기반 이미지 분석 중...")
+    async def analyze_total_impression(self, img_base64, voice_kwd):
+        print("📸 시각 + 청각 데이터 기반 종합 이미지 분석 중...")
         try:
+            # 시스템 메시지에 '음성과의 조화'를 분석하라는 지침 추가
+            system_msg = (
+                "당신은 긍정 심리학 기반의 이미지 메이킹 전문가이자 퍼스널 브랜딩 컨설턴트입니다.\n"
+                f"현재 사용자의 목소리 분석 키워드는 다음과 같습니다: [{voice_kwd}]\n\n"
+                "제공된 이미지(외모, 패션, 스타일)와 위 음성 키워드를 종합적으로 분석하여 "
+                "사용자의 전체적인 인상을 매력적이고 긍정적인 어투로 3문장 이내로 요약하세요.\n"
+                "1. 외모와 목소리가 결이 같다면 '높은 신뢰감과 일관성'을 강조하세요.\n"
+                "2. 외모와 목소리에 차이가 있다면 '예상치 못한 반전 매력'이나 '입체적인 페르소나'로 칭찬하세요."
+            )
+
             visual_prompt = ChatPromptTemplate.from_messages([
-                ("system", "당신은 긍정 심리학 기반의 이미지 메이킹 전문가입니다. 사용자의 외모적 특징을 아주 매력적이고 긍정적인 어투로 3문장으로 분석하세요. 사용자의 사진 스타일, 패션 등을 포함합니다."),
+                ("system", system_msg),
                 ("human", [
                     {
                         "type": "image_url", 
-                        "image_url": {"url": img_base64}  # 전송받은 base64 이미지
+                        "image_url": {"url": img_base64}
+                    },
+                    {
+                        "type": "text",
+                        "text": "이 사진의 주인공과 앞서 언급한 목소리 키워드의 조화를 분석해줘."
                     }
                 ])
             ])
+
             chain = visual_prompt | self.llm
             response = await chain.ainvoke({}) 
             
-            visual_analysis = response.content
-            print(f"✨ 시각 분석 완료: {visual_analysis}")
-            return visual_analysis
+            total_analysis = response.content
+            print(f"✨ 종합 분석 완료: {total_analysis}")
+            return total_analysis
 
         except Exception as e:
-            print(f"시각 분석 중 에러 발생: {e}")
-            return "매력적이고 현대적인 분위기를 가진 크리에이터입니다." # 에러 시 기본 문구
+            print(f"종합 분석 중 에러 발생: {e}")
+            return "시각적 세련됨과 목소리의 깊이가 어우러져 독보적인 분위기를 가진 크리에이터입니다."
 
     async def analyze(self, voice_kwd, visual_analysis, user_pref):
         print("\n🌈 통합 페르소나 리포트 생성 중...")
@@ -136,7 +150,7 @@ class ImageGenerator:
 
     async def generate_profile_prompt(self, report, vil_analysis):
         # 프롬프트 생성 과정을 사용자에게 보여주지 않고 로직으로만 처리
-        prompt_msg = f"다음의 사항을 반영하세요: {report['summary']}, Style: {report['traits']}, 다음의 색상을 사진의 전반적인 톤으로 녹여내세요: {report['color_palette']}. 다음 유저의 프로필 이미지 생성 프롬프트를 작성하세요. 20대 초반의 한국인, 깔끔한 두상 이미지."        
+        prompt_msg = f"다음의 사항을 반영하세요: {report['summary']}, Style: {report['traits']}, 다음의 색상을 사용하되, 직접적인 옷 색이 아닌 사진의 전반적인 톤, 분위기로 녹여내세요: {report['color_palette']}. 다음 유저의 프로필 이미지 생성 프롬프트를 작성하세요. 20대 초반의 한국인, 깔끔한 두상 이미지."        
         res = await self.llm.ainvoke(prompt_msg)
         return res.content.strip()
 
@@ -201,17 +215,17 @@ class PersonaPipeline:
         # 0. 음성 분석 & 외모 분석
         voice_kwd = await self.analyzer.get_voice_keywords_from_url(audio_url)
         img_base64 = await self.analyzer.get_base64_from_url(image_url)
-        visual_analysis = await self.analyzer.analyze_visual_impression(img_base64)
+        total_impression = await self.analyzer.analyze_total_impression(img_base64, voice_kwd)
 
         # 1. 설문 답변(answers)을 텍스트 형태의 '선호(user_pref)'로 변환
         user_pref_description = self._build_base_prompt(answers, tones)
         print(f"📝 사용자 선호 요약: {user_pref_description}")
 
         # 2. 페르소나 리포트 생성
-        persona_report = await self.analyzer.analyze(voice_kwd, visual_analysis, user_pref_description)
+        persona_report = await self.analyzer.analyze(voice_kwd, total_impression, user_pref_description)
 
         # 3. 이미지 생성을 위한 텍스트 프롬프트 도출
-        final_image_prompt = await self.generator.generate_profile_prompt(persona_report, visual_analysis)
+        final_image_prompt = await self.generator.generate_profile_prompt(persona_report, total_impression)
 
         # 3. DALL-E 3로 실제 이미지 생성
         image_result_url = self.generator.generate_persona_image(final_image_prompt)

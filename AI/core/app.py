@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 import os
+import time
 
 from persona_pipeline import PersonaPipeline
 from content_creator import ContentGeneration
@@ -128,10 +129,10 @@ async def generate_trend_content(data: TrendContentRequest):
     try:
         # 1. 트렌드 프롬프트 + 유저 페르소나 결합
         final_prompt = await content_creator.generate_profile_prompt(
-            "",
-            report=data.report,
-            answers=data.answers,
-            tones=data.q8_tone
+            trend_prompt=data.trend_prompt, # 첫 번째 인자 명시
+            report=data.report,             # 두 번째 인자 명시
+            answers=data.answers,           # 세 번째 인자 명시
+            tones=data.q8_tone              # 네 번째 인자 명시
         )
 
         # 2. 이미지 생성

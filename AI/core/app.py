@@ -6,13 +6,15 @@ import os
 import time
 
 from persona_pipeline import PersonaPipeline
-from content_creator import ContentGeneration
+from content_creator import ContentGeneration as BasicGen
+from trend_setter import ContentGeneration as TrendGen
 
 app = FastAPI()
 
 # 서버 시작 시 인스턴스들을 미리 만들어둬서 속도를 높임
 pipeline = PersonaPipeline()
-content_creator = ContentGeneration()
+content_creator = BasicGen()
+trend_setter = TrendGen()
 
 # --- [데이터 모델 정의] ---
 
@@ -41,7 +43,6 @@ class TrendContentRequest(BaseModel):
     crop_type: int = 1
 
 # --- [API 엔드포인트] ---
-
 @app.post("/diagnose-persona")
 async def diagnose_persona(data: DiagnosisRequest):
     """
@@ -130,7 +131,7 @@ async def generate_trend_content(data: TrendContentRequest):
         # 1. 트렌드 프롬프트 + 유저 페르소나 결합
         # content_creator.py 정의: (self, be_input, report, answers, tones)
         # 모든 인자를 키워드 인자로 명시하는 것이 가장 안전함!
-        final_prompt = await content_creator.generate_profile_prompt(
+        final_prompt = await trend_setter.generate_profile_prompt(
             be_input=data.trend_prompt,  # be_input 자리에 trend_prompt 전달
             report=data.report,
             answers=data.answers,
@@ -138,7 +139,7 @@ async def generate_trend_content(data: TrendContentRequest):
         )
 
         # 2. 이미지 생성
-        b64_image = content_creator.generate_persona_image(
+        b64_image = trend_setter.generate_persona_image(
             prompt=final_prompt,
             user_image_url=data.user_image_url
         )
@@ -155,7 +156,7 @@ async def generate_trend_content(data: TrendContentRequest):
         config = crop_configs.get(data.crop_type, crop_configs[1])
         
         # 4. 스마트 크롭 실행
-        cropped_cv_img = content_creator.apply_smart_crop(
+        cropped_cv_img = trend_setter.apply_smart_crop(
             b64_image, 
             aspect_ratio=config["ratio"], 
             mode=config["mode"]
@@ -163,7 +164,7 @@ async def generate_trend_content(data: TrendContentRequest):
         
         # 5. S3 업로드
         file_name = f"trend_gen_{int(time.time())}"
-        final_url = content_creator.upload_cv2_to_s3(cropped_cv_img, file_name)
+        final_url = trend_setter.upload_cv2_to_s3(cropped_cv_img, file_name)
 
         return {
             "status": "success",

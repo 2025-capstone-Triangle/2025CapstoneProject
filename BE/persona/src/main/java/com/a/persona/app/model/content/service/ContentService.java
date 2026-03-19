@@ -1,18 +1,20 @@
 package com.a.persona.app.model.content.service;
 
 import com.a.persona.app.controller.content.payload.ContentRequest;
+import com.a.persona.app.model.content.code.ContentType;
 import com.a.persona.app.model.content.domain.Content;
 import com.a.persona.app.model.content.domain.ContentLike;
-import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.content.dto.ContentStatDto;
 import com.a.persona.app.model.content.repo.ContentLikeRepository;
+import com.a.persona.app.model.persona.dto.PersonaDto;
+import com.a.persona.app.model.reference.domain.Reference;
+import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.content.repo.ContentRepository;
 import com.a.persona.app.model.contentLog.service.ContentLogService;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
-import com.a.persona.app.model.reference.domain.Reference;
 import com.a.persona.app.model.reference.repo.ReferenceRepository;
 import com.a.persona.infra.error.exceptions.NotFoundException;
 import com.a.persona.infra.feign.AiServerApi;
@@ -64,10 +66,6 @@ public class ContentService {
     public ContentDto createContent(String username, ContentRequest contentRequest) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,contentRequest.getCode(),true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        Reference reference = null;
-        if(contentRequest.getReferenceId()!=null){
-            reference = referenceRepository.findById(contentRequest.getReferenceId()).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        }
 
 
         AiContentRequest request = AiContentRequest.builder()
@@ -88,7 +86,7 @@ public class ContentService {
         
         Content content = Content.builder()
                 .persona(persona)
-                .reference(reference)
+                .reference(null)
                 .img(response.getGenerated_image_url())
                 .type(contentRequest.getType())
                 .build();
@@ -96,7 +94,7 @@ public class ContentService {
         contentRepository.save(content);
 
         // 생성 로그
-        contentLogService.createContentLog(member,reference);
+        contentLogService.createContentLog(member,null);
 
         return ContentDto.fromEntity(content);
     }

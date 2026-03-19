@@ -11,8 +11,6 @@ public class ContentRequest {
     @NotEmpty
     String code;
 
-    Long referenceId;
-
     @NotNull
     ContentType type;
 

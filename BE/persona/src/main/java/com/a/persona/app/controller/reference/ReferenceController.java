@@ -65,7 +65,7 @@ public class ReferenceController {
     }
 
     @PostMapping
-    @Operation(summary = "(미구현)레퍼런스를 바탕으로 컨텐츠 생성", description = "요즘 뜨는 컨텐츠를 바탕으로 컨텐츠를 생성합니다.<br>" +
+    @Operation(summary = "레퍼런스를 바탕으로 컨텐츠 생성", description = "요즘 뜨는 컨텐츠를 바탕으로 컨텐츠를 생성합니다.<br>" +
             "persona 코드와, reference id를 입력하면 해당하는 레퍼런스와 페르소나를 참고하여 생성합니다.")
     public ResponseEntity<CommonApiResponse<TrendContentResponse>> createTrendContent(
             @AuthenticationPrincipal UserDetails userDetails,

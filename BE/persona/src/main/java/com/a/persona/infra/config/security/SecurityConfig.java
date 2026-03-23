@@ -52,6 +52,7 @@ public class SecurityConfig {
                     .requestMatchers("/", "/error", "/favicon.ico", "/api/v1/check/**", "/api/v1/signin",
                         "/api/v1/signup", "/api/v1/auth/**", "/api/v1/check-email", "/api/v1/verify-code").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/persona").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/reference").permitAll()
                     .requestMatchers("/api/**").authenticated()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().permitAll()

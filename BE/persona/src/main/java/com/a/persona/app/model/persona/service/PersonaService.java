@@ -96,6 +96,7 @@ public class PersonaService {
         persona.setIsSaved(true);
         if(name!=null)
             persona.setName(name);
+
         personaRepository.save(persona);
     }
 
@@ -216,6 +217,19 @@ public class PersonaService {
         if(name==null)
             name = sharedpersona.getName();
 
+        Preference newPreference = Preference.builder()
+                .q1Environment(sharedpersona.getPreference().getQ1Environment())
+                .q2Style(sharedpersona.getPreference().getQ2Style())
+                .q3MinimalMaximal(sharedpersona.getPreference().getQ3MinimalMaximal())
+                .q4Mood(sharedpersona.getPreference().getQ4Mood())
+                .q5ContrastType(sharedpersona.getPreference().getQ5ContrastType())
+                .q6Motion(sharedpersona.getPreference().getQ6Motion())
+                .q7Framing(sharedpersona.getPreference().getQ7Framing())
+                .q8Tone(new ArrayList<>(sharedpersona.getPreference().getQ8Tone()))
+                .build();
+
+        preferenceRepository.save(newPreference);
+
         // 기존의 페르소나를 복붙
         Persona newPersona = Persona.builder()
                 .name(name)
@@ -225,6 +239,9 @@ public class PersonaService {
                 .colors(new HashSet<>(sharedpersona.getColors()))
                 .isSaved(true)
                 .thumbnail(sharedpersona.getThumbnail())
+                .preference(newPreference)
+                .summary(sharedpersona.getSummary())
+                .traits(sharedpersona.getTraits())
                 .build();
         String newCode;
         // 코드가 중복이 아니도록

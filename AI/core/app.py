@@ -7,7 +7,7 @@ import time
 
 from persona_pipeline import PersonaPipeline
 from image_generation import ImageGeneration as BasicGen
-from content_generation import ContentGeneration as TrendGen
+from trend_setter import ContentGeneration as TrendGen
 
 app = FastAPI()
 

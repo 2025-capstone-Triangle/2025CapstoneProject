@@ -240,7 +240,6 @@ class PersonaPipeline:
 
         # 1. 설문 답변 → 선호 텍스트로 변환
         user_pref_description = self._build_base_prompt(answers, tones)
-        print(f"📝 사용자 선호 요약: {user_pref_description}")
 
         # 2. 페르소나 리포트 생성
         persona_report = await self.analyzer.analyze(voice_kwd, total_impression, user_pref_description)
@@ -248,18 +247,29 @@ class PersonaPipeline:
         # 3. 이미지 생성 프롬프트 도출
         final_image_prompt = await self.generator.generate_profile_prompt(persona_report, user_pref_description)
 
-        # 4. 유저 이미지 PIL로 다운로드 (Gemini 입력용)
+        # 4. 유저 이미지 PIL로 다운로드
         print("⬇️ 유저 얼굴 이미지 다운로드 중...")
         user_pil_image = await self.generator.download_image_as_pil(image_url)
 
-        # 5. Gemini로 유저 얼굴 반영한 이미지 생성 → 로컬 임시 경로 반환
+        # 5. Gemini로 이미지 생성 → 로컬 임시 경로 반환
         temp_image_path = self.generator.generate_persona_image(final_image_prompt, user_pil_image)
+
+        # ✅ 6. S3 업로드를 여기서 처리 (__main__ 밖으로 이동)
+        final_s3_url = None
+        if temp_image_path and os.path.exists(temp_image_path):
+            try:
+                uploader = CloudUploader()
+                ts = int(time.time())
+                unique_name = f"persona_{ts}.png"
+                final_s3_url = uploader.upload_to_s3(temp_image_path, unique_name)
+                os.remove(temp_image_path)
+            except Exception as e:
+                print(f"❌ S3 업로드 오류: {e}")
 
         return {
             "report": persona_report,
-            "temp_image_path": temp_image_path  # S3 업로드 시 사용
+            "image_url": final_s3_url  # ✅ app.py의 result.get('image_url')과 키 일치
         }
-
 
 # 5. 클라우드 업로더
 class CloudUploader:
@@ -309,7 +319,6 @@ class CloudUploader:
 # --- 실제 테스트 실행 ---
 if __name__ == "__main__":
     pipeline = PersonaPipeline()
-    uploader = CloudUploader()
 
     test_audio = os.getenv("TEST_AUDIO_URL")
     test_image = os.getenv("TEST_IMAGE_URL")
@@ -319,32 +328,14 @@ if __name__ == "__main__":
 
     result = asyncio.run(pipeline.run_e2e_test(test_audio, test_image, test_answers, test_tones))
 
-    report_data = result['report']
-    temp_image_path = result['temp_image_path']  # Gemini가 저장한 로컬 경로
-
-    # S3 업로드
-    final_s3_url = None
-    if temp_image_path and os.path.exists(temp_image_path):
-        try:
-            ts = int(time.time())
-            unique_name = f"persona_{ts}.png"
-
-            # S3에 업로드
-            final_s3_url = uploader.upload_to_s3(temp_image_path, unique_name)
-
-            # 임시 파일 삭제
-            os.remove(temp_image_path)
-        except Exception as e:
-            print(f"❌ S3 업로드 과정 중 오류: {e}")
-
-    # 최종 결과
+    # ✅ 'temp_image_path' → 'image_url'로 변경 (S3 업로드는 run_e2e_test 내부에서 완료됨)
     final_response = {
-        "persona_report": report_data,
-        "image_url": final_s3_url
+        "persona_report": result['report'],
+        "image_url": result['image_url']  # ✅ 키 이름 변경
     }
 
     with open("persona_result.json", "w", encoding="utf-8") as f:
         json.dump(final_response, f, ensure_ascii=False, indent=4)
 
     print("✅ 최종 리포트가 'persona_result.json'으로 저장되었습니다.")
-    print(f"🔗 최종 S3 링크: {final_s3_url}")
+    print(f"🔗 최종 S3 링크: {result['image_url']}")  # ✅ 키 이름 변경

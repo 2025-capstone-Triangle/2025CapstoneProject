@@ -15,6 +15,8 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
+from image_crop import image_crop
+
 
 class ContentGeneration:
     def __init__(self):
@@ -168,76 +170,53 @@ class ContentGeneration:
             print(f"❌ 이미지 생성 에러: {e}")
             return None
 
-    # --- [스마트 크롭 로직] ---
+    # --- [스마트 크롭 — image_crop 모듈 활용] ---
     def apply_smart_crop(self, image_bytes: bytes, aspect_ratio=0.8, mode="Post"):
         img_array = np.frombuffer(image_bytes, np.uint8)
         cv_img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
         h, w, _ = cv_img.shape
-
+ 
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB))
         detection_result = self.landmarker.detect(mp_image)
-
+ 
         if not detection_result.pose_landmarks:
             print("⚠️ 포즈를 찾지 못해 중앙 크롭을 수행합니다.")
             return self._center_crop(cv_img, aspect_ratio)
-
+ 
         landmarks = detection_result.pose_landmarks[0]
-        crop_coords = self._calculate_crop_coords(landmarks, w, h, aspect_ratio, mode)
-
-        if crop_coords:
-            (x, y, cw, ch) = crop_coords
-            return cv_img[y:y+ch, x:x+cw]
-        return cv_img
-
-    def _calculate_crop_coords(self, landmarks, w, h, aspect_ratio, mode):
-        x_coords = [lm.x for lm in landmarks]
-        y_coords = [lm.y for lm in landmarks]
-        person_center_x = (min(x_coords) + max(x_coords)) / 2
-        person_h_rel = max(y_coords) - min(y_coords)
-        eye_y_rel = (landmarks[1].y + landmarks[5].y) / 2
-
-        zoom_factors = {"Profile": 5, "Post": 1.6, "Story": 2.0}
-        eye_ratios = {"Profile": 0.4, "Post": 0.3, "Story": 0.25}
-
-        zoom = zoom_factors.get(mode, 1.6)
-        eye_ratio = eye_ratios.get(mode, 0.3)
-
-        pixel_crop_h = min(h, person_h_rel * h * zoom)
-        pixel_crop_w = pixel_crop_h * aspect_ratio
-
-        if pixel_crop_w > w:
-            pixel_crop_w = w
-            pixel_crop_h = pixel_crop_w / aspect_ratio
-
-        target_x_min = person_center_x - ((pixel_crop_w / w) * 0.5)
-        target_y_min = eye_y_rel - ((pixel_crop_h / h) * eye_ratio)
-
-        x_min = int(max(0, min(1 - (pixel_crop_w/w), target_x_min)) * w)
-        y_min = int(max(0, min(1 - (pixel_crop_h/h), target_y_min)) * h)
-
-        return (x_min, y_min, int(pixel_crop_w), int(pixel_crop_h))
-
+ 
+        # image_crop.py의 image_crop() 함수 호출
+        crop_info = image_crop(landmarks, w, h, aspect_ratio=aspect_ratio, mode=mode)
+        if crop_info is None:
+            print("⚠️ 크롭 좌표 계산 실패, 중앙 크롭을 수행합니다.")
+            return self._center_crop(cv_img, aspect_ratio)
+ 
+        (x, y, cw, ch), angle = crop_info
+        print(f"✂️ 크롭 적용 — mode: {mode}, angle: {angle:.1f}°")
+        return cv_img[y:y+ch, x:x+cw]
+ 
     def _center_crop(self, img, aspect_ratio):
+        """포즈 미감지 시 폴백용 중앙 크롭"""
         h, w, _ = img.shape
-        if w/h > aspect_ratio:
+        if w / h > aspect_ratio:
             new_w = int(h * aspect_ratio)
             start_x = (w - new_w) // 2
             return img[:, start_x:start_x+new_w]
         new_h = int(w / aspect_ratio)
         start_y = (h - new_h) // 2
         return img[start_y:start_y+new_h, :]
-
+ 
     def upload_cv2_to_s3(self, cv_img, file_name):
         try:
             _, buffer = cv2.imencode('.png', cv_img)
             image_bytes = buffer.tobytes()
             s3_path = f"generated_personas/{file_name}.png"
-
+ 
             self.s3.put_object(
                 Bucket=self.bucket_name, Key=s3_path,
                 Body=image_bytes, ContentType='image/png'
             )
-
+ 
             region = os.getenv("AWS_REGION", "ap-northeast-2")
             final_url = f"https://{self.bucket_name}.s3.{region}.amazonaws.com/{s3_path}"
             print(f"✅ S3 업로드 완료: {final_url}")
@@ -245,7 +224,6 @@ class ContentGeneration:
         except Exception as e:
             print(f"❌ S3 업로드 에러: {e}")
             return None
-
 
 # --- 실행부 ---
 async def main(trend_prompt, crop_type=1):

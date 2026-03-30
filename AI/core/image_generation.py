@@ -5,12 +5,16 @@ import time
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
+import numpy as np
+import cv2
+
 import boto3
 from google import genai
 from google.genai import types
 from PIL import Image
 import httpx
 
+from image_crop  import image_crop
 
 class ImageGeneration:
     def __init__(self):
@@ -105,11 +109,14 @@ class ImageGeneration:
                 if part.text is not None:
                     print(f"💬 Gemini 응답: {part.text}")
                 elif image := part.as_image():
+                    ts = int(time.time())
                     # PIL Image → bytes 변환
-                    buffer = io.BytesIO()
-                    image.save(buffer, format="PNG")
-                    print("✨ 이미지 데이터 획득 성공!")
-                    return buffer.getvalue()
+                    temp_path = f"temp_gemini_{ts}.png"
+                    image.save(temp_path)          # 경로만 받는 Gemini 방식
+                    with open(temp_path, "rb") as f:
+                        image_bytes = f.read()
+                    os.remove(temp_path)
+                    return image_bytes
 
             print("⚠️ Gemini 응답에 이미지가 없습니다.")
             return None
@@ -118,36 +125,94 @@ class ImageGeneration:
             print(f"❌ 이미지 생성 에러: {e}")
             return None
 
-    def upload_to_s3(self, image_bytes: bytes, file_name: str) -> str | None:
-        """생성된 이미지 bytes를 S3에 직접 업로드"""
+    def apply_smart_crop(self, image_bytes: bytes, aspect_ratio: float, mode: str):
+        """image_crop 모듈의 image_crop() 함수를 호출해 크롭된 cv2 이미지를 반환"""
+        img_array = np.frombuffer(image_bytes, np.uint8)
+        cv_img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+        h, w, _ = cv_img.shape
+ 
+        # MediaPipe로 랜드마크 검출
+        import mediapipe as mp
+        from mediapipe.tasks import python as mp_python
+        from mediapipe.tasks.python import vision
+ 
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(current_dir, 'pose_landmarker_heavy.task')
+        base_options = mp_python.BaseOptions(model_asset_path=model_path)
+        options = vision.PoseLandmarkerOptions(base_options=base_options)
+ 
+        with vision.PoseLandmarker.create_from_options(options) as landmarker:
+            mp_image = mp.Image(
+                image_format=mp.ImageFormat.SRGB,
+                data=cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+            )
+            detection_result = landmarker.detect(mp_image)
+ 
+        if not detection_result.pose_landmarks:
+            print("⚠️ 포즈를 찾지 못해 중앙 크롭을 수행합니다.")
+            return self._center_crop(cv_img, aspect_ratio)
+ 
+        landmarks = detection_result.pose_landmarks[0]
+ 
+        # image_crop 모듈의 함수 호출
+        crop_info = image_crop(landmarks, w, h, aspect_ratio=aspect_ratio, mode=mode)
+        if crop_info is None:
+            print("⚠️ 크롭 좌표 계산 실패, 중앙 크롭을 수행합니다.")
+            return self._center_crop(cv_img, aspect_ratio)
+ 
+        (x, y, cw, ch), angle = crop_info
+        print(f"✂️ 크롭 적용 — mode: {mode}, angle: {angle:.1f}°")
+        return cv_img[y:y+ch, x:x+cw]
+ 
+    def _center_crop(self, img, aspect_ratio):
+        """포즈 미감지 시 폴백용 중앙 크롭"""
+        h, w, _ = img.shape
+        if w / h > aspect_ratio:
+            new_w = int(h * aspect_ratio)
+            start_x = (w - new_w) // 2
+            return img[:, start_x:start_x+new_w]
+        new_h = int(w / aspect_ratio)
+        start_y = (h - new_h) // 2
+        return img[start_y:start_y+new_h, :]
+ 
+    def upload_cv2_to_s3(self, cv_img, file_name: str) -> str | None:
+        """크롭된 cv2 이미지를 PNG로 인코딩해 S3에 업로드"""
         try:
+            _, buffer = cv2.imencode('.png', cv_img)
+            image_bytes = buffer.tobytes()
             s3_path = f"generated_personas/{file_name}.png"
-
+ 
             self.s3.put_object(
                 Bucket=self.bucket_name,
                 Key=s3_path,
                 Body=image_bytes,
                 ContentType='image/png'
             )
-
+ 
             region = os.getenv("AWS_REGION", "ap-northeast-2")
             final_url = f"https://{self.bucket_name}.s3.{region}.amazonaws.com/{s3_path}"
             print(f"✅ S3 업로드 완료: {final_url}")
             return final_url
-
+ 
         except Exception as e:
             print(f"❌ S3 업로드 에러: {e}")
             return None
 
-
 # --- 실행부 ---
-async def main():
+async def main(crop_type=1):
     generator = ImageGeneration()
+ 
+    crop_configs = {
+        0: {"ratio": 1.0,    "mode": "Profile", "label": "1-1_Square"},
+        1: {"ratio": 0.8,    "mode": "Post",    "label": "4-5_Portrait"},
+        2: {"ratio": 0.5625, "mode": "Story",   "label": "9-16_Full"}
+    }
+    config = crop_configs.get(crop_type, crop_configs[1])
 
     mock_report = {
         "name": "차분한 도시 산책자",
-        "color_palette": ["#E2B2B2", "#E0E0E0"],
-        "keywords": ["Urban", "Midnight", "Minimal"]
+        "color_palette": ["#F7E3E0", "#EBEBEB","#F7FFE5"],
+        "keywords": ["Natural", "Daylight", "Minimal"]
     }
 
     # 1. 프롬프트 생성
@@ -159,20 +224,30 @@ async def main():
     user_photo_url = os.getenv("TEST_IMAGE_URL")
     user_pil_image = await generator.download_image_as_pil(user_photo_url)
 
-    # 3. Gemini로 이미지 생성 → bytes 반환
+    # 3. 이미지 생성
+    print("3. 이미지 생성 중...")
     image_bytes = generator.generate_persona_image(final_prompt, user_pil_image)
-
-    # 4. S3 업로드 (결과가 있을 때만 실행)
+ 
+    # 4. 포즈 기반 스마트 크롭 적용
     if image_bytes:
-        ts = int(time.time())
-        file_name = f"user_test_result_{ts}"
-        final_s3_url = generator.upload_to_s3(image_bytes, file_name)
-        return final_s3_url  # 이 URL 백엔드로 넘겨주기
-
+        print("4. 스마트 크롭 적용 중...")
+        cropped_cv_img = generator.apply_smart_crop(
+            image_bytes,
+            aspect_ratio=config["ratio"],
+            mode=config["mode"]
+        )
+ 
+        print("5. S3 업로드 중...")
+        unique_filename = f"user_test_{int(time.time())}"
+        final_s3_url = generator.upload_cv2_to_s3(cropped_cv_img, unique_filename)
+ 
+        print(f"🔗 새로 생성된 이미지 주소: {final_s3_url}")
+        return final_s3_url
 
 if __name__ == "__main__":
     test_payload = {
-        "answers": {"q1_environment": 1, "q3_minimal_maximal": 1, "q4_mood": 2, "q5_contrast_type": 1, "q7_framing": 4},
-        "q8_tone": [34, 23, 56, 34]
+        "answers": {"q1_environment": 1, "q2_style": 2, "q3_minimal_maximal": 1, "q4_mood": 1, "q5_contrast_type": 2, "q6_motion": 1, "q7_framing": 3},
+        "q8_tone": [34, 73, 36, 72]
     }
-    asyncio.run(main())
+    user_input_selection = 1  # 0: 1:1 Square, 1: 4:5 Portrait, 2: 9:16 Story
+    asyncio.run(main(crop_type=user_input_selection))

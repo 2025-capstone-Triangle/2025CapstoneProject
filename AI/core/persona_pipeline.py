@@ -314,14 +314,8 @@ if __name__ == "__main__":
     test_audio = os.getenv("TEST_AUDIO_URL")
     test_image = os.getenv("TEST_IMAGE_URL")
 
-    test_answers = {
-        "q1_environment": 1,
-        "q3_minimal_maximal": 1,
-        "q4_mood": 2,
-        "q5_contrast_type": 1,
-        "q7_framing": 4
-    }
-    test_tones = [34, 23, 56, 34]
+    test_answers = {"q1_environment": 1, "q2_style": 2, "q3_minimal_maximal": 1, "q4_mood": 1, "q5_contrast_type": 2, "q6_motion": 1, "q7_framing": 3}
+    test_tones = [34, 73, 36, 72]
 
     result = asyncio.run(pipeline.run_e2e_test(test_audio, test_image, test_answers, test_tones))
 

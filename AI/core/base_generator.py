@@ -53,6 +53,17 @@ class BaseContentGenerator:
         options = vision.PoseLandmarkerOptions(base_options=base_options)
         self.landmarker = vision.PoseLandmarker.create_from_options(options)
 
+    def _get_framing(self, answers) -> str:
+        """answers의 q7_framing 값을 Gemini 프롬프트에 직접 삽입할 framing 텍스트로 변환합니다."""
+        framing_map = {
+            1: "extreme close-up shot, face only",
+            2: "bust shot, upper body and shoulders only",
+            3: "half-body shot, waist up",
+            4: "full-body shot, entire figure visible from head to toe",
+            5: "wide cinematic shot with the person as focal point"
+        }
+        return framing_map.get(answers.get('q7_framing'), "portrait shot")
+
     def _build_base_prompt(self, answers, tones):
         """설문 답변과 톤 슬라이더 값으로 이미지 생성용 기본 스타일 설명을 반환합니다."""
         framing_map = {
@@ -66,6 +77,9 @@ class BaseContentGenerator:
         env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \
               else "inside a minimalist, aesthetically pleasing studio or a modern interior with soft window light"
 
+        style = "candid, natural everyday lifestyle look, unposed and effortless" if answers.get('q2_style') == 1 \
+                else "editorial, carefully styled and directed pose, fashion-shoot aesthetic"
+
         density = "clean minimalist background, focus strictly on the subject" if answers.get('q3_minimal_maximal') == 1 \
                   else "richly detailed environment with plants, books, and sophisticated props"
 
@@ -73,6 +87,9 @@ class BaseContentGenerator:
                    else "moody, calm, and slightly dark cinematic atmosphere"
         contrast_str = "with deep shadows and striking highlights" if answers.get('q5_contrast_type') == 1 \
                        else "with soft, low-contrast, and dreamy transitions"
+
+        motion = "still and composed pose, calm and poised body language" if answers.get('q6_motion') == 1 \
+                 else "dynamic, caught-in-motion energy, natural movement and flowing hair or clothing"
 
         s_val, v_val, c_val, t_val = tones
 
@@ -93,8 +110,9 @@ class BaseContentGenerator:
         else: temp = "neutral daylight white balance"
 
         return (
-            f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {saturation}, {brightness}, {contrast}, {temp}. "
-            f"{density}, {mood_str}, {contrast_str}, {temp}. "
+            f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {style}, {motion}. "
+            f"{density}, {mood_str}, {contrast_str}. "
+            f"{saturation}, {brightness}, {contrast}, {temp}. "
             f"Overall visual style matches these specific attributes: "
             f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100."
         )

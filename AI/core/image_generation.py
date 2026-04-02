@@ -33,7 +33,8 @@ class ImageGeneration(BaseContentGenerator):
         6. 영어로 작성하세요.
         """
         res = await self.llm.ainvoke(prompt_refine_msg)
-        return res.content.strip()
+        framing = self._get_framing(answers)
+        return f"Camera framing: {framing}. {res.content.strip()}"
 
 
 # --- 실행부 ---

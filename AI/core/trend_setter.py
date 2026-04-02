@@ -38,7 +38,8 @@ class ContentGeneration(BaseContentGenerator):
             결과는 영어로만, "A high-quality realistic photo of..."로 시작해서 출력하세요.
         """
         res = await self.llm.ainvoke(prompt_refine_msg)
-        return res.content.strip()
+        framing = self._get_framing(answers)
+        return f"Camera framing: {framing}. {res.content.strip()}"
 
 
 # --- 실행부 ---

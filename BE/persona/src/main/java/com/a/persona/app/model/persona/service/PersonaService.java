@@ -110,7 +110,7 @@ public class PersonaService {
      * @return PersonaDto 
      * @throws IOException 업로드 예외
      */
-    public PersonaDto createPersona(String username, MultipartFile profile, MultipartFile image, MultipartFile voice, LikeAnswerRequest preferenceType, List<Long> tone) throws IOException {
+    public PersonaDto createPersona(String username, MultipartFile profile, MultipartFile image, MultipartFile voice, LikeAnswerRequest preferenceType, List<Long> tone, String sessionId) throws IOException {
 
         Preference preference = Preference.builder()
                 .q1Environment(preferenceType.getQ1_environment())
@@ -143,13 +143,14 @@ public class PersonaService {
         // 이미지 파일 업로드 및 URL 리스트 반환
         String voiceUrl = s3Manager.upload(voice, amazonConfig.getVoicePath(), fileName);
 
-
         // AI 서버에 페르소나 진단 요청
         PersonaRequest request = PersonaRequest.builder()
                 .answers(preferenceType)
                 .q8_tone(tone)
                 .images(pictureUrl)
-                .voice(voiceUrl).build();
+                .voice(voiceUrl)
+                .callback_url(sessionId)
+                .build();
 
         PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
 
@@ -158,7 +159,6 @@ public class PersonaService {
         do {
             code = CodeGenerator.generateShareCode();
         } while (isExistCode(code));
-        // todo 이미지 파일 저장 presigned-url을 만들 수 있는 그 코드? 를 저장하기
 
         Persona persona = Persona.builder()
                 .name(result.getReport().getName())

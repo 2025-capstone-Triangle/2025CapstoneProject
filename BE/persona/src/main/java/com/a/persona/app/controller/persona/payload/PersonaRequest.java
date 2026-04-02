@@ -16,6 +16,7 @@ public class PersonaRequest {
     MultipartFile voice;
     String answer;
     List<Long> q8_tone = List.of(0L,0L,0L,0L);
+    String sessionId;
 
     @Schema(hidden = true)
     public LikeAnswerRequest getLikeAnswerRequest()

@@ -88,7 +88,7 @@ public class PersonaController {
                 username = userDetails.getUsername();
             
             // 페르소나 진단
-            personaDto = personaService.createPersona(username, personaRequest.getProfile(), personaRequest.getImage(), personaRequest.getVoice(), personaRequest.getLikeAnswerRequest(), personaRequest.getQ8_tone());
+            personaDto = personaService.createPersona(username, personaRequest.getProfile(), personaRequest.getImage(), personaRequest.getVoice(), personaRequest.getLikeAnswerRequest(), personaRequest.getQ8_tone(), personaRequest.getSessionId());
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }

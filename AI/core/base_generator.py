@@ -60,9 +60,9 @@ class BaseContentGenerator:
             2: "bust shot, upper body and shoulders only",
             3: "half-body shot, waist up",
             4: "full-body shot, entire figure visible from head to toe",
-            5: "wide cinematic shot with the person as focal point"
+            5: "wide cinematic shot, person full-body being speck in a landscape, harmonized with the vast background environment"
         }
-        return framing_map.get(answers.get('q7_framing'), "portrait shot")
+        return framing_map.get(answers.get('q7_framing'))
 
     def _build_base_prompt(self, answers, tones):
         """설문 답변과 톤 슬라이더 값으로 이미지 생성용 기본 스타일 설명을 반환합니다."""
@@ -71,7 +71,7 @@ class BaseContentGenerator:
             2: "cinematic bust shot, focusing on upper body and jewelry",
             3: "half-body shot, natural pose with arms slightly in frame",
             4: "full-body shot, standing naturally, capturing the outfit and silhouette",
-            5: "wide cinematic shot, person harmonized with the vast background environment"
+            5: "wide cinematic shot, person full-body being speck in a landscape, harmonized with the vast background environment"
         }
 
         env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \

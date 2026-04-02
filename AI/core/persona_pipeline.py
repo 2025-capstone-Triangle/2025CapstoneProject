@@ -213,7 +213,7 @@ class PersonaPipeline:
             2: "cinematic bust shot, focusing on upper body and jewelry",
             3: "half-body shot, natural pose with arms slightly in frame",
             4: "full-body shot, standing naturally, capturing the outfit and silhouette",
-            5: "wide cinematic shot, person harmonized with the vast background environment"
+            5: "wide cinematic shot, person full-body being speck in a landscape, harmonized with the vast background environment"
         }
 
         env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \

@@ -49,7 +49,7 @@ async def main(crop_type=1):
     config = crop_configs.get(crop_type, crop_configs[1])
 
     mock_report = {
-        "name": "차분한 도시 산책자",
+        "name": "맑은 자연 산책자",
         "color_palette": ["#F7E3E0", "#EBEBEB", "#F7FFE5"],
         "keywords": ["Natural", "Daylight", "Minimal"]
     }
@@ -86,7 +86,7 @@ async def main(crop_type=1):
 
 if __name__ == "__main__":
     test_payload = {
-        "answers": {"q1_environment": 1, "q2_style": 2, "q3_minimal_maximal": 1, "q4_mood": 1, "q5_contrast_type": 2, "q6_motion": 1, "q7_framing": 3},
+        "answers": {"q1_environment": 1, "q2_style": 2, "q3_minimal_maximal": 1, "q4_mood": 1, "q5_contrast_type": 2, "q6_motion": 2, "q7_framing": 5},
         "q8_tone": [34, 73, 36, 72]
     }
     user_input_selection = 1  # 0: 1:1 Square, 1: 4:5 Portrait, 2: 9:16 Story

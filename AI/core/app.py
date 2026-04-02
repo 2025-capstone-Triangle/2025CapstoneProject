@@ -22,8 +22,9 @@ class DiagnosisRequest(BaseModel):
     """1. 페르소나 진단용: 음성과 이미지를 분석해 리포트 생성"""
     answers: dict
     q8_tone: List[int] = [0, 0, 0, 0]
-    images: str  # 사용자 원본 사진 URL
-    voice: str   # 사용자 목소리 URL
+    images: str           # 사용자 원본 사진 URL
+    voice: str            # 사용자 목소리 URL
+    callback_url: str | None = None  # 진행 상태 수신할 BE 엔드포인트 (선택)
 
 class ContentCreateRequest(BaseModel):
     """2. 콘텐츠 생성용: 진단 리포트를 바탕으로 AI 이미지 생성 및 크롭"""
@@ -55,7 +56,8 @@ async def diagnose_persona(data: DiagnosisRequest):
             audio_url=data.voice,
             image_url=data.images,
             answers=data.answers,
-            tones=data.q8_tone
+            tones=data.q8_tone,
+            callback_url=data.callback_url
         )
 
         # S3 업로드는 persona_pipeline 내부에서 처리되므로 temp_image_path는 여기서 사용 안 함

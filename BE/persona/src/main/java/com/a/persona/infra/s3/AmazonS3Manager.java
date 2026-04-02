@@ -49,7 +49,7 @@ public class AmazonS3Manager {
                     amazonConfig.getBucket(), fileName, inputStream, metadata));
         }
 
-        return generatePresignedUrl(fileName);
+        return amazonS3Client.getUrl(amazonConfig.getBucket(), fileName).toString();
     }
 
 

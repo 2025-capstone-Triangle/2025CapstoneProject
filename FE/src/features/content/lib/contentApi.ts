@@ -23,9 +23,31 @@ export interface ContentStatResponse {
   isLiked: boolean;
 }
 
+export type ContentType = "SQUARE" | "FEED" | "STORY";
+
+export interface ContentCreateRequest {
+  code: string;
+  referenceId?: number;
+  type: ContentType;
+}
+
+export interface ContentCreateResponse {
+  id: number;
+  reference?: ContentReferenceDto | null;
+  img: string;
+  type: ContentType;
+}
+
 export async function getContentListByPersonaCode(code: string) {
   const query = `?code=${encodeURIComponent(code)}`;
   return apiRequest<ContentStatResponse[]>(`/api/v1/content${query}`);
+}
+
+export async function createContent(payload: ContentCreateRequest) {
+  return apiRequest<ContentCreateResponse>("/api/v1/content", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function toggleContentLike(id: number, like: boolean) {

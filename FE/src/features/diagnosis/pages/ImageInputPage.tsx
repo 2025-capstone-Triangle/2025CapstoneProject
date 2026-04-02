@@ -4,19 +4,17 @@ import { Loader2, Upload } from 'lucide-react';
 import { BackButton } from '../../../shared/layout/BackButton';
 import { checkFaceAnalyzable } from '../lib/faceLandmarkCheck';
 import {
-  clearStagedDiagnosisImageFiles,
   getStagedDiagnosisImageFiles,
   stageDiagnosisImageFiles,
 } from '../lib/imageStaging';
 
 interface ImageInputPageProps {
   onNext?: () => void;
-  onSkip?: () => void;
   onBack?: () => void;
   onHome?: () => void;
 }
 
-export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPageProps) {
+export function ImageInputPage({ onNext, onBack, onHome }: ImageInputPageProps) {
   const [firstFile, setFirstFile] = useState<File | null>(() => getStagedDiagnosisImageFiles()[0] ?? null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [faceStatus, setFaceStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'error'>('idle');
@@ -25,15 +23,6 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
 
   const handleImageUpload = (file: File) => {
     setFirstFile(file);
-  };
-
-  const handleSkip = () => {
-    setFirstFile(null);
-    setUploadedImage(null);
-    setFaceStatus('idle');
-    setFaceMessage('');
-    clearStagedDiagnosisImageFiles();
-    onSkip?.();
   };
 
   const canProceed = Boolean(uploadedImage) && faceStatus === 'valid';
@@ -74,11 +63,11 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
   }, [firstFile]);
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">
+    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
 
-      <div className="px-8 pt-8">
+      <div className="mx-auto w-full max-w-[720px] flex-1 px-6 sm:px-8 lg:px-10 pt-8 pb-28 md:pb-8">
         <h2 className="font-['Noto_Sans_KR'] font-semibold text-[16px] text-black text-center mb-8">
           얼굴이 나온 사진을 넣어보세요
         </h2>
@@ -150,18 +139,12 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
         ) : null}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-6 max-w-[390px] mx-auto">
-        <div className="flex gap-3">
-          <button
-            onClick={handleSkip}
-            className="bg-[#f0f0f0] rounded-[16px] h-[56px] px-8 font-['Noto_Sans_KR'] font-medium text-[15px] text-[#262626] hover:bg-[#e5e5e5] transition-colors"
-          >
-            건너뛰기
-          </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent md:backdrop-blur-0">
+        <div className="mx-auto max-w-[720px] p-4 sm:p-6 md:px-8 lg:px-10 md:pt-2 md:pb-8">
           <button
             onClick={onNext}
             disabled={!canProceed}
-            className="flex-1 bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a1a1a] transition-colors"
+            className="w-full bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a1a1a] transition-colors"
           >
             다음
           </button>
@@ -170,3 +153,5 @@ export function ImageInputPage({ onNext, onSkip, onBack, onHome }: ImageInputPag
     </div>
   );
 }
+
+

@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
-import { StatusBar } from '../../../shared/layout/StatusBar';
 
-interface AnalyzingPageProps {
-  onComplete?: () => void;
-}
-
-export function AnalyzingPage({ onComplete }: AnalyzingPageProps) {
+export function AnalyzingPage() {
   const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -18,33 +13,27 @@ export function AnalyzingPage({ onComplete }: AnalyzingPageProps) {
 
   useEffect(() => {
     const stepInterval = setInterval(() => {
-      setStep((prev) => {
-        if (prev < steps.length - 1) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    }, 600); // 2000 → 600ms
+      setStep((prev) => (prev + 1) % steps.length);
+    }, 1400);
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev < 100) {
-          return prev + 4; // 1 → 4 (4배 빠르게)
+        if (prev >= 95) {
+          return 95;
         }
-        clearInterval(progressInterval);
-        setTimeout(() => onComplete?.(), 300); // 500 → 300ms
-        return 100;
+        return prev + 1;
       });
-    }, 20); // 80 → 20ms (4배 빠르게)
+    }, 180);
 
     return () => {
       clearInterval(stepInterval);
       clearInterval(progressInterval);
     };
-  }, [onComplete]);
+  }, [steps.length]);
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto flex flex-col">      <div className="flex-1 flex flex-col items-center justify-center px-8">
+    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-8">
         {/* Loading Animation */}
         <div className="relative mb-16">
           <div className="w-32 h-32 border-4 border-[#f0f0f0] rounded-full" />
@@ -80,5 +69,7 @@ export function AnalyzingPage({ onComplete }: AnalyzingPageProps) {
     </div>
   );
 }
+
+
 
 

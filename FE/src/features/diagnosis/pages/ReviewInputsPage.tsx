@@ -10,7 +10,7 @@ import { getStagedDiagnosisImageFiles } from "../lib/imageStaging";
 import { getStagedVoiceRecordingMeta } from "../lib/voiceRecording";
 
 interface ReviewInputsPageProps {
-  onConfirm?: () => void;
+  onConfirm?: () => void | Promise<void>;
   onBack?: () => void;
   onHome?: () => void;
 }
@@ -30,21 +30,29 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
       setSubmitError("선호 테스트 결과가 없습니다. 테스트를 먼저 완료해 주세요.");
       return;
     }
+    if (!imageFile) {
+      setSubmitError("이미지 업로드가 필요합니다. 이미지 단계를 완료해 주세요.");
+      return;
+    }
+    if (!voiceMeta) {
+      setSubmitError("음성 녹음이 필요합니다. 음성 단계를 완료해 주세요.");
+      return;
+    }
 
     const payload = buildDiagnosisPreferencePayload(preferenceResult);
     stageDiagnosisPreferencePayload(payload);
 
     console.info("[diagnosis.preference.payload]", payload);
     setStagedMessage("분석 요청 데이터가 준비되었습니다.");
-    onConfirm?.();
+    void onConfirm?.();
   };
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[84px]">
+    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
 
-      <div className="px-8 pt-8">
+      <div className="mx-auto w-full max-w-[760px] flex-1 px-5 sm:px-8 lg:px-10 pt-8 pb-28 md:pb-8">
         <h2 className="font-['NEXON_Football_Gothic'] text-[28px] text-black mb-6">입력 내용 확인</h2>
 
         <div className="space-y-3 mb-8">
@@ -75,8 +83,8 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
           <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">이미지 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#6b6b6b]">
-                {imageFile ? "완료" : "건너뜀"}
+              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#EF466F]">
+                {imageFile ? "완료" : "미완료"}
               </span>
             </div>
             {imageFile ? (
@@ -85,15 +93,15 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
                 <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">{(imageFile.size / 1024).toFixed(1)} KB</p>
               </div>
             ) : (
-              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">이미지 업로드를 건너뛰었습니다.</p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">이미지를 업로드해 주세요.</p>
             )}
           </div>
 
           <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">음성 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#6b6b6b]">
-                {voiceMeta ? "완료" : "건너뜀"}
+              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#EF466F]">
+                {voiceMeta ? "완료" : "미완료"}
               </span>
             </div>
             {voiceMeta ? (
@@ -104,7 +112,7 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
                 </p>
               </div>
             ) : (
-              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">음성 녹음을 건너뛰었습니다.</p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">음성을 녹음해 주세요.</p>
             )}
           </div>
         </div>
@@ -119,14 +127,18 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
         {stagedMessage && <p className="font-['Noto_Sans_KR'] text-[12px] text-[#0f9f53] mb-2">{stagedMessage}</p>}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-6 max-w-[390px] mx-auto">
-        <button
-          onClick={handleConfirm}
-          className="w-full bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-sm hover:bg-[#1a1a1a] transition-colors"
-        >
-          확인하고 분석 시작
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent">
+        <div className="mx-auto max-w-[760px] p-4 sm:p-6 lg:px-10 md:pt-2 md:pb-8">
+          <button
+            onClick={handleConfirm}
+            className="w-full bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-sm hover:bg-[#1a1a1a] transition-colors"
+          >
+            확인하고 분석 시작
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+

@@ -62,5 +62,12 @@
     server: {
       port: 3000,
       open: true,
+      proxy: {
+        "/api": {
+          target: "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
   });

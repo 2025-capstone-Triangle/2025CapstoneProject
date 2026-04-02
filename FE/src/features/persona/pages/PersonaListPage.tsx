@@ -1,14 +1,30 @@
 ﻿import { useEffect, useMemo, useState, type MouseEvent } from "react";
-import { CheckCircle2, ChevronRight, Heart, KeyRound, Loader2, Plus, RefreshCw } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  KeyRound,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { isAuthenticated } from "../../../lib/auth";
 import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+import { ImageWithFallback } from "../../../shared/ui/ImageWithFallback";
 import {
   clearPendingPersonaCode,
   getPendingPersonaCode,
   normalizePersonaCode,
 } from "../lib/personaShareCode";
-import { getPersonaList, saveSharedPersona, type PersonaResponse } from "../lib/personaApi";
+import {
+  getPersonaList,
+  removePersona,
+  saveSharedPersona,
+  type PersonaResponse,
+} from "../lib/personaApi";
 
 interface PersonaListPageProps {
   onPersonaClick?: (id: string) => void;
@@ -23,7 +39,7 @@ interface PersonaCardItem {
   name: string;
   description: string;
   colors: string[];
-  profile: string;
+  thumbnail: string;
   isFavorite: boolean;
 }
 
@@ -50,7 +66,7 @@ function mapPersonaToCard(item: PersonaResponse, favorites: Set<string>): Person
     name: item.name,
     description: item.keywords?.length ? item.keywords.join(" · ") : "나만의 페르소나",
     colors: item.colors?.length ? item.colors.slice(0, 4) : ["#000000", "#666666", "#999999", "#cccccc"],
-    profile: item.profile ?? "",
+    thumbnail: item.thumbnail || item.profile || "",
     isFavorite: favorites.has(item.code),
   };
 }
@@ -63,6 +79,9 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
   const [importError, setImportError] = useState("");
   const [importMessage, setImportMessage] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [deletingCode, setDeletingCode] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
 
   const loadPersonas = async () => {
     setLoading(true);
@@ -88,6 +107,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
     if (!pendingCode) return;
 
     setImportCode(pendingCode);
+    setIsImportOpen(true);
     setImportMessage("진단에서 받은 코드가 입력되어 있어요. 추가 버튼을 눌러 가져오세요.");
   }, []);
 
@@ -115,6 +135,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
   const handleAddByCode = async () => {
     setImportError("");
     setImportMessage("");
+    setActionError("");
 
     if (!isAuthenticated()) {
       setImportError("코드로 가져오기는 로그인 후 이용할 수 있어요.");
@@ -151,6 +172,31 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
     }
   };
 
+  const handleDeletePersona = async (code: string, event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    if (!window.confirm("이 페르소나를 삭제할까요?")) return;
+
+    setActionError("");
+    setDeletingCode(code);
+
+    try {
+      await removePersona(code);
+      setPersonas((prev) => {
+        const next = prev.filter((item) => item.code !== code);
+        const favoriteCodes = next.filter((item) => item.isFavorite).map((item) => item.code);
+        writeFavoriteCodes(favoriteCodes);
+        return next;
+      });
+      setImportMessage("페르소나를 삭제했습니다.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "페르소나 삭제에 실패했습니다.";
+      setActionError(message);
+    } finally {
+      setDeletingCode(null);
+    }
+  };
+
   const favoriteCount = personas.filter((persona) => persona.isFavorite).length;
 
   return (
@@ -169,40 +215,53 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
         </div>
 
         <div className="mb-6 rounded-[20px] border border-[#ececec] bg-gradient-to-br from-[#fcfcfc] to-[#f7f7f7] p-5 shadow-[0_6px_20px_rgba(0,0,0,0.03)]">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-[#fff2f5] flex items-center justify-center flex-shrink-0">
-              <KeyRound className="w-5 h-5 text-[#EF466F]" />
+          <button
+            type="button"
+            onClick={() => setIsImportOpen((prev) => !prev)}
+            className="w-full flex items-start justify-between gap-3 text-left"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#fff2f5] flex items-center justify-center flex-shrink-0">
+                <KeyRound className="w-5 h-5 text-[#EF466F]" />
+              </div>
+              <div>
+                <h3 className="font-['NEXON_Football_Gothic'] text-[18px] text-black">코드로 페르소나 추가</h3>
+                <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666] leading-[1.5]">
+                  공유 코드를 입력하면 내 페르소나 목록에 저장됩니다.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-['NEXON_Football_Gothic'] text-[18px] text-black">코드로 페르소나 추가</h3>
-              <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666] leading-[1.5]">
-                공유 코드를 입력하면 내 페르소나 목록에 저장됩니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              value={importCode}
-              onChange={(event) => {
-                setImportCode(event.target.value.toUpperCase());
-                setImportError("");
-              }}
-              placeholder="PRS-XXXX-XXXX"
-              className="flex-1 h-[46px] rounded-[12px] border border-[#d9d9d9] bg-white px-4 font-['Noto_Sans_KR'] text-[13px] text-black placeholder:text-[#999] focus:outline-none focus:border-black"
+            <ChevronDown
+              className={`w-5 h-5 text-[#666] mt-2 transition-transform ${isImportOpen ? "rotate-180" : ""}`}
             />
-            <button
-              onClick={handleAddByCode}
-              disabled={isImporting}
-              className="h-[46px] px-4 rounded-[12px] bg-black text-white font-['Noto_Sans_KR'] text-[13px] font-semibold disabled:opacity-60"
-            >
-              {isImporting ? "저장중" : "추가"}
-            </button>
-          </div>
+          </button>
 
-          {importError && (
-            <p className="mt-2 font-['Noto_Sans_KR'] text-[12px] text-[#d92d20]">{importError}</p>
-          )}
+          {isImportOpen ? (
+            <div className="mt-4">
+              <div className="flex gap-2">
+                <input
+                  value={importCode}
+                  onChange={(event) => {
+                    setImportCode(event.target.value.toUpperCase());
+                    setImportError("");
+                  }}
+                  placeholder="PRS-XXXX-XXXX"
+                  className="flex-1 h-[46px] rounded-[12px] border border-[#d9d9d9] bg-white px-4 font-['Noto_Sans_KR'] text-[13px] text-black placeholder:text-[#999] focus:outline-none focus:border-black"
+                />
+                <button
+                  onClick={handleAddByCode}
+                  disabled={isImporting}
+                  className="h-[46px] px-4 rounded-[12px] bg-black text-white font-['Noto_Sans_KR'] text-[13px] font-semibold disabled:opacity-60"
+                >
+                  {isImporting ? "저장중" : "추가"}
+                </button>
+              </div>
+
+              {importError && (
+                <p className="mt-2 font-['Noto_Sans_KR'] text-[12px] text-[#d92d20]">{importError}</p>
+              )}
+            </div>
+          ) : null}
 
           {importMessage && (
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#eefaf3] px-3 py-1.5">
@@ -211,6 +270,12 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
             </div>
           )}
         </div>
+
+        {actionError && (
+          <div className="mb-4 rounded-[12px] border border-[#f0d0d0] bg-[#fff7f7] p-3">
+            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#bb3b3b]">{actionError}</p>
+          </div>
+        )}
 
         {loading && (
           <div className="h-[220px] flex items-center justify-center text-[#666] font-['Noto_Sans_KR'] text-[14px] gap-2">
@@ -237,9 +302,9 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
             {sortedPersonas.map((persona) => (
               <div key={persona.code} className="relative bg-[#f8f8f8] rounded-[16px] transition-all group hover:bg-[#f0f0f0]">
                 <button onClick={() => onPersonaClick?.(persona.code)} className="w-full flex items-center gap-4 p-5">
-                  {persona.profile ? (
-                    <img
-                      src={persona.profile}
+                  {persona.thumbnail ? (
+                    <ImageWithFallback
+                      src={persona.thumbnail}
                       alt={persona.name}
                       className="w-[70px] h-[70px] rounded-[12px] object-cover flex-shrink-0"
                     />
@@ -272,6 +337,17 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
                       className={`w-5 h-5 ${persona.isFavorite ? "text-red-500 fill-red-500" : "text-[#d0d0d0]"} transition-colors`}
                     />
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={(event) => void handleDeletePersona(persona.code, event)}
+                    disabled={deletingCode === persona.code}
+                    className="p-2 hover:bg-white rounded-lg transition-colors flex-shrink-0 text-[#c0c0c0] hover:text-[#d92d20] disabled:opacity-40"
+                    title="페르소나 삭제"
+                    aria-label="페르소나 삭제"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
 
                   <ChevronRight className="w-5 h-5 text-[#c0c0c0] group-hover:text-black transition-colors flex-shrink-0" />
                 </button>

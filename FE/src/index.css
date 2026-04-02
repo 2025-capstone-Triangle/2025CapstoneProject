@@ -7,3 +7,124 @@
   outline: 2px solid #000;
   outline-offset: 2px;
 }
+
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(1200px 560px at -12% -12%, rgba(255, 216, 224, 0.5), transparent 60%),
+    radial-gradient(980px 640px at 112% 0%, rgba(204, 227, 253, 0.56), transparent 62%),
+    linear-gradient(180deg, #f4f7fb 0%, #e9eff7 100%);
+}
+
+:root {
+  --app-shell-stage-width: 100%;
+  --page-fit-scale: 1;
+  --page-fit-extra-space: 0px;
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .app-shell {
+    padding: 12px;
+    --app-shell-stage-width: min(95vw, 760px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    padding: 12px;
+    --app-shell-stage-width: min(96vw, 1200px);
+  }
+}
+
+.app-shell-stage {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--app-shell-stage-width);
+  margin: 0 auto;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.home-page-root,
+.diag-page-root {
+  width: 100%;
+}
+
+.fit-distribute {
+  gap: clamp(12px, 1.8vh, 20px);
+}
+
+@media (min-width: 768px) {
+  .app-shell {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-shell-stage {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .home-page-root,
+  .diag-page-root {
+    height: 100%;
+    min-height: 0 !important;
+    overflow: hidden;
+    zoom: var(--page-fit-scale);
+  }
+
+  .home-page-root .fit-distribute,
+  .diag-page-root .fit-distribute {
+    gap: min(30px, calc(12px + var(--page-fit-extra-space) * 0.085));
+  }
+}
+
+.app-shell-stage > .max-w-\[390px\] {
+  width: 100%;
+  max-width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .app-shell .fixed.left-0.right-0.max-w-\[390px\].mx-auto {
+    width: min(100%, var(--app-shell-stage-width));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+  }
+
+  .app-shell .fixed.inset-0.max-w-\[390px\].mx-auto {
+    width: min(100%, var(--app-shell-stage-width));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell-stage {
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+    max-width: 100%;
+  }
+}

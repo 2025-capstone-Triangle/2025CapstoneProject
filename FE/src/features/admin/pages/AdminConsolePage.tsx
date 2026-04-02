@@ -334,7 +334,7 @@ export function AdminConsolePage({ adminId = "admin", onLogout, onBackHome }: Ad
     setDashboardAppliedDate(resolvedDate);
     try {
       const data = await getAdminDashboardStatus({
-        date: options?.date ? options.date.replaceAll("-", "") : undefined,
+        date: options?.date ?? undefined,
         periodType: dashboardPeriod,
       });
       setDashboard(data);

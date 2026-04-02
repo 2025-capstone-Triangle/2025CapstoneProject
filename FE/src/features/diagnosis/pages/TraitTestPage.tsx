@@ -54,10 +54,11 @@ export function TraitTestPage({ onNext, onBack, onHome }: TraitTestPageProps) {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
+    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto">
+      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
       
-      <div className="px-8 pt-8">
+      <div className="mx-auto max-w-[760px] px-8 pt-8">
         {/* Progress */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-3">
@@ -109,5 +110,7 @@ export function TraitTestPage({ onNext, onBack, onHome }: TraitTestPageProps) {
     </div>
   );
 }
+
+
 
 

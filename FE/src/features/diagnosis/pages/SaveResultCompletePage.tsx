@@ -8,7 +8,8 @@ interface SaveResultCompletePageProps {
 
 export function SaveResultCompletePage({ onGoToPersona, onCreateContent, onHome }: SaveResultCompletePageProps) {
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto flex flex-col">      <div className="flex-1 flex flex-col items-center justify-center px-8">
+    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 mx-auto max-w-[640px] w-full">
         {/* Success Icon */}
         <div className="w-32 h-32 bg-[#EF466F] rounded-full flex items-center justify-center mb-12 shadow-lg">
           <Check className="w-16 h-16 text-white" strokeWidth={3} />
@@ -48,5 +49,7 @@ export function SaveResultCompletePage({ onGoToPersona, onCreateContent, onHome 
     </div>
   );
 }
+
+
 
 

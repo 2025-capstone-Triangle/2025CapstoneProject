@@ -1,27 +1,36 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronDown,
   Copy,
+  Download,
+  Edit2,
   Heart,
   Lock,
-  RefreshCw,
   RotateCcw,
   Sparkles,
 } from "lucide-react";
 import { isAuthenticated } from "../../../lib/auth";
 import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+import { raiseErrorToast } from "../../../lib/errorToastService";
 import { type PersonaResponse } from "../../persona/lib/personaApi";
 import { setPendingPersonaCode } from "../../persona/lib/personaShareCode";
 
 interface DiagnosisResultPageProps {
   result?: PersonaResponse | null;
+  mode?: "diagnosis" | "view";
   onSave?: (payload: { code: string; name: string }) => Promise<void> | void;
   onRecreate?: () => void;
   onBack?: () => void;
   onHome?: () => void;
   onNavigateToSignup?: () => void;
   onNavigateToLogin?: () => void;
+  viewLeftActionLabel?: string;
+  viewLeftAction?: () => void;
+  viewRightActionLabel?: string;
+  viewRightAction?: () => void;
+  statusBadgeLabel?: string;
+  onEditName?: () => void;
 }
 
 function ensureHex(value: string) {
@@ -32,17 +41,22 @@ function ensureHex(value: string) {
 
 export function DiagnosisResultPage({
   result,
+  mode = "diagnosis",
   onSave,
   onRecreate,
   onBack,
   onHome,
   onNavigateToSignup,
   onNavigateToLogin,
+  viewLeftActionLabel = "목록으로",
+  viewLeftAction,
+  viewRightActionLabel = "콘텐츠 만들기",
+  viewRightAction,
+  statusBadgeLabel,
+  onEditName,
 }: DiagnosisResultPageProps) {
-  const [selectedColor, setSelectedColor] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [liked, setLiked] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showGuestCodeModal, setShowGuestCodeModal] = useState(false);
   const [guestPersonaCode, setGuestPersonaCode] = useState("");
   const [copyDone, setCopyDone] = useState(false);
@@ -61,23 +75,63 @@ export function DiagnosisResultPage({
   const personaName = result?.name || "";
   const personaCode = result?.code || "";
   const personaDescription = useMemo(() => {
-    if (!keywords.length) return "설명 데이터가 없습니다.";
-    return keywords.join(", ");
-  }, [keywords]);
-
-  const imageCandidates = useMemo(() => {
-    const items = [result?.profile, result?.thumbnail].filter((item): item is string => Boolean(item));
-    return items;
+    const summary = result?.summary?.trim();
+    if (summary) return summary;
+    return "설명 데이터가 없습니다.";
   }, [result]);
 
-  const selectedImage = imageCandidates[currentImageIndex] || imageCandidates[0] || "";
+  const selectedImage = result?.thumbnail || result?.profile || "";
+  const traitsDetail = result?.traits?.trim() || "";
+
+  const getImageExtension = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      const fileName = parsed.pathname.split("/").pop() ?? "";
+      const matched = fileName.match(/\.(png|jpe?g|webp)$/i);
+      return matched?.[1]?.toLowerCase() ?? "png";
+    } catch {
+      const fileName = url.split("?")[0]?.split("/").pop() ?? "";
+      const matched = fileName.match(/\.(png|jpe?g|webp)$/i);
+      return matched?.[1]?.toLowerCase() ?? "png";
+    }
+  };
+
+  const handleDownloadThumbnail = async () => {
+    if (!selectedImage) {
+      raiseErrorToast("저장할 이미지가 없습니다.");
+      return;
+    }
+
+    const extension = getImageExtension(selectedImage);
+    const safeName =
+      personaName.trim().replace(/[^\w가-힣]+/g, "-").replace(/^-+|-+$/g, "") || "persona";
+    const fileName = `${safeName}-thumbnail.${extension === "jpeg" ? "jpg" : extension}`;
+
+    try {
+      const response = await fetch(selectedImage);
+      if (!response.ok) throw new Error("fetch failed");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(blobUrl);
+      raiseErrorToast("이미지를 저장했습니다.");
+      return;
+    } catch {
+      raiseErrorToast("이미지 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  };
 
   if (!result) {
     return (
-      <div className="bg-white min-h-screen max-w-[390px] mx-auto">
+      <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto">
         <DefaultTopBar onTitleClick={onHome} showNotification={false} />
         <BackButton onClick={onBack} />
-        <div className="px-8 pt-10">
+        <div className="mx-auto max-w-[760px] px-5 sm:px-8 lg:px-10 pt-10">
           <div className="rounded-[16px] border border-[#f0d0d0] bg-[#fff7f7] p-5">
             <p className="font-['Noto_Sans_KR'] text-[13px] text-[#bb3b3b] mb-3">
               진단 결과 데이터를 불러오지 못했습니다. 입력값을 확인한 뒤 다시 진단해 주세요.
@@ -157,15 +211,17 @@ export function DiagnosisResultPage({
   };
 
   return (
-    <div className="bg-gradient-to-b from-[#fafafa] to-white min-h-screen max-w-[390px] mx-auto">
+    <div className="bg-gradient-to-b from-[#fafafa] to-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
 
-      <div className="relative px-8 pt-8 pb-8">
+      <div className="relative mx-auto max-w-[760px] px-5 sm:px-8 lg:px-10 pt-8 pb-8">
         <div className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#EF466F] to-[#ff6b8a] text-white px-5 py-2 rounded-full shadow-lg">
             <Sparkles className="w-4 h-4" />
-            <span className="font-['Noto_Sans_KR'] font-semibold text-[13px]">페르소나 생성 완료</span>
+            <span className="font-['Noto_Sans_KR'] font-semibold text-[13px]">
+              {statusBadgeLabel ?? (mode === "view" ? "저장된 페르소나" : "페르소나 생성 완료")}
+            </span>
           </div>
         </div>
 
@@ -180,23 +236,36 @@ export function DiagnosisResultPage({
           >
             <Heart className={`w-6 h-6 transition-all ${liked ? "fill-[#EF466F] text-[#EF466F]" : "text-black"}`} />
           </button>
+        </div>
 
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-            {imageCandidates.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={`h-1.5 rounded-full transition-all ${currentImageIndex === index ? "w-8 bg-white" : "w-1.5 bg-white/50"}`}
-              />
-            ))}
-          </div>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleDownloadThumbnail}
+            disabled={!selectedImage}
+            className="inline-flex items-center gap-2 rounded-[12px] border border-[#e5e5e5] bg-white px-4 py-2 font-['Noto_Sans_KR'] text-[13px] text-black shadow-sm hover:bg-[#f7f7f7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            이미지 저장
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-t-[32px] px-8 pt-8 pb-32 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+      <div className="bg-white rounded-t-[32px] mx-auto max-w-[760px] px-5 sm:px-8 lg:px-10 pt-8 pb-24 md:pb-10 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-2">
             <h2 className="font-['NEXON_Football_Gothic'] text-[22px] text-black">{personaName}</h2>
+            {mode === "view" && onEditName ? (
+              <button
+                type="button"
+                onClick={onEditName}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-[10px] border border-[#ececec] bg-white text-[#444] hover:border-black hover:text-black transition-colors"
+                aria-label="페르소나 이름 수정"
+                title="이름 수정"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            ) : null}
           </div>
           {keywords.length > 0 ? (
             <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -217,15 +286,30 @@ export function DiagnosisResultPage({
             컬러 팔레트
           </h3>
           {colors.length > 0 ? (
-            <div className="bg-[#fafafa] rounded-[16px] p-5 flex items-center justify-around">
+            <div className="rounded-[16px] border border-[#ececec] bg-gradient-to-r from-[#fcfcfc] to-[#f7f7f7] p-3">
+              <div className="flex items-center gap-3 overflow-x-auto">
               {colors.map((color, index) => (
                 <button
-                  key={index}
-                  onClick={() => setSelectedColor(index)}
-                  className={`rounded-full transition-all shadow-md ${selectedColor === index ? "w-[48px] h-[48px] ring-4 ring-offset-4 ring-black/20" : "w-[40px] h-[40px] hover:scale-110"}`}
+                  key={`${color}-${index}`}
+                  type="button"
+                  title={`${color.toUpperCase()} 복사`}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(color.toUpperCase());
+                      raiseErrorToast("색상 코드가 복사되었습니다.");
+                    } catch {
+                      raiseErrorToast("색상 코드를 복사할 수 없습니다.");
+                    }
+                  }}
+                  className="group relative shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-full border border-transparent shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] hover:border-black/40 focus-visible:border-black focus-visible:outline-none transition-colors"
                   style={{ backgroundColor: color }}
-                />
+                >
+                  <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/15 bg-black/90 backdrop-blur px-2.5 py-1.5 font-['Noto_Sans_KR'] text-[11px] text-white opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.24)] transition-all duration-150 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0">
+                    {color.toUpperCase()}
+                  </span>
+                </button>
               ))}
+              </div>
             </div>
           ) : (
             <div className="bg-[#fafafa] rounded-[16px] p-5 border border-[#ececec]">
@@ -249,72 +333,62 @@ export function DiagnosisResultPage({
             onClick={() => setShowDetails(!showDetails)}
             className="w-full flex items-center justify-between py-4 px-5 border-2 border-[#f0f0f0] rounded-[16px] hover:border-[#e5e5e5] transition-colors"
           >
-            <span className="font-['Noto_Sans_KR'] font-semibold text-[14px] text-black">상세 정보</span>
+            <span className="font-['Noto_Sans_KR'] font-semibold text-[14px] text-black">상세 정보 및 활용</span>
             <ChevronDown className={`w-5 h-5 text-[#6b6b6b] transition-transform ${showDetails ? "rotate-180" : ""}`} />
           </button>
           {showDetails && (
             <div className="bg-gradient-to-br from-[#f8f8f8] to-[#f0f0f0] rounded-[16px] p-5 mt-3 border border-[#e5e5e5]">
               <p className="font-['Noto_Sans_KR'] text-[14px] text-[#262626] leading-[1.8]">
-                코드: {personaCode || "미발급"}
-                <br />
-                키워드 개수: {keywords.length}
-                <br />
-                팔레트 개수: {colors.length}
+                {traitsDetail || "세부 특성 정보가 없습니다."}
               </p>
             </div>
           )}
         </div>
 
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-['Noto_Sans_KR'] font-semibold text-[15px] text-black flex items-center gap-2">
-              <div className="w-1 h-5 bg-black rounded-full" />
-              추천 프로필
-            </h3>
-            <button
-              className="p-2 hover:bg-[#f0f0f0] rounded-full transition-colors"
-              onClick={() =>
-                setCurrentImageIndex((prev) =>
-                  imageCandidates.length > 0 ? (prev + 1) % imageCandidates.length : 0
-                )
-              }
-            >
-              <RefreshCw className="w-4 h-4 text-black" />
-            </button>
-          </div>
+      </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="aspect-square rounded-[16px] overflow-hidden bg-[#f1f1f1] shadow-md">
-              {result?.profile ? <img src={result.profile} alt="프로필 1" className="h-full w-full object-cover" /> : null}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent md:backdrop-blur-0">
+        <div className="mx-auto max-w-[760px] p-4 sm:p-6 lg:px-10 md:pt-2 md:pb-8">
+          {mode === "diagnosis" ? (
+            <>
+              {saveError ? <p className="mb-2 font-['Noto_Sans_KR'] text-[12px] text-[#d92d20]">{saveError}</p> : null}
+              <div className="flex gap-3">
+                <button
+                  onClick={onRecreate}
+                  className="flex-1 bg-white border-2 border-[#e5e5e5] rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-black flex items-center justify-center gap-2 hover:border-black hover:bg-[#fafafa] transition-all"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  다시 만들기
+                </button>
+                <button
+                  onClick={handleSaveClick}
+                  disabled={isSaving}
+                  className="flex-1 bg-gradient-to-r from-black to-[#2d2d2d] rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
+                >
+                  {isSaving ? "저장 중" : "저장하기"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={viewLeftAction ?? onBack}
+                className="flex-1 bg-white border-2 border-[#e5e5e5] rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-black flex items-center justify-center hover:border-black hover:bg-[#fafafa] transition-all"
+              >
+                {viewLeftActionLabel}
+              </button>
+              <button
+                onClick={viewRightAction}
+                className="flex-1 bg-gradient-to-r from-black to-[#2d2d2d] rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all"
+              >
+                {viewRightActionLabel}
+              </button>
             </div>
-            <div className="aspect-square rounded-[16px] overflow-hidden bg-[#f1f1f1] shadow-md">
-              {result?.thumbnail ? <img src={result.thumbnail} alt="프로필 2" className="h-full w-full object-cover" /> : result?.profile ? <img src={result.profile} alt="프로필 2" className="h-full w-full object-cover" /> : null}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#f0f0f0] p-6 max-w-[390px] mx-auto">
-        {saveError ? <p className="mb-2 font-['Noto_Sans_KR'] text-[12px] text-[#d92d20]">{saveError}</p> : null}
-        <div className="flex gap-3">
-          <button
-            onClick={onRecreate}
-            className="flex-1 bg-white border-2 border-[#e5e5e5] rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-black flex items-center justify-center gap-2 hover:border-black hover:bg-[#fafafa] transition-all"
-          >
-            <RotateCcw className="w-5 h-5" />
-            다시 만들기
-          </button>
-          <button
-            onClick={handleSaveClick}
-            disabled={isSaving}
-            className="flex-1 bg-gradient-to-r from-black to-[#2d2d2d] rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
-          >
-            {isSaving ? "저장 중" : "저장하기"}
-          </button>
-        </div>
-      </div>
-
-      {showGuestCodeModal ? (
+      {mode === "diagnosis" && showGuestCodeModal ? (
         <div className="fixed inset-0 z-50 bg-black/45 flex items-end justify-center p-5" onClick={() => setShowGuestCodeModal(false)}>
           <div className="w-full max-w-[360px] rounded-[24px] bg-white p-6 shadow-2xl border border-[#ececec]" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center gap-2 mb-3">
@@ -353,3 +427,5 @@ export function DiagnosisResultPage({
     </div>
   );
 }
+
+

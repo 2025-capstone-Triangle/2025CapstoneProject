@@ -3,7 +3,7 @@ import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import { BackButton } from "../../../shared/layout/BackButton";
 import { CheckCircle2, Circle, Mic, Pause, Play, RefreshCw, Square } from "lucide-react";
 import {
-  buildVoiceWebFile,
+  buildVoiceWavFile,
   clearStagedVoiceRecording,
   getStagedVoiceRecordingFile,
   getStagedVoiceRecordingMeta,
@@ -13,7 +13,6 @@ import {
 
 interface VoiceInputPageProps {
   onNext?: () => void;
-  onSkip?: () => void;
   onBack?: () => void;
   onHome?: () => void;
 }
@@ -21,7 +20,7 @@ interface VoiceInputPageProps {
 const MAX_RECORDING_SECONDS = 90;
 const SAMPLE_SCRIPT = "안녕하세요, 반갑습니다. 오늘 날씨가 정말 좋네요.";
 
-export function VoiceInputPage({ onNext, onSkip, onBack, onHome }: VoiceInputPageProps) {
+export function VoiceInputPage({ onNext, onBack, onHome }: VoiceInputPageProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isRecorderStopping, setIsRecorderStopping] = useState(false);
@@ -244,7 +243,16 @@ export function VoiceInputPage({ onNext, onSkip, onBack, onHome }: VoiceInputPag
       return;
     }
 
-    const voiceFile = buildVoiceWebFile(voiceBlob);
+    let voiceFile: File;
+    try {
+      voiceFile = await buildVoiceWavFile(voiceBlob);
+    } catch {
+      setHasRecording(false);
+      setRecordingMeta(null);
+      setError("WAV 변환에 실패했습니다. 다시 녹음해 주세요.");
+      clearStagedVoiceRecording();
+      return;
+    }
     const fallbackDurationSec = Math.max(1, Math.ceil(getCurrentDurationMs() / 1000));
     const measuredDurationSec = await getBlobDurationSec(voiceBlob);
     const durationSec = measuredDurationSec ?? fallbackDurationSec;
@@ -400,22 +408,6 @@ export function VoiceInputPage({ onNext, onSkip, onBack, onHome }: VoiceInputPag
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
-  }
-
-  function handleSkip() {
-    if (isRecording || isRecorderStopping) {
-      stopRecording({ save: false });
-    }
-    stopAudioLevelMonitor();
-    if (playbackAudioRef.current) {
-      playbackAudioRef.current.pause();
-      playbackAudioRef.current.currentTime = 0;
-    }
-    setIsPlaybackPlaying(false);
-    setPlaybackCurrentSec(0);
-    clearRecordedClip();
-    setError(null);
-    onSkip?.();
   }
 
   function formatTime(seconds: number) {
@@ -601,11 +593,11 @@ export function VoiceInputPage({ onNext, onSkip, onBack, onHome }: VoiceInputPag
   }
 
   return (
-    <div className="bg-gradient-to-b from-[#f7f8fa] via-white to-white min-h-screen max-w-[390px] mx-auto pb-[108px]">
+    <div className="bg-gradient-to-b from-[#f7f8fa] via-white to-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col pb-[112px] md:pb-8">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
 
-      <div className="px-6 pt-6">
+      <div className="mx-auto w-full max-w-[760px] flex-1 px-5 sm:px-8 lg:px-10 pt-6 pb-2 md:pb-8">
         <div className="rounded-[20px] border border-[#eceff3] bg-white p-5 shadow-[0_10px_24px_rgba(0,0,0,0.05)] mb-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#f3f4f6] px-3 py-1.5 mb-3">
             <Mic className="w-4 h-4 text-[#111827]" />
@@ -792,29 +784,24 @@ export function VoiceInputPage({ onNext, onSkip, onBack, onHome }: VoiceInputPag
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-[#f0f0f0] p-4 max-w-[390px] mx-auto">
-        <p className="font-['Noto_Sans_KR'] text-[11px] text-[#666] mb-2 px-1">
-          {hasRecording
-            ? "현재 녹음본이 선택되어 있으며, 다음 단계에서 그대로 사용됩니다."
-            : "녹음은 선택 항목입니다. 필요하면 건너뛰고 진행할 수 있습니다."}
-        </p>
-        <div className="flex gap-2.5">
-          <button
-            onClick={handleSkip}
-            disabled={isRecorderStopping}
-            className="bg-[#f0f0f0] rounded-[14px] h-[50px] px-5 font-['Noto_Sans_KR'] font-medium text-[14px] text-[#262626] hover:bg-[#e5e5e5] transition-colors disabled:opacity-50"
-          >
-            건너뛰기
-          </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent md:backdrop-blur-0">
+        <div className="mx-auto max-w-[760px] p-4 sm:p-5 lg:px-10 md:pt-2 md:pb-8">
+          <p className="font-['Noto_Sans_KR'] text-[11px] text-[#666] mb-2 px-1">
+            {hasRecording
+              ? "현재 녹음본이 선택되어 있으며, 다음 단계에서 그대로 사용됩니다."
+              : "음성 녹음은 필수 항목입니다. 녹음을 완료해야 다음 단계로 이동할 수 있습니다."}
+          </p>
           <button
             onClick={onNext}
-            disabled={isRecording || isRecorderStopping}
-            className="flex-1 bg-black rounded-[14px] h-[50px] font-['Noto_Sans_KR'] font-semibold text-[15px] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a1a1a] transition-colors"
+            disabled={isRecording || isRecorderStopping || !hasRecording}
+            className="w-full bg-black rounded-[14px] h-[50px] font-['Noto_Sans_KR'] font-semibold text-[15px] text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a1a1a] transition-colors"
           >
-            {hasRecording ? "이 녹음으로 다음" : "다음"}
+            {hasRecording ? "이 녹음으로 다음" : "녹음 후 다음"}
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+

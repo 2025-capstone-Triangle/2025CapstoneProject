@@ -11,6 +11,8 @@ export interface PersonaResponse {
   isActive: boolean;
   code: string;
   thumbnail?: string | null;
+  summary?: string | null;
+  traits?: string | null;
 }
 
 export async function getPersonaList(code?: string) {
@@ -49,15 +51,27 @@ export async function saveNewPersona(code: string, name: string) {
 
 export async function diagnosePersona(payload: {
   profile: File;
-  images: File[];
-  voices: File[];
-  preferenceType: string;
+  image: File;
+  voice: File;
+  answer: {
+    q1_environment: number;
+    q2_style: number;
+    q3_minimal_maximal: number;
+    q4_mood: number;
+    q5_contrast_type: number;
+    q6_motion: number;
+    q7_framing: number;
+  };
+  q8_tone: number[];
 }) {
   const formData = new FormData();
   formData.append("profile", payload.profile);
-  payload.images.forEach((image) => formData.append("image", image));
-  payload.voices.forEach((voice) => formData.append("voice", voice));
-  formData.append("preferenceType", payload.preferenceType);
+  formData.append("image", payload.image);
+  formData.append("voice", payload.voice);
+  formData.append("answer", JSON.stringify(payload.answer));
+  payload.q8_tone.forEach((toneValue) => {
+    formData.append("q8_tone", String(toneValue));
+  });
 
   return apiRequest<PersonaResponse>("/api/v1/persona", {
     method: "POST",

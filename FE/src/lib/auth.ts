@@ -80,7 +80,7 @@ export async function getMemberInfo() {
 }
 
 export async function verifyMemberPassword(password: string) {
-  return apiRequest<Record<string, never>>("/api/v1/member/check", {
+  return apiRequest<boolean>("/api/v1/member/check", {
     method: "POST",
     body: JSON.stringify({ password }),
   });

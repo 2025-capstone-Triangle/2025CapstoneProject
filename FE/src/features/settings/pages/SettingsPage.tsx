@@ -224,7 +224,11 @@ export function SettingsPage({ onBack, onNavigate }: SettingsPageProps) {
 
     setSaving(true);
     try {
-      await verifyMemberPassword(emailForm.currentPassword);
+      const isPasswordValid = await verifyMemberPassword(emailForm.currentPassword);
+      if (!isPasswordValid) {
+        setError("현재 비밀번호가 일치하지 않습니다.");
+        return;
+      }
       await updateMemberEmail(emailForm.nextEmail.trim());
       setEmailForm({ currentPassword: "", nextEmail: "" });
       await loadMember();
@@ -253,7 +257,11 @@ export function SettingsPage({ onBack, onNavigate }: SettingsPageProps) {
 
     setSaving(true);
     try {
-      await verifyMemberPassword(passwordForm.currentPassword);
+      const isPasswordValid = await verifyMemberPassword(passwordForm.currentPassword);
+      if (!isPasswordValid) {
+        setError("현재 비밀번호가 일치하지 않습니다.");
+        return;
+      }
       await updateMemberPassword(passwordForm.nextPassword);
       setPasswordForm({ currentPassword: "", nextPassword: "", confirmPassword: "" });
       setPasswordModalOpen(false);

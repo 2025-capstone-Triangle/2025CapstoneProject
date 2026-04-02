@@ -29,6 +29,7 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
     setIsSubmitting(true);
     try {
       const token = await signIn({ username: username.trim(), password });
+      saveAuth(token);
       try {
         const member = await getMemberInfo();
         saveAuth(token, { username: member.username, email: member.email });

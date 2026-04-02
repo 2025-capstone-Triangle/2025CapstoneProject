@@ -1,3 +1,6 @@
+import { clearAuth } from "./auth";
+import { raiseErrorToast } from "./errorToastService";
+
 const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
 const IS_HTTPS_PAGE = typeof window !== "undefined" && window.location.protocol === "https:";
 const IS_DEV = Boolean(import.meta.env.DEV);
@@ -46,10 +49,7 @@ function buildApiUrl(path: string) {
   return `${base}${normalizedPath}`;
 }
 
-export async function apiRequest<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
 
@@ -64,24 +64,40 @@ export async function apiRequest<T>(
     headers.set("Authorization", `${grantType} ${auth.accessToken}`);
   }
 
-  const response = await fetch(buildApiUrl(path), {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(buildApiUrl(path), {
+      ...options,
+      headers,
+    });
 
-  const hasJsonBody = response.headers.get("content-type")?.includes("application/json");
-  const payload = (hasJsonBody ? ((await response.json()) as ApiResponse<T> | ApiErrorResponse) : null);
+    const hasJsonBody = response.headers.get("content-type")?.includes("application/json");
+    const payload = hasJsonBody
+      ? ((await response.json()) as ApiResponse<T> | ApiErrorResponse)
+      : null;
 
-  if (!response.ok) {
-    const errorPayload = payload as ApiErrorResponse | null;
-    const error = new Error(errorPayload?.message || "Request failed");
-    (error as Error & { code?: string }).code = errorPayload?.code ?? errorPayload?.status;
+    if (!response.ok) {
+      const errorPayload = payload as ApiErrorResponse | null;
+      const message = errorPayload?.message || "요청에 실패했습니다.";
+      if (response.status === 401 || response.status === 403) {
+        clearAuth();
+        window.dispatchEvent(new CustomEvent("auth:expired"));
+      }
+      raiseErrorToast(message);
+      const error = new Error(message);
+      (error as Error & { code?: string }).code = errorPayload?.code ?? errorPayload?.status;
+      throw error;
+    }
+
+    if (!payload) {
+      const message = "서버 응답을 처리할 수 없습니다.";
+      raiseErrorToast(message);
+      return undefined as T;
+    }
+
+    return (payload as ApiResponse<T>).data;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "요청에 실패했습니다.";
+    raiseErrorToast(message);
     throw error;
   }
-
-  if (!payload) {
-    return undefined as T;
-  }
-
-  return (payload as ApiResponse<T>).data;
 }

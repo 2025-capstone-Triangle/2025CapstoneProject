@@ -137,6 +137,13 @@ function SliderField({
   );
 }
 
+function getOptionGridClass(optionCount: number) {
+  if (optionCount <= 2) return "grid-cols-1 sm:grid-cols-2";
+  if (optionCount === 4) return "grid-cols-2 lg:grid-cols-4";
+  if (optionCount >= 5) return "grid-cols-2 lg:grid-cols-3";
+  return "grid-cols-2";
+}
+
 export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPageProps) {
   const [hasStarted, setHasStarted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -222,11 +229,11 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
 
   if (!hasStarted) {
     return (
-      <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[84px]">
+      <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
         <DefaultTopBar onTitleClick={onHome} showNotification={false} />
         <BackButton onClick={handleHeaderBack} />
 
-        <div className="px-8 pt-8">
+        <div className="mx-auto w-full max-w-[860px] flex-1 px-5 sm:px-8 lg:px-10 pt-8 pb-28 md:pb-8">
           <div className="inline-flex items-center rounded-full bg-black text-white px-3 py-1.5 font-['Noto_Sans_KR'] text-[12px] mb-4">
             선호 테스트 안내
           </div>
@@ -235,27 +242,29 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-5 max-w-[390px] mx-auto">
-          <button
-            onClick={() => {
-              setStepIndex(0);
-              setHasStarted(true);
-            }}
-            className="w-full h-[52px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] font-semibold"
-          >
-            시작하기
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent">
+          <div className="mx-auto max-w-[860px] p-4 sm:p-5 lg:px-10 md:pt-2 md:pb-8">
+            <button
+              onClick={() => {
+                setStepIndex(0);
+                setHasStarted(true);
+              }}
+              className="w-full h-[52px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] font-semibold"
+            >
+              시작하기
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[84px]">
+    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={handleHeaderBack} />
 
-      <div className="px-8 pt-4">
+      <div className="mx-auto w-full max-w-[860px] flex-1 px-5 sm:px-8 lg:px-10 pt-4 pb-28 md:pb-8">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">
@@ -281,7 +290,7 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
         </div>
 
         {!isToneStep && currentQuestion && (
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className={`grid gap-3 ${getOptionGridClass(currentQuestion.options.length)}`}>
             {currentQuestion.options.map((option) => {
               const isSelected = selectedOptionByQuestion[currentQuestion.number] === option.id;
 
@@ -289,11 +298,11 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
                 <button
                   key={option.id}
                   onClick={() => handleSelectOption(currentQuestion.number, option.id)}
-                  className={`w-[calc(50%-6px)] min-w-[140px] max-w-[155px] rounded-[16px] overflow-hidden border-2 transition-all ${
+                  className={`w-full rounded-[16px] overflow-hidden border-2 transition-all ${
                     isSelected ? "border-black shadow-md" : "border-[#e5e5e5] hover:border-[#bdbdbd]"
                   }`}
                 >
-                  <div className="aspect-[3/4] bg-[#f2f2f2]">
+                  <div className="aspect-[3/4] md:aspect-auto md:h-[210px] lg:h-[220px] bg-[#f2f2f2]">
                     <img src={option.src} alt={`question-${currentQuestion.number}-${option.id}`} className="w-full h-full object-cover" />
                   </div>
                   <div
@@ -312,7 +321,7 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
         {isToneStep && (
           <div className="space-y-4">
             <div className="relative rounded-[20px] overflow-hidden border border-[#e5e5e5] bg-[#f4f4f4]">
-              <div className="aspect-[3/4]">
+              <div className="aspect-[3/4] md:aspect-auto md:h-[360px]">
                 <img src={trait71} alt="tone-adjust-target" className="w-full h-full object-cover" style={imageFilterStyle} />
                 <div className="absolute inset-0 mix-blend-color pointer-events-none" style={temperatureOverlayStyle} />
               </div>
@@ -350,16 +359,20 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-5 max-w-[390px] mx-auto">
-        <button
-          onClick={handleNextStep}
-          disabled={!canGoNext}
-          className="w-full h-[52px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] font-semibold disabled:opacity-45"
-        >
-          {isToneStep ? "선호 테스트 완료" : "다음"}
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent">
+        <div className="mx-auto max-w-[860px] p-4 sm:p-5 lg:px-10 md:pt-2 md:pb-8">
+          <button
+            onClick={handleNextStep}
+            disabled={!canGoNext}
+            className="w-full h-[52px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[15px] font-semibold disabled:opacity-45"
+          >
+            {isToneStep ? "선호 테스트 완료" : "다음"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+
 

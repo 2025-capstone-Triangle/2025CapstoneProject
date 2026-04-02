@@ -1,111 +1,26 @@
 import os
-import io
 import asyncio
 import time
-import cv2
-import numpy as np
-import boto3
-import httpx
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from google import genai
-from google.genai import types
-from PIL import Image
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 
-from image_crop import image_crop
+from base_generator import BaseContentGenerator
 
 
-class ContentGeneration:
-    def __init__(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(current_dir)
-        dotenv_path = os.path.join(parent_dir, '.env')
-        load_dotenv(dotenv_path)
-
-        self.api_key = os.getenv("OPENAI_API_KEY")
-
-        # AWS S3 설정
-        self.s3 = boto3.client(
-            's3',
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
-            region_name=os.getenv("AWS_REGION", "ap-northeast-2")
-        )
-        self.bucket_name = os.getenv("AWS_BUCKET")
-
-        # LLM 설정
-        self.llm = ChatOpenAI(
-            model="gpt-5-mini",
-            api_key=self.api_key,
-            temperature=0.7
-        )
-
-        # Gemini 클라이언트 (GOOGLE_API_KEY 환경변수 자동 참조)
-        self.gemini_client = genai.Client()
-
-        # MediaPipe Pose Landmarker 초기화 (스마트 크롭용)
-        model_path = os.path.join(current_dir, 'pose_landmarker_heavy.task')
-        base_options = python.BaseOptions(model_asset_path=model_path)
-        options = vision.PoseLandmarkerOptions(base_options=base_options)
-        self.landmarker = vision.PoseLandmarker.create_from_options(options)
-
-    def _build_base_prompt(self, report, answers, tones):
-        framing_map = {
-            1: "tightly framed extreme close-up focusing on expressive eyes and skin texture",
-            2: "cinematic bust shot, focusing on upper body and jewelry",
-            3: "half-body shot, natural pose with arms slightly in frame",
-            4: "full-body shot, standing naturally, capturing the outfit and silhouette",
-            5: "wide cinematic shot, person harmonized with the vast background environment"
-        }
-
-        env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \
-              else "inside a minimalist, aesthetically pleasing studio or a modern interior with soft window light"
-
-        density = "clean minimalist background, focus strictly on the subject" if answers.get('q3_minimal_maximal') == 1 \
-                  else "richly detailed environment with plants, books, and sophisticated props"
-
-        mood_str = "bright, airy, and high-key lighting with a fresh feel" if answers.get('q4_mood') == 1 \
-                   else "moody, calm, and slightly dark cinematic atmosphere"
-        contrast_str = "with deep shadows and striking highlights" if answers.get('q5_contrast_type') == 1 \
-                       else "with soft, low-contrast, and dreamy transitions"
-
-        s_val, v_val, c_val, t_val = tones
-
-        if s_val > 80: saturation = "vibrant, highly saturated colors, popping tones"
-        elif s_val < 30: saturation = "muted, desaturated, almost pastel-like color palette"
-        else: saturation = "natural color balance, realistic saturation"
-
-        if v_val > 80: brightness = "bright, overexposed aesthetic, high-key lighting"
-        elif v_val < 30: brightness = "underexposed, low-key lighting, dark and mysterious"
-        else: brightness = "well-lit, balanced exposure"
-
-        if c_val > 80: contrast = "extreme contrast, deep black shadows and bright highlights"
-        elif c_val < 30: contrast = "soft, low contrast, hazy and dreamy look"
-        else: contrast = "standard cinematic contrast"
-
-        if t_val > 70: temp = "warm golden hour glow, amber and orange tint"
-        elif t_val < 30: temp = "cool blue hour tint, icy and crisp atmosphere"
-        else: temp = "neutral daylight white balance"
-
-        return (
-            f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {saturation}, {brightness}, {contrast}, {temp}. "
-            f"{density}, {mood_str}, {contrast_str}, {temp}. "
-            f"Overall visual style matches these specific attributes: "
-            f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100."
-        )
+class ContentGeneration(BaseContentGenerator):
+    """
+    BE에서 전달한 트렌드 컨셉과 페르소나를 결합해 AI 이미지를 생성하는 클래스.
+    Gemini 생성 이미지는 인스타 포스트 기본 비율인 4:5를 사용합니다.
+    """
+    _gemini_aspect_ratio = "4:5"
 
     async def generate_profile_prompt(self, be_input, report, answers, tones):
-        base_elements = self._build_base_prompt(report, answers, tones)
+        base_elements = self._build_base_prompt(answers, tones)
 
         prompt_refine_msg = f"""
-            당신은 인스타그램 트렌드를 선도하는 비주얼 디렉터입니다. 
+            당신은 인스타그램 트렌드를 선도하는 비주얼 디렉터입니다.
             Back-end에서 넘어온 [트렌드 컨셉]을 바탕으로 이미지를 생성하는 것을 기본 목표로 하되,
             사용자의 [페르소나]와 [비주얼 취향]을 완벽히 반영한 최종 이미지 생성용 프롬프트를 영어로 작성하세요.
 
-            [1. 트렌드 컨셉 (BE 수신)] 
+            [1. 트렌드 컨셉 (BE 수신)]
             : "{be_input}"
 
             [2. 사용자의 페르소나 & 취향]
@@ -114,9 +29,10 @@ class ContentGeneration:
             - 기술적 스타일: {base_elements}
 
             [작성 지침]
-            - BE의 [트렌드 컨셉]에 묘사된 상황(장소, 소품, 의상)을 최우선으로 반영하세요.
-            - 여기에 사용자의 [선호 색상]을 의상 포인트나 배경 조명에 자연스럽게 녹이세요.
-            - [기술적 스타일]에 명시된 채도, 명도, 구도 설정을 반드시 적용하세요.
+            - 구도(Framing): [기술적 스타일]의 첫 번째 항목에 명시된 프레이밍을 반드시 그대로 따를 것. 사용자가 선택한 구도를 임의로 변경하지 말 것.
+            - 트렌드 반영: BE의 [트렌드 컨셉]에 묘사된 상황(장소, 소품, 의상)을 반영하되, 구도는 위 사용자 선택을 우선시할 것.
+            - 색상: 사용자의 [선호 색상]을 의상 포인트나 배경 조명에 자연스럽게 녹이세요.
+            - 스타일: [기술적 스타일]에 명시된 채도, 명도, 분위기, 조명 설정을 모두 반영할 것.
             - 인물은 20대 한국 여성의 자연스러운 모습으로, 'Shot on iPhone 15 Pro' 느낌의 고해상도 실사여야 합니다.
 
             결과는 영어로만, "A high-quality realistic photo of..."로 시작해서 출력하세요.
@@ -124,115 +40,15 @@ class ContentGeneration:
         res = await self.llm.ainvoke(prompt_refine_msg)
         return res.content.strip()
 
-    async def download_image_as_pil(self, image_url: str) -> Image.Image:
-        """URL에서 이미지를 다운로드해 PIL Image로 반환"""
-        async with httpx.AsyncClient() as client:
-            response = await client.get(image_url)
-            if response.status_code == 200:
-                return Image.open(io.BytesIO(response.content))
-            else:
-                raise ValueError(f"유저 이미지 다운로드 실패: {response.status_code}")
-
-    def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> bytes | None:
-        """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 PNG bytes를 반환"""
-        try:
-            print("🎨 Gemini로 이미지 생성 요청 중...")
-            response = self.gemini_client.models.generate_content(
-                model="gemini-3.1-flash-image-preview",
-                contents=[prompt, user_pil_image],
-                config=types.GenerateContentConfig(
-                    response_modalities=['TEXT', 'IMAGE'],
-                    image_config=types.ImageConfig(
-                        aspect_ratio="4:5",  # 인스타 포스트 기본 비율
-                        image_size="1K",
-                    ),
-                )
-            )
-
-            for part in response.parts:
-                if part.text is not None:
-                    print(f"💬 Gemini 응답: {part.text}")
-                elif image := part.as_image():
-                    # 임시 파일 저장 → bytes 읽기 → 삭제
-                    ts = int(time.time())
-                    temp_path = f"temp_gemini_{ts}.png"
-                    image.save(temp_path)
-                    with open(temp_path, "rb") as f:
-                        image_bytes = f.read()
-                    os.remove(temp_path)
-                    print("✨ 이미지 데이터 획득 성공!")
-                    return image_bytes
-
-            print("⚠️ Gemini 응답에 이미지가 없습니다.")
-            return None
-
-        except Exception as e:
-            print(f"❌ 이미지 생성 에러: {e}")
-            return None
-
-    # --- [스마트 크롭 — image_crop 모듈 활용] ---
-    def apply_smart_crop(self, image_bytes: bytes, aspect_ratio=0.8, mode="Post"):
-        img_array = np.frombuffer(image_bytes, np.uint8)
-        cv_img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        h, w, _ = cv_img.shape
- 
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB))
-        detection_result = self.landmarker.detect(mp_image)
- 
-        if not detection_result.pose_landmarks:
-            print("⚠️ 포즈를 찾지 못해 중앙 크롭을 수행합니다.")
-            return self._center_crop(cv_img, aspect_ratio)
- 
-        landmarks = detection_result.pose_landmarks[0]
- 
-        # image_crop.py의 image_crop() 함수 호출
-        crop_info = image_crop(landmarks, w, h, aspect_ratio=aspect_ratio, mode=mode)
-        if crop_info is None:
-            print("⚠️ 크롭 좌표 계산 실패, 중앙 크롭을 수행합니다.")
-            return self._center_crop(cv_img, aspect_ratio)
- 
-        (x, y, cw, ch), angle = crop_info
-        print(f"✂️ 크롭 적용 — mode: {mode}, angle: {angle:.1f}°")
-        return cv_img[y:y+ch, x:x+cw]
- 
-    def _center_crop(self, img, aspect_ratio):
-        """포즈 미감지 시 폴백용 중앙 크롭"""
-        h, w, _ = img.shape
-        if w / h > aspect_ratio:
-            new_w = int(h * aspect_ratio)
-            start_x = (w - new_w) // 2
-            return img[:, start_x:start_x+new_w]
-        new_h = int(w / aspect_ratio)
-        start_y = (h - new_h) // 2
-        return img[start_y:start_y+new_h, :]
- 
-    def upload_cv2_to_s3(self, cv_img, file_name):
-        try:
-            _, buffer = cv2.imencode('.png', cv_img)
-            image_bytes = buffer.tobytes()
-            s3_path = f"generated_personas/{file_name}.png"
- 
-            self.s3.put_object(
-                Bucket=self.bucket_name, Key=s3_path,
-                Body=image_bytes, ContentType='image/png'
-            )
- 
-            region = os.getenv("AWS_REGION", "ap-northeast-2")
-            final_url = f"https://{self.bucket_name}.s3.{region}.amazonaws.com/{s3_path}"
-            print(f"✅ S3 업로드 완료: {final_url}")
-            return final_url
-        except Exception as e:
-            print(f"❌ S3 업로드 에러: {e}")
-            return None
 
 # --- 실행부 ---
 async def main(trend_prompt, crop_type=1):
     generator = ContentGeneration()
 
     crop_configs = {
-        0: {"ratio": 1.0, "mode": "Profile", "label": "1-1_Square"},
-        1: {"ratio": 0.8, "mode": "Post", "label": "4-5_Portrait"},
-        2: {"ratio": 0.5625, "mode": "Story", "label": "9-16_Full"}
+        0: {"ratio": 1.0,    "mode": "Profile", "label": "1-1_Square"},
+        1: {"ratio": 0.8,    "mode": "Post",    "label": "4-5_Portrait"},
+        2: {"ratio": 0.5625, "mode": "Story",   "label": "9-16_Full"}
     }
 
     config = crop_configs.get(crop_type, crop_configs[1])

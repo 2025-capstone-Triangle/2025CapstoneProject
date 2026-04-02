@@ -131,13 +131,14 @@ class ImageGenerator:
             f"- 핵심 요약: {report['summary']}\n"
             f"- 스타일 성향: {report['traits']}\n"
             f"- 색상 팔레트: {report['color_palette']}\n\n"
-            f"[분위기 참고] (구도·프레이밍은 무시하고 mood·tone·lighting만 참고할 것)\n"
+            f"[분위기 & 스타일 참고] (mood·tone·lighting·환경 설정을 반영할 것)\n"
             f"{user_pref}\n\n"
             "### 반드시 지켜야 할 규칙 ###\n"
             "1. 구도: 반드시 얼굴+어깨만 나오는 bust shot 또는 head shot. 전신·반신·광각은 절대 사용하지 말 것.\n"
-            "2. 색감: 위 색상 팔레트의 HEX 컬러들이 배경·조명·피부 톤·소품에 자연스럽게 녹아들도록 할 것. 옷 색으로 직접 표현하지 말 것.\n"
-            "3. 스타일: 20대 한국인 인플루언서가 SNS에 올릴 법한 자연스럽고 세련된 인물 사진. 인위적이거나 과도하게 보정된 느낌 없이, 실제 사진처럼 자연스러워야 함.\n"
-            "4. 얼굴: 입력된 인물의 얼굴을 유지할 것.\n"
+            "2. 분위기·조명: 위 '분위기 & 스타일 참고'에 명시된 채도, 명도, 조명, 환경(실내/실외), 분위기 설정을 반드시 반영할 것.\n"
+            "3. 색감: 위 색상 팔레트의 HEX 컬러들이 배경·조명·피부 톤·소품에 자연스럽게 녹아들도록 할 것. 옷 색으로 직접 표현하지 말 것.\n"
+            "4. 스타일: 20대 한국인 인플루언서가 SNS에 올릴 법한 자연스럽고 세련된 인물 사진. 인위적이거나 과도하게 보정된 느낌 없이, 실제 사진처럼 자연스러워야 함.\n"
+            "5. 얼굴: 입력된 인물의 얼굴을 유지할 것.\n"
         )
         res = await self.llm.ainvoke(prompt_msg)
         return res.content.strip()
@@ -207,29 +208,48 @@ class PersonaPipeline:
         self.generator = ImageGenerator(self.api_key)
 
     def _build_base_prompt(self, answers, tones):
-        saturation = "vibrant and colorful" if tones[0] > 50 else "muted and desaturated colors"
-        brightness = "high-key lighting, bright" if tones[1] > 50 else "low-key lighting, dim"
-        contrast_val = "striking high contrast" if tones[2] > 50 else "soft and subtle contrast"
-        temperature = "warm golden hour light" if tones[3] > 50 else "cool cinematic blue light"
-
         framing_map = {
-            1: "extreme close-up focusing on facial features",
-            2: "bust shot, upper body",
-            3: "half-body shot",
-            4: "full-body shot, standing figure",
-            5: "wide cinematic shot with person as a focal point"
+            1: "tightly framed extreme close-up focusing on expressive eyes and skin texture",
+            2: "cinematic bust shot, focusing on upper body and jewelry",
+            3: "half-body shot, natural pose with arms slightly in frame",
+            4: "full-body shot, standing naturally, capturing the outfit and silhouette",
+            5: "wide cinematic shot, person harmonized with the vast background environment"
         }
-        framing = framing_map.get(answers.get('q7_framing'), "portrait")
-        env = "outdoors" if answers.get('q1_environment') == 1 else "indoors"
-        density = "minimalist and clean" if answers.get('q3_minimal_maximal') == 1 else "maximalist with rich details"
-        mood = "bright and airy" if answers.get('q4_mood') == 1 else "moody and calm"
-        contrast = "high contrast" if answers.get('q5_contrast_type') == 1 else "soft and low contrast"
+
+        env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \
+              else "inside a minimalist, aesthetically pleasing studio or a modern interior with soft window light"
+
+        density = "clean minimalist background, focus strictly on the subject" if answers.get('q3_minimal_maximal') == 1 \
+                  else "richly detailed environment with plants, books, and sophisticated props"
+
+        mood_str = "bright, airy, and high-key lighting with a fresh feel" if answers.get('q4_mood') == 1 \
+                   else "moody, calm, and slightly dark cinematic atmosphere"
+        contrast_str = "with deep shadows and striking highlights" if answers.get('q5_contrast_type') == 1 \
+                       else "with soft, low-contrast, and dreamy transitions"
+
+        s_val, v_val, c_val, t_val = tones
+
+        if s_val > 80: saturation = "vibrant, highly saturated colors, popping tones"
+        elif s_val < 30: saturation = "muted, desaturated, almost pastel-like color palette"
+        else: saturation = "natural color balance, realistic saturation"
+
+        if v_val > 80: brightness = "bright, overexposed aesthetic, high-key lighting"
+        elif v_val < 30: brightness = "underexposed, low-key lighting, dark and mysterious"
+        else: brightness = "well-lit, balanced exposure"
+
+        if c_val > 80: contrast = "extreme contrast, deep black shadows and bright highlights"
+        elif c_val < 30: contrast = "soft, low contrast, hazy and dreamy look"
+        else: contrast = "standard cinematic contrast"
+
+        if t_val > 70: temp = "warm golden hour glow, amber and orange tint"
+        elif t_val < 30: temp = "cool blue hour tint, icy and crisp atmosphere"
+        else: temp = "neutral daylight white balance"
 
         return (
-            f"Framing: {framing}. "
-            f"Setting: {env}, {density} style. "
-            f"Mood: {mood}, {contrast}. "
-            f"Color tone: {saturation}, {brightness}, {contrast_val}, {temperature}."
+            f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {saturation}, {brightness}, {contrast}, {temp}. "
+            f"{density}, {mood_str}, {contrast_str}, {temp}. "
+            f"Overall visual style matches these specific attributes: "
+            f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100."
         )
 
     async def run_e2e_test(self, audio_url, image_url, answers, tones):

@@ -252,13 +252,16 @@ class PersonaPipeline:
             f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100."
         )
 
-    async def _notify(self, callback_url: str | None, step: str, progress: int, message: str):
-        """각 단계 완료 시 BE로 진행 상태를 POST합니다. callback_url이 없으면 스킵합니다."""
-        if not callback_url:
+    PROGRESS_URL = "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080/api/v1/progress"
+
+    async def _notify(self, session_id: str | None, step: str, progress: int, message: str):
+        """각 단계 완료 시 BE로 진행 상태를 POST합니다. session_id가 없으면 스킵합니다."""
+        if not session_id:
             return
         try:
             async with httpx.AsyncClient() as client:
-                await client.post(callback_url, json={
+                await client.post(self.PROGRESS_URL, json={
+                    "sessionId": session_id,
                     "step": step,
                     "progress": progress,
                     "message": message
@@ -266,28 +269,28 @@ class PersonaPipeline:
         except Exception as e:
             print(f"⚠️ 진행 상태 알림 실패 ({step}): {e}")
 
-    async def run_e2e_test(self, audio_url, image_url, answers, tones, callback_url: str | None = None):
+    async def run_e2e_test(self, audio_url, image_url, answers, tones, session_id: str | None = None):
         # 0-a. 음성 분석
         voice_kwd = await self.analyzer.get_voice_keywords_from_url(audio_url)
-        await self._notify(callback_url, "voice_analysis", 15, "음성 분석 완료")
+        await self._notify(session_id, "voice_analysis", 15, "음성 분석 완료")
 
         # 0-b. 이미지 다운로드 & 종합 인상 분석
         img_base64 = await self.analyzer.get_image_bytes_from_url(image_url)
-        await self._notify(callback_url, "image_download", 25, "이미지 로드 완료")
+        await self._notify(session_id, "image_download", 25, "이미지 로드 완료")
 
         total_impression = await self.analyzer.analyze_total_impression(img_base64, voice_kwd)
-        await self._notify(callback_url, "impression_analysis", 40, "외모·음성 종합 분석 완료")
+        await self._notify(session_id, "impression_analysis", 40, "외모·음성 종합 분석 완료")
 
         # 1. 설문 답변 → 선호 텍스트로 변환
         user_pref_description = self._build_base_prompt(answers, tones)
 
         # 2. 페르소나 리포트 생성
         persona_report = await self.analyzer.analyze(voice_kwd, total_impression, user_pref_description)
-        await self._notify(callback_url, "persona_report", 60, "페르소나 리포트 생성 완료")
+        await self._notify(session_id, "persona_report", 60, "페르소나 리포트 생성 완료")
 
         # 3. 이미지 생성 프롬프트 도출
         final_image_prompt = await self.generator.generate_profile_prompt(persona_report, user_pref_description)
-        await self._notify(callback_url, "prompt_ready", 70, "이미지 프롬프트 생성 완료")
+        await self._notify(session_id, "prompt_ready", 70, "이미지 프롬프트 생성 완료")
 
         # 4. 유저 이미지 PIL로 다운로드
         print("⬇️ 유저 얼굴 이미지 다운로드 중...")
@@ -295,7 +298,7 @@ class PersonaPipeline:
 
         # 5. Gemini로 이미지 생성 → 로컬 임시 경로 반환
         temp_image_path = self.generator.generate_persona_image(final_image_prompt, user_pil_image)
-        await self._notify(callback_url, "image_generated", 85, "AI 이미지 생성 완료")
+        await self._notify(session_id, "image_generated", 85, "AI 이미지 생성 완료")
 
         # 6. S3 업로드
         final_s3_url = None
@@ -309,7 +312,7 @@ class PersonaPipeline:
             except Exception as e:
                 print(f"❌ S3 업로드 오류: {e}")
 
-        await self._notify(callback_url, "completed", 100, "페르소나 진단 완료")
+        await self._notify(session_id, "completed", 100, "페르소나 진단 완료")
 
         return {
             "report": persona_report,

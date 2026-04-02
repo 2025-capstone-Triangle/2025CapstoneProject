@@ -59,24 +59,24 @@ INSERT INTO persona_colors (persona_id, color) VALUES (10002, '#6200EE'), (10002
 
 -- 1. 미니멀 기하학 스타일 (삼각형 모티프 강조)
 INSERT INTO reference (id, name, img, prompt, description, created_at, updated_at,is_active)
-VALUES (nextval('reference_sequence'), '추상적 기하학 정체성', 'https://api.persona-art.com/refs/geo-01.jpg',
+VALUES (nextval('reference_sequence'), '추상적 기하학 정체성', 'https://capstone-project-persona.s3.ap-northeast-2.amazonaws.com/reference/Gemini_Generated_Image_5eb71s5eb71s5eb7.png',
         'Abstract 3D composition of glowing triangles, minimalist layout, soft pastel gradients, glassmorphism style, high resolution',
         '기하학적 도형을 활용하여 깔끔하고 세련된 디지털 이미지를 구축할 때 적합한 레퍼런스입니다.', NOW(), NOW(),true);
 
 -- 2. 사이버펑크 네온 스타일 (MZ 트렌드 반영)
 INSERT INTO reference (id, name, img, prompt, description, created_at, updated_at,is_active)
-VALUES (nextval('reference_sequence'), '네온 디지털 아바타', 'https://api.persona-art.com/refs/neon-02.jpg',
+VALUES (nextval('reference_sequence'), '네온 디지털 아바타', 'https://capstone-project-persona.s3.ap-northeast-2.amazonaws.com/reference/Gemini_Generated_Image_9r4829r4829r4829.png',
         'Cyberpunk style portrait, holographic texture, vibrant neon purple and cyan lighting, glitch effect, futuristic digital identity',
         '강렬한 개성과 에너지를 표현하고 싶은 사용자를 위한 화려한 스타일 가이드입니다.', NOW(), NOW(),true);
 
 -- 3. 따뜻한 3D 캐릭터 스타일 (친근한 브랜딩)
 INSERT INTO reference (id, name, img, prompt, description, created_at, updated_at,is_active)
-VALUES (nextval('reference_sequence'), '클레이모피즘 캐릭터', 'https://api.persona-art.com/refs/clay-03.jpg',
+VALUES (nextval('reference_sequence'), '클레이모피즘 캐릭터', 'https://capstone-project-persona.s3.ap-northeast-2.amazonaws.com/reference/Gemini_Generated_Image_k0977zk0977zk097.png',
         'Cute 3D clay character, rounded shapes, soft studio lighting, friendly expression, matte texture, pastel background',
         '부드럽고 친근한 인상을 주는 캐릭터 기반 브랜딩을 위한 레퍼런스입니다.', NOW(), NOW(),true);
 
 -- 4. 감성적인 아날로그 텍스처 (Y2K/레트로 트렌드)
 INSERT INTO reference (id, name, img, prompt, description, created_at, updated_at)
-VALUES (nextval('reference_sequence'), 'Y2K 레트로 비주얼', 'https://api.persona-art.com/refs/y2k-04.jpg',
+VALUES (nextval('reference_sequence'), 'Y2K 레트로 비주얼', 'https://capstone-project-persona.s3.ap-northeast-2.amazonaws.com/reference/Gemini_Generated_Image_wnjxqiwnjxqiwnjx.png',
         '90s anime style, grainy film texture, lo-fi aesthetic, nostalgic colors, dreamy atmosphere, digital illustration',
         '최근 유행하는 레트로하고 감성적인 정체성을 시각화하는 데 최적화된 프롬프트 구성을 제공합니다.', NOW(), NOW());

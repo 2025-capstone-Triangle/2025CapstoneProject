@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { Menu } from "lucide-react";
 
 interface DefaultTopBarProps {
   title?: string;
@@ -16,39 +17,50 @@ export function DefaultTopBar({
   onNotificationClick,
 }: DefaultTopBarProps) {
   return (
-    <div className="bg-white/90 backdrop-blur-[6px] rounded-b-[12px] md:rounded-b-[18px] shadow-[0_6px_14px_rgba(0,0,0,0.08)] md:shadow-[0_12px_24px_rgba(0,0,0,0.1)]">
-      <div className="flex items-center justify-between px-6 md:px-8 lg:px-10 pt-4 md:pt-5 pb-4 md:pb-5">
-        <button 
-          type="button"
-          className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white border border-black/5 shadow-[0_4px_10px_rgba(0,0,0,0.06)] flex items-center justify-center transition-transform duration-300 hover:scale-105" 
-          aria-label="메뉴"
-          onClick={onMenuClick}
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 20 19">
-            <path d="M1 1L11 1" stroke="#33302E" strokeLinecap="round" strokeWidth="2" />
-            <path d="M1 9L19 9" stroke="#33302E" strokeLinecap="round" strokeWidth="2" />
-            <path d="M1 18L19 18" stroke="#33302E" strokeLinecap="round" strokeWidth="2" />
-          </svg>
-        </button>
-        <button type="button" onClick={onTitleClick}>
-          <h1 className="font-['Noto_Serif_KR'] font-black text-[22px] md:text-[26px] leading-none tracking-[0.2px] text-[#1a1a1a]">
-            {title}
-          </h1>
-        </button>
-        {showNotification ? (
+    <div className="sticky top-0 z-40 shrink-0 px-4 md:px-6 xl:px-8">
+      <header className="rounded-b-[14px] border border-white/70 bg-white/78 backdrop-blur-xl shadow-[0_10px_28px_rgba(15,23,42,0.10)] md:rounded-b-[20px]">
+        <div className="flex items-center justify-between px-6 pb-3 pt-3 md:px-8 md:pb-3 md:pt-3 lg:px-10">
           <button
             type="button"
-            className="relative w-9 h-9 md:w-10 md:h-10 rounded-full bg-white border border-black/5 shadow-[0_4px_10px_rgba(0,0,0,0.06)] flex items-center justify-center transition-transform duration-300 hover:scale-105"
-            aria-label="알림"
-            onClick={onNotificationClick}
+            className="group relative flex h-12 w-12 transform-gpu items-center justify-center overflow-hidden rounded-full border border-[#dbe1e8] bg-white/70 backdrop-blur-md shadow-[0_4px_14px_rgba(15,23,42,0.10)] transition-[transform,border-color,box-shadow,background-color] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.05] hover:border-[#111827]/25 hover:bg-white/90 hover:shadow-[0_10px_22px_rgba(15,23,42,0.14)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 md:h-[52px] md:w-[52px]"
+            aria-label="메뉴"
+            onClick={onMenuClick}
           >
-            <Icon icon="ph:bell-simple" className="w-6 h-6 text-[#1f2937]" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#EF466F]" />
+            <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.7),rgba(255,255,255,0))] opacity-70 transition-opacity duration-250 group-hover:opacity-100" />
+            <span className="pointer-events-none absolute inset-[1px] rounded-full border border-white/80" />
+            <Menu className="relative h-[19px] w-[19px] text-[#1f2937] transition-[color,transform] duration-250 ease-out group-hover:scale-[1.04] group-hover:text-[#0f172a] md:h-5 md:w-5" strokeWidth={2.15} />
           </button>
-        ) : (
-          <div className="w-9 h-9" />
-        )}
-      </div>
+
+          <button
+            type="button"
+            onClick={onTitleClick}
+            className="rounded-[10px] px-2 py-1 transition-colors duration-200 hover:bg-black/[0.04]"
+          >
+            <h1 className="font-['Noto_Serif_KR'] text-[24px] font-black leading-none tracking-[0.15px] text-[#161616] md:text-[28px]">
+              {title}
+            </h1>
+          </button>
+
+          {showNotification ? (
+            <button
+              type="button"
+              className="group relative flex h-12 w-12 transform-gpu items-center justify-center overflow-hidden rounded-full border border-[#dbe1e8] bg-white/70 backdrop-blur-md shadow-[0_4px_14px_rgba(15,23,42,0.10)] transition-[transform,border-color,box-shadow,background-color] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.05] hover:border-[#111827]/25 hover:bg-white/90 hover:shadow-[0_10px_22px_rgba(15,23,42,0.14)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 md:h-[52px] md:w-[52px]"
+              aria-label="알림"
+              onClick={onNotificationClick}
+            >
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.7),rgba(255,255,255,0))] opacity-70 transition-opacity duration-250 group-hover:opacity-100" />
+              <span className="pointer-events-none absolute inset-[1px] rounded-full border border-white/80" />
+              <Icon
+                icon="ph:bell-simple"
+                className="relative h-6 w-6 text-[#1f2937] transition-colors duration-250 ease-out group-hover:text-[#0f172a]"
+              />
+              <span className="absolute right-[9px] top-[9px] h-[7px] w-[7px] rounded-full bg-[#ef466f] ring-2 ring-white" />
+            </button>
+          ) : (
+            <div className="h-12 w-12 md:h-[52px] md:w-[52px]" />
+          )}
+        </div>
+      </header>
     </div>
   );
 }

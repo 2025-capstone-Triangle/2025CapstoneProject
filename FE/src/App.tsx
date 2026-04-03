@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { HomePage } from "./features/home/pages/HomePage";
 import { DiagnosisStartPage } from "./features/diagnosis/pages/DiagnosisStartPage";
@@ -38,6 +38,11 @@ import {
   getStagedDiagnosisImageFiles,
 } from "./features/diagnosis/lib/imageStaging";
 import { clearStagedVoiceRecording, getStagedVoiceRecordingFile } from "./features/diagnosis/lib/voiceRecording";
+import {
+  createDiagnosisSessionId,
+  openDiagnosisProgressStream,
+  type DiagnosisProgressEventPayload,
+} from "./features/diagnosis/lib/progressApi";
 import { createContent, type ContentCreateResponse, type ContentType } from "./features/content/lib/contentApi";
 import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth, signOut } from "./lib/auth";
 import { ErrorToast } from "./shared/ui/ErrorToast";
@@ -70,6 +75,15 @@ type Page =
   | "help"
   | "admin";
 
+type DiagnosisProgressState = {
+  sessionId: string;
+  progress: number;
+  message: string;
+  step: string;
+  connected: boolean;
+  status: "idle" | "connecting" | "connected" | "running" | "completed" | "error";
+};
+
 const UNAUTH_ALLOWED_PAGES = new Set<Page>([
   "home",
   "login",
@@ -85,18 +99,6 @@ const UNAUTH_ALLOWED_PAGES = new Set<Page>([
 ]);
 
 const DIAGNOSIS_FLOW_PAGES = new Set<Page>([
-  "diagnosis-start",
-  "image-input",
-  "voice-input",
-  "preference-test",
-  "review-inputs",
-  "analyzing",
-  "diagnosis-result",
-  "save-complete",
-]);
-
-const SCALE_FIT_PAGES = new Set<Page>([
-  "home",
   "diagnosis-start",
   "image-input",
   "voice-input",
@@ -150,6 +152,50 @@ function getContentTypeByRatio(ratio: string): ContentType {
 
 const DIAGNOSIS_RESULT_STORAGE_KEY = "app.diagnosis.latest-result";
 const DIAGNOSIS_RESULT_PAGE_STORAGE_KEY = "app.diagnosis.last-page";
+const DEFAULT_DIAGNOSIS_PROGRESS: DiagnosisProgressState = {
+  sessionId: "",
+  progress: 0,
+  message: "AI가 페르소나를 분석하고 있습니다...",
+  step: "idle",
+  connected: false,
+  status: "idle",
+};
+
+function clampProgress(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function normalizeServerProgress(raw: unknown): number | null {
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+  if (raw >= 0 && raw <= 1) return clampProgress(raw * 100);
+  if (raw >= 1 && raw <= 100) return clampProgress(raw);
+  if (raw > 100 && raw <= 10000) return clampProgress(raw / 100);
+  return null;
+}
+
+function inferProgressByStep(step: string, current: number) {
+  const normalized = step.toLowerCase();
+  if (normalized.includes("connect")) return Math.max(current, 10);
+  if (normalized.includes("upload")) return Math.max(current, 25);
+  if (normalized.includes("analy")) return Math.max(current, 55);
+  if (normalized.includes("report")) return Math.max(current, 75);
+  if (normalized.includes("save") || normalized.includes("final")) return Math.max(current, 90);
+  if (normalized.includes("complete")) return 100;
+  return Math.min(95, Math.max(current + 4, 15));
+}
+
+function inferMessage(payload: DiagnosisProgressEventPayload | null, fallback: string) {
+  if (payload?.message && payload.message.trim().length > 0) {
+    const message = payload.message.trim();
+    const lower = message.toLowerCase();
+    if (lower === "connect" || lower.includes("진행상황 채널") || lower.includes("채널 연결")) {
+      return fallback;
+    }
+    return message;
+  }
+  return fallback;
+}
 
 function getStoredDiagnosisResult() {
   if (typeof window === "undefined") return null;
@@ -203,85 +249,11 @@ export default function App() {
   const [selectedPersonaCode, setSelectedPersonaCode] = useState<string>("");
   const [latestDiagnosisCode, setLatestDiagnosisCode] = useState<string>(bootstrap.diagnosisCode);
   const [latestDiagnosisResult, setLatestDiagnosisResult] = useState<PersonaResponse | null>(bootstrap.diagnosisResult);
+  const [diagnosisProgress, setDiagnosisProgress] = useState<DiagnosisProgressState>(DEFAULT_DIAGNOSIS_PROGRESS);
   const previousPageRef = useRef<Page>(currentPage);
   const isAdminPage = currentPage === "admin";
 
   const loggedIn = isAuthenticated();
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const root = document.documentElement;
-
-    const syncFitScale = () => {
-      if (!SCALE_FIT_PAGES.has(currentPage) || window.innerWidth < 768) {
-        root.style.setProperty("--page-fit-scale", "1");
-        root.style.setProperty("--page-fit-extra-space", "0px");
-        return;
-      }
-
-      const stage = document.querySelector<HTMLElement>(".app-shell-stage");
-      const page = document.querySelector<HTMLElement>(".home-page-root, .diag-page-root");
-      if (!stage || !page) {
-        root.style.setProperty("--page-fit-scale", "1");
-        root.style.setProperty("--page-fit-extra-space", "0px");
-        return;
-      }
-
-      // Measure natural content size first, then compute the tightest fit scale.
-      root.style.setProperty("--page-fit-scale", "1");
-      const availableWidth = Math.max(stage.clientWidth, 1);
-      const availableHeight = Math.max(stage.clientHeight, 1);
-      const pageRect = page.getBoundingClientRect();
-
-      let maxRight = pageRect.left;
-      let maxBottom = pageRect.top;
-
-      const nodes = page.querySelectorAll<HTMLElement>("*");
-      nodes.forEach((node) => {
-        const style = window.getComputedStyle(node);
-        if (style.display === "none" || style.visibility === "hidden") return;
-
-        const rect = node.getBoundingClientRect();
-        if (!Number.isFinite(rect.right) || !Number.isFinite(rect.bottom)) return;
-
-        maxRight = Math.max(maxRight, rect.right);
-        maxBottom = Math.max(maxBottom, rect.bottom);
-      });
-
-      const contentWidth = Math.max(page.scrollWidth, page.offsetWidth, maxRight - pageRect.left, 1);
-      const contentHeight = Math.max(page.scrollHeight, page.offsetHeight, maxBottom - pageRect.top, 1);
-
-      const scaleByWidth = availableWidth / contentWidth;
-      const scaleByHeight = availableHeight / contentHeight;
-      const nextScale = Math.min(1, scaleByWidth, scaleByHeight);
-      const clampedScale = Math.max(0.54, nextScale);
-      root.style.setProperty("--page-fit-scale", clampedScale.toFixed(4));
-      const extraUnscaledSpace = Math.max(0, availableHeight / clampedScale - contentHeight);
-      root.style.setProperty("--page-fit-extra-space", `${extraUnscaledSpace.toFixed(2)}px`);
-    };
-
-    const syncFitScaleInFrame = () => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(syncFitScale);
-      });
-    };
-
-    syncFitScaleInFrame();
-    const timeoutId = window.setTimeout(syncFitScaleInFrame, 180);
-    window.addEventListener("resize", syncFitScaleInFrame);
-    window.addEventListener("orientationchange", syncFitScaleInFrame);
-    window.addEventListener("load", syncFitScaleInFrame);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("resize", syncFitScaleInFrame);
-      window.removeEventListener("orientationchange", syncFitScaleInFrame);
-      window.removeEventListener("load", syncFitScaleInFrame);
-      root.style.setProperty("--page-fit-scale", "1");
-      root.style.setProperty("--page-fit-extra-space", "0px");
-    };
-  }, [currentPage]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -339,6 +311,7 @@ export default function App() {
     setPageHistory(["home"]);
     setCurrentPage("home");
     setActiveTab("home");
+    setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
   };
 
   useEffect(() => {
@@ -353,6 +326,7 @@ export default function App() {
       clearStagedDiagnosisPreferencePayload();
       setLatestDiagnosisCode("");
       setLatestDiagnosisResult(null);
+      setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
     }
 
     previousPageRef.current = currentPage;
@@ -381,6 +355,7 @@ export default function App() {
       setActiveTab("home");
       setLatestDiagnosisCode("");
       setLatestDiagnosisResult(null);
+      setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
     };
     window.addEventListener("auth:expired", handleAuthExpired);
     return () => window.removeEventListener("auth:expired", handleAuthExpired);
@@ -514,15 +489,135 @@ export default function App() {
 
   const runPersonaDiagnosis = async () => {
     setLatestDiagnosisResult(null);
+    setLatestDiagnosisCode("");
+    let closeProgressStream: (() => void) | null = null;
+    let connectTimeout: number | null = null;
+
     try {
       const images = getStagedDiagnosisImageFiles();
       const voice = getStagedVoiceRecordingFile();
       const preference = getPreferenceTestResult();
       if (!preference || !images.length || !voice) {
-        setLatestDiagnosisCode("");
-        setLatestDiagnosisResult(null);
-        return;
+        setDiagnosisProgress({
+          ...DEFAULT_DIAGNOSIS_PROGRESS,
+          status: "error",
+          message: "입력 데이터가 부족합니다. 이미지/음성/선호 테스트를 확인해 주세요.",
+          step: "invalid-input",
+        });
+        return false;
       }
+
+      const sessionId = createDiagnosisSessionId();
+      let currentProgress = 3;
+      let connectAcked = false;
+      let completedFromStream = false;
+      let resolveConnect: (() => void) | null = null;
+      let rejectConnect: ((reason?: unknown) => void) | null = null;
+
+      const connectPromise = new Promise<void>((resolve, reject) => {
+        resolveConnect = resolve;
+        rejectConnect = reject;
+      });
+
+      connectTimeout = window.setTimeout(() => {
+        if (!connectAcked) {
+          rejectConnect?.(new Error("진단 진행 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."));
+        }
+      }, 9000);
+
+      setDiagnosisProgress({
+        sessionId,
+        progress: currentProgress,
+        message: "AI가 페르소나를 분석하고 있습니다...",
+        step: "connecting",
+        connected: false,
+        status: "connecting",
+      });
+
+      closeProgressStream = openDiagnosisProgressStream({
+        sessionId,
+        onEvent: (event) => {
+          const payload = event.data;
+          const eventName = event.event.toLowerCase();
+          const rawStep = String(payload?.step ?? "").toLowerCase();
+          const rawMessage = String(payload?.message ?? "").toLowerCase();
+          const isConnectEvent =
+            eventName === "connect" ||
+            rawStep === "connect" ||
+            rawMessage === "connect" ||
+            event.rawData.trim().toLowerCase() === "connect";
+
+          if (isConnectEvent && !connectAcked) {
+            connectAcked = true;
+            currentProgress = Math.max(currentProgress, 10);
+            setDiagnosisProgress((prev) => ({
+              sessionId,
+              progress: currentProgress,
+              message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
+              step: String(payload?.step ?? "connect"),
+              connected: true,
+              status: "connected",
+            }));
+            resolveConnect?.();
+            return;
+          }
+
+          if (!connectAcked) return;
+
+          const step = String(payload?.step ?? event.event ?? "running");
+          const normalizedProgress = normalizeServerProgress(payload?.progress);
+          currentProgress =
+            normalizedProgress !== null
+              ? clampProgress(normalizedProgress)
+              : inferProgressByStep(step, currentProgress);
+
+          if (step.toLowerCase().includes("complete")) {
+            currentProgress = 100;
+            completedFromStream = true;
+          }
+
+          setDiagnosisProgress((prev) => ({
+            sessionId,
+            progress: currentProgress,
+            message: inferMessage(payload, prev.message || "진행상황을 반영하고 있습니다..."),
+            step,
+            connected: true,
+            status: completedFromStream ? "completed" : "running",
+          }));
+        },
+        onError: (error) => {
+          if (!connectAcked) {
+            rejectConnect?.(error);
+            return;
+          }
+
+          setDiagnosisProgress((prev) => ({
+            ...prev,
+            status: "error",
+            message: error.message || "진단 진행 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.",
+            step: "stream-error",
+            connected: false,
+          }));
+        },
+      });
+
+      try {
+        await connectPromise;
+      } finally {
+        if (connectTimeout !== null) {
+          window.clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
+      }
+
+      setDiagnosisProgress((prev) => ({
+        ...prev,
+        status: "running",
+        progress: Math.max(prev.progress, 12),
+        message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
+        step: prev.step === "connect" ? "requested" : prev.step,
+      }));
+
       const { answer, q8_tone } = buildBackendPreferencePayload(preference);
       const profileImage = images[0];
       const result = await diagnosePersona({
@@ -531,15 +626,40 @@ export default function App() {
         voice,
         answer,
         q8_tone,
+        sessionId,
+        callbackUrl: sessionId,
       });
+
       if (result?.code) {
         setLatestDiagnosisResult(result);
         setLatestDiagnosisCode(result.code);
+        setDiagnosisProgress((prev) => ({
+          ...prev,
+          progress: 100,
+          status: "completed",
+          message: "페르소나 진단이 완료되었습니다.",
+          step: "completed",
+          connected: prev.connected,
+        }));
+        return true;
       }
+      return false;
     } catch (error) {
       console.error("[persona.diagnosis]", error);
       setLatestDiagnosisCode("");
       setLatestDiagnosisResult(null);
+      setDiagnosisProgress((prev) => ({
+        ...prev,
+        status: "error",
+        message: error instanceof Error ? error.message : "진단 요청에 실패했습니다.",
+        step: "error",
+      }));
+      return false;
+    } finally {
+      if (connectTimeout !== null) {
+        window.clearTimeout(connectTimeout);
+      }
+      closeProgressStream?.();
     }
   };
 
@@ -642,15 +762,22 @@ export default function App() {
         <ReviewInputsPage
           onConfirm={async () => {
             handleNavigateWithoutHistory("analyzing");
-            await runPersonaDiagnosis();
-            handleNavigateWithoutHistory("diagnosis-result");
+            const isSuccess = await runPersonaDiagnosis();
+            handleNavigateWithoutHistory(isSuccess ? "diagnosis-result" : "review-inputs");
           }}
           onBack={handleBack}
           onHome={handleNavigateToHome}
         />
       )}
 
-      {currentPage === "analyzing" && <AnalyzingPage />}
+      {currentPage === "analyzing" && (
+        <AnalyzingPage
+          progress={diagnosisProgress.progress}
+          message={diagnosisProgress.message}
+          onBack={handleBack}
+          onHome={handleNavigateToHome}
+        />
+      )}
 
       {currentPage === "diagnosis-result" && (
         <DiagnosisResultPage
@@ -669,6 +796,7 @@ export default function App() {
           onGoToPersona={() => handleNavigate("persona-list")}
           onCreateContent={() => handleNavigate("content-aspect-ratio")}
           onHome={handleNavigateToHome}
+          onBack={handleBack}
         />
       )}
 

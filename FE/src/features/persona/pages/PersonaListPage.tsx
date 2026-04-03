@@ -200,11 +200,12 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
   const favoriteCount = personas.filter((persona) => persona.isFavorite).length;
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto pb-[80px]">
+    <div className="flex min-h-[100dvh] w-full max-w-[980px] flex-col bg-white md:h-full md:min-h-0">
       <DefaultTopBar title="My Persona" onTitleClick={onHome} />
       <BackButton onClick={onBack} />
 
-      <div className="px-8 pt-8">
+      <div className="page-scroll">
+      <div className="mx-auto max-w-[920px] px-4 pb-24 pt-4 sm:px-8 sm:pt-6 lg:px-10">
         <div className="mb-7">
           <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[28px] text-black mb-2 leading-tight">
             저장된 페르소나
@@ -298,9 +299,9 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
         )}
 
         {!loading && sortedPersonas.length > 0 && (
-          <div className="space-y-3 mb-6">
+          <div className="mb-6 grid gap-3 lg:grid-cols-2">
             {sortedPersonas.map((persona) => (
-              <div key={persona.code} className="relative bg-[#f8f8f8] rounded-[16px] transition-all group hover:bg-[#f0f0f0]">
+              <div key={persona.code} className="relative rounded-[16px] bg-[#f8f8f8] transition-all group hover:bg-[#f0f0f0]">
                 <button onClick={() => onPersonaClick?.(persona.code)} className="w-full flex items-center gap-4 p-5">
                   {persona.thumbnail ? (
                     <ImageWithFallback
@@ -371,6 +372,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
           </div>
           <span className="font-['Noto_Sans_KR'] font-medium text-[14px] text-[#6b6b6b]">새 페르소나 만들기</span>
         </button>
+      </div>
       </div>
     </div>
   );

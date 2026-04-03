@@ -1,6 +1,4 @@
-import { useMemo, useState } from "react";
-import { BackButton } from "../../../shared/layout/BackButton";
-import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+﻿import { useMemo, useState } from "react";
 import {
   buildDiagnosisPreferencePayload,
   getPreferenceTestResult,
@@ -8,6 +6,8 @@ import {
 } from "../lib/preferenceTest";
 import { getStagedDiagnosisImageFiles } from "../lib/imageStaging";
 import { getStagedVoiceRecordingMeta } from "../lib/voiceRecording";
+import { DiagnosisPageLayout } from "../components/DiagnosisPageLayout";
+import { InputReviewCard } from "../components/review/InputReviewCard";
 
 interface ReviewInputsPageProps {
   onConfirm?: () => void | Promise<void>;
@@ -18,6 +18,7 @@ interface ReviewInputsPageProps {
 export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPageProps) {
   const [submitError, setSubmitError] = useState("");
   const [stagedMessage, setStagedMessage] = useState("");
+
   const preferenceResult = useMemo(() => getPreferenceTestResult(), []);
   const imageFile = useMemo(() => getStagedDiagnosisImageFiles()[0] ?? null, []);
   const voiceMeta = useMemo(() => getStagedVoiceRecordingMeta(), []);
@@ -48,97 +49,80 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
   };
 
   return (
-    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
-      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
-      <BackButton onClick={onBack} />
-
-      <div className="mx-auto w-full max-w-[760px] flex-1 px-5 sm:px-8 lg:px-10 pt-8 pb-28 md:pb-8">
-        <h2 className="font-['NEXON_Football_Gothic'] text-[28px] text-black mb-6">입력 내용 확인</h2>
-
-        <div className="space-y-3 mb-8">
-          <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">선호 테스트</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] text-[#EF466F] font-semibold">
-                {preferenceResult ? "완료" : "미완료"}
-              </span>
-            </div>
-            {preferenceResult ? (
-              <div className="space-y-1">
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                  이미지 선택: {preferenceResult.imageSelections.length}문항
-                </p>
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                  채도 {preferenceResult.toneAdjustment.saturation} / 명도 {preferenceResult.toneAdjustment.brightness}
-                </p>
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                  대비 {preferenceResult.toneAdjustment.contrast} / 색 온도 {preferenceResult.toneAdjustment.temperature}
-                </p>
-              </div>
-            ) : (
-              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">결과가 저장되지 않았습니다.</p>
-            )}
-          </div>
-
-          <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">이미지 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#EF466F]">
-                {imageFile ? "완료" : "미완료"}
-              </span>
-            </div>
-            {imageFile ? (
-              <div className="space-y-1">
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] break-all">{imageFile.name}</p>
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">{(imageFile.size / 1024).toFixed(1)} KB</p>
-              </div>
-            ) : (
-              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">이미지를 업로드해 주세요.</p>
-            )}
-          </div>
-
-          <div className="rounded-[16px] bg-[#f8f8f8] p-5 border border-[#ececec]">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-['Noto_Sans_KR'] text-[15px] text-black font-semibold">음성 분석</h3>
-              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#EF466F]">
-                {voiceMeta ? "완료" : "미완료"}
-              </span>
-            </div>
-            {voiceMeta ? (
-              <div className="space-y-1">
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] break-all">{voiceMeta.fileName}</p>
-                <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                  {voiceMeta.durationSec}초 / {(voiceMeta.size / 1024).toFixed(1)} KB
-                </p>
-              </div>
-            ) : (
-              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">음성을 녹음해 주세요.</p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-[16px] bg-[#f0f7ff] border border-[#d8e9ff] p-5 mb-4">
-          <p className="font-['Noto_Sans_KR'] text-[13px] text-[#1a4d8f] leading-[1.7]">
-            확인 버튼을 누르면 현재 입력값으로 분석을 시작합니다.
-          </p>
-        </div>
-
-        {submitError && <p className="font-['Noto_Sans_KR'] text-[12px] text-[#d92d20] mb-2">{submitError}</p>}
-        {stagedMessage && <p className="font-['Noto_Sans_KR'] text-[12px] text-[#0f9f53] mb-2">{stagedMessage}</p>}
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] w-full max-w-[980px] mx-auto md:static md:border-t-0 md:bg-transparent">
-        <div className="mx-auto max-w-[760px] p-4 sm:p-6 lg:px-10 md:pt-2 md:pb-8">
+    <DiagnosisPageLayout
+      onBack={onBack}
+      onHome={onHome}
+      contentMaxWidthClassName="max-w-[1120px]"
+      contentClassName="px-5 pb-28 pt-5 sm:px-8 md:pb-28 lg:px-10"
+      bottomMaxWidthClassName="max-w-[1120px]"
+      bottom={
+        <div className="p-4 sm:p-6 md:px-10 md:pb-8 md:pt-2">
           <button
             onClick={handleConfirm}
-            className="w-full bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-sm hover:bg-[#1a1a1a] transition-colors"
+            className="flex h-[56px] w-full items-center justify-center rounded-[16px] bg-black font-['Noto_Sans_KR'] text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1a1a1a]"
           >
             확인하고 분석 시작
           </button>
         </div>
+      }
+    >
+      <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[28px] text-black">입력 내용 확인</h2>
+      <p className="mb-5 font-['Noto_Sans_KR'] text-[13px] text-[#6b7280]">
+        분석 요청 전에 업로드된 정보와 테스트 결과를 최종 확인해 주세요.
+      </p>
+
+      <div className="space-y-3">
+        <div className="rounded-[16px] border border-[#d8e9ff] bg-[#f0f7ff] p-5">
+          <p className="font-['Noto_Sans_KR'] text-[13px] leading-[1.7] text-[#1a4d8f]">
+            확인 버튼을 누르면 현재 입력값으로 페르소나 분석이 시작됩니다. 분석 중에는 페이지를 닫지 말아 주세요.
+          </p>
+        </div>
+
+        <InputReviewCard title="선호 테스트" done={Boolean(preferenceResult)}>
+          {preferenceResult ? (
+            <div className="space-y-1">
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
+                이미지 선택: {preferenceResult.imageSelections.length}문항
+              </p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
+                채도 {preferenceResult.toneAdjustment.saturation} / 명도 {preferenceResult.toneAdjustment.brightness}
+              </p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
+                대비 {preferenceResult.toneAdjustment.contrast} / 온도 {preferenceResult.toneAdjustment.temperature}
+              </p>
+            </div>
+          ) : (
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">결과가 저장되지 않았습니다.</p>
+          )}
+        </InputReviewCard>
+
+        <InputReviewCard title="이미지 분석" done={Boolean(imageFile)}>
+          {imageFile ? (
+            <div className="space-y-1">
+              <p className="break-all font-['Noto_Sans_KR'] text-[13px] text-[#666]">{imageFile.name}</p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">{(imageFile.size / 1024).toFixed(1)} KB</p>
+            </div>
+          ) : (
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">이미지를 업로드해 주세요.</p>
+          )}
+        </InputReviewCard>
+
+        <InputReviewCard title="음성 분석" done={Boolean(voiceMeta)}>
+          {voiceMeta ? (
+            <div className="space-y-1">
+              <p className="break-all font-['Noto_Sans_KR'] text-[13px] text-[#666]">{voiceMeta.fileName}</p>
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
+                {voiceMeta.durationSec}초 / {(voiceMeta.size / 1024).toFixed(1)} KB
+              </p>
+            </div>
+          ) : (
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">음성을 녹음해 주세요.</p>
+          )}
+        </InputReviewCard>
+
+        {submitError ? <p className="mb-2 font-['Noto_Sans_KR'] text-[12px] text-[#d92d20]">{submitError}</p> : null}
+        {stagedMessage ? <p className="mb-2 font-['Noto_Sans_KR'] text-[12px] text-[#0f9f53]">{stagedMessage}</p> : null}
       </div>
-    </div>
+    </DiagnosisPageLayout>
   );
 }
-
-

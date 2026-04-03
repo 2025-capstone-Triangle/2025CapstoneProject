@@ -1,5 +1,5 @@
-﻿import { useState } from "react";
-import { AlertCircle, ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import {
   checkDuplicate,
   requestEmailCode,
@@ -9,6 +9,8 @@ import {
   verifyEmailCode,
   type SignUpPayload,
 } from "../../../lib/auth";
+import { BackButton } from "../../../shared/layout/BackButton";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface SignupPageProps {
   onBack?: () => void;
@@ -287,17 +289,12 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
   };
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">
-      <div className="sticky top-0 z-10 bg-white">
-        <div className="h-[56px] flex items-center px-4">
-          <button className="w-9 h-9 flex items-center justify-center" onClick={handleBackStep}>
-            <ChevronLeft className="w-6 h-6 text-black" />
-          </button>
-        </div>
-      </div>
+    <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
+      <BackButton onClick={handleBackStep} />
 
       {step === "basic" && (
-        <div className="px-6 pb-12">
+        <div className="mx-auto w-full max-w-[560px] px-6 pb-12 sm:px-8">
           <h1 className="font-['NEXON_Football_Gothic'] text-[28px] text-black mb-2">회원가입</h1>
           <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] mb-10">Person:a에 오신 것을 환영합니다</p>
 
@@ -537,7 +534,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
       )}
 
       {step === "birthdate" && (
-        <div className="px-[42px] pt-20 pb-12">
+        <div className="mx-auto w-full max-w-[560px] px-6 pb-12 pt-10 sm:px-8 sm:pt-16">
           <h2 className="font-['NEXON_Football_Gothic'] text-[24px] text-black text-center mb-16">생년월일을 입력해 주세요</h2>
 
           <div className="flex gap-2 items-center justify-center mb-40">
@@ -597,7 +594,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
       )}
 
       {step === "gender" && (
-        <div className="px-[60px] pt-20 pb-12">
+        <div className="mx-auto w-full max-w-[560px] px-6 pb-12 pt-10 sm:px-8 sm:pt-16">
           <h2 className="font-['NEXON_Football_Gothic'] text-[24px] text-black text-center mb-12">성별을 선택해 주세요</h2>
 
           <div className="space-y-3 mb-40">
@@ -640,7 +637,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
       )}
 
       {step === "occupation" && (
-        <div className="px-[60px] pt-20 pb-12">
+        <div className="mx-auto w-full max-w-[560px] px-6 pb-12 pt-10 sm:px-8 sm:pt-16">
           <h2 className="font-['NEXON_Football_Gothic'] text-[24px] text-black text-center mb-12">직업유형을 선택해 주세요</h2>
 
           <div className="space-y-3 mb-40">

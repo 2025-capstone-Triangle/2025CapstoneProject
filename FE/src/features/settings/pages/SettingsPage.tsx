@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import {
   Bell,
-  ChevronLeft,
   ChevronRight,
   FileText,
   Globe,
@@ -12,6 +11,8 @@ import {
   Shield,
   User,
 } from "lucide-react";
+import { BackButton } from "../../../shared/layout/BackButton";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import {
   clearAuth,
   deleteMemberAccount,
@@ -52,19 +53,6 @@ function formatDate(value: string) {
 
 function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
-}
-
-function SettingsTopBar({ onBack }: { onBack?: () => void }) {
-  return (
-    <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
-      <div className="h-[56px] flex items-center px-4">
-        <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100" onClick={onBack}>
-          <ChevronLeft className="w-6 h-6 text-black" />
-        </button>
-        <h1 className="flex-1 text-center font-['NEXON_Football_Gothic'] font-bold text-[17px] text-black pr-9">설정</h1>
-      </div>
-    </div>
-  );
 }
 
 function SettingRow({
@@ -324,10 +312,16 @@ export function SettingsPage({ onBack, onNavigate }: SettingsPageProps) {
   }, [member]);
 
   return (
-    <div className="bg-gray-50 min-h-screen max-w-[390px] mx-auto">
-      <SettingsTopBar onBack={onBack} />
+    <div className="flex min-h-[100dvh] w-full flex-col bg-gradient-to-b from-[#fafafa] to-white md:h-full md:min-h-0">
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
+      <BackButton onClick={onBack} />
 
-      <div className="py-4 px-4 space-y-4">
+      <div className="mx-auto mb-3 w-full max-w-[1120px] px-4 sm:px-8 md:px-10">
+        <h1 className="font-['NEXON_Football_Gothic'] text-[clamp(18px,2.2vw,22px)] font-bold text-black">설정</h1>
+      </div>
+
+      <div className="page-scroll">
+        <div className="mx-auto w-full max-w-[1120px] space-y-4 px-4 pb-8 sm:px-8 md:px-10">
         {loading ? (
           <div className="rounded-xl bg-white border border-gray-100 p-6 flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -363,6 +357,7 @@ export function SettingsPage({ onBack, onNavigate }: SettingsPageProps) {
 
         {message ? <div className="rounded-md bg-emerald-50 border border-emerald-100 p-3 text-xs text-emerald-700">{message}</div> : null}
         {error ? <div className="rounded-md bg-rose-50 border border-rose-100 p-3 text-xs text-rose-700">{error}</div> : null}
+      </div>
       </div>
 
       {profileModalOpen ? (

@@ -1,75 +1,53 @@
-import { useEffect, useState } from 'react';
+﻿import { DiagnosisPageLayout } from "../components/DiagnosisPageLayout";
 
-export function AnalyzingPage() {
-  const [step, setStep] = useState(0);
-  const [progress, setProgress] = useState(0);
+interface AnalyzingPageProps {
+  progress?: number;
+  message?: string;
+  onBack?: () => void;
+  onHome?: () => void;
+}
 
-  const steps = [
-    '성향 데이터 분석 중...',
-    '이미지 특징 추출 중...',
-    '페르소나 생성 중...',
-    '톤&무드 설정 중...'
-  ];
+function clampProgress(value: number | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
 
-  useEffect(() => {
-    const stepInterval = setInterval(() => {
-      setStep((prev) => (prev + 1) % steps.length);
-    }, 1400);
-
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 95) {
-          return 95;
-        }
-        return prev + 1;
-      });
-    }, 180);
-
-    return () => {
-      clearInterval(stepInterval);
-      clearInterval(progressInterval);
-    };
-  }, [steps.length]);
+export function AnalyzingPage({
+  progress,
+  message = "AI가 페르소나를 분석하고 있습니다...",
+  onBack,
+  onHome,
+}: AnalyzingPageProps) {
+  const safeProgress = clampProgress(progress);
 
   return (
-    <div className="bg-white h-full min-h-0 diag-page-root w-full max-w-[980px] mx-auto flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-8">
-        {/* Loading Animation */}
-        <div className="relative mb-16">
-          <div className="w-32 h-32 border-4 border-[#f0f0f0] rounded-full" />
-          <div 
-            className="absolute inset-0 w-32 h-32 border-4 border-black rounded-full border-t-transparent animate-spin"
-            style={{ animationDuration: '1s' }}
+    <DiagnosisPageLayout
+      onBack={onBack}
+      onHome={onHome}
+      contentMaxWidthClassName="max-w-[980px]"
+      contentClassName="px-5 pb-8 pt-2 sm:px-8 md:px-10"
+      showNotification={false}
+    >
+      <div className="mx-auto flex min-h-[calc(100dvh-320px)] w-full flex-col items-center justify-center py-6 md:min-h-[calc(100dvh-340px)]">
+        <div className="relative mb-10 md:mb-12">
+          <div className="h-28 w-28 rounded-full border-4 border-[#f0f0f0] md:h-32 md:w-32" />
+          <div
+            className="absolute inset-0 h-28 w-28 animate-spin rounded-full border-4 border-black border-t-transparent md:h-32 md:w-32"
+            style={{ animationDuration: "1s" }}
           />
         </div>
 
-        {/* Progress */}
-        <div className="w-full max-w-[280px] mb-12">
-          <div className="w-full h-2 bg-[#f0f0f0] rounded-full overflow-hidden mb-4">
-            <div 
-              className="h-full bg-black transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+        <div className="mb-7 w-full max-w-[420px] md:mb-8">
+          <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+            <div className="h-full bg-black transition-all duration-300" style={{ width: `${safeProgress}%` }} />
           </div>
-          <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] text-center font-semibold">
-            {progress}%
-          </p>
+          <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">{safeProgress}%</p>
         </div>
 
-        {/* Current Step */}
-        <div className="text-center">
-          <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[28px] text-black mb-4">
-            페르소나 생성 중
-          </h2>
-          <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">
-            {steps[step]}
-          </p>
-        </div>
+        <p className="max-w-[520px] text-center font-['Noto_Sans_KR'] text-[15px] leading-[1.7] text-[#4d4d4d] md:text-[16px]">
+          {message}
+        </p>
       </div>
-    </div>
+    </DiagnosisPageLayout>
   );
 }
-
-
-
-

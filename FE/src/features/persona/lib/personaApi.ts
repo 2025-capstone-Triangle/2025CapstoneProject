@@ -63,15 +63,31 @@ export async function diagnosePersona(payload: {
     q7_framing: number;
   };
   q8_tone: number[];
+  sessionId?: string;
+  callbackUrl?: string;
 }) {
   const formData = new FormData();
   formData.append("profile", payload.profile);
   formData.append("image", payload.image);
   formData.append("voice", payload.voice);
   formData.append("answer", JSON.stringify(payload.answer));
+  formData.append(
+    "preferenceType",
+    JSON.stringify({
+      answer: payload.answer,
+      q8_tone: payload.q8_tone,
+    }),
+  );
   payload.q8_tone.forEach((toneValue) => {
     formData.append("q8_tone", String(toneValue));
   });
+  if (payload.sessionId) {
+    formData.append("sessionId", payload.sessionId);
+    formData.append("session_id", payload.sessionId);
+  }
+  if (payload.callbackUrl) {
+    formData.append("callback_url", payload.callbackUrl);
+  }
 
   return apiRequest<PersonaResponse>("/api/v1/persona", {
     method: "POST",

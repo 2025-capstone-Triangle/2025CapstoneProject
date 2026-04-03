@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { ChevronLeft, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { useState } from "react";
+import { AlertCircle, CheckCircle, Mail } from "lucide-react";
+import { BackButton } from "../../../shared/layout/BackButton";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface ForgotPasswordPageProps {
   onBack?: () => void;
@@ -7,115 +9,86 @@ interface ForgotPasswordPageProps {
 }
 
 export function ForgotPasswordPage({ onBack, onNavigate }: ForgotPasswordPageProps) {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
   const handleResetPassword = () => {
-    setError('');
+    setError("");
     setSuccess(false);
 
-    // Validation
-    if (!email) {
-      setError('이메일을 입력해주세요.');
+    if (!email.trim()) {
+      setError("이메일을 입력해 주세요.");
+      return;
+    }
+    if (!validateEmail(email.trim())) {
+      setError("올바른 이메일 형식이 아닙니다.");
       return;
     }
 
-    if (!validateEmail(email)) {
-      setError('올바른 이메일 형식이 아닙니다.');
-      return;
-    }
-
-    // Check if email exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find((u: any) => u.email === email);
-
+    // TODO: 서버 비밀번호 재설정 API 연동 전까지 로컬 사용자 확인으로 임시 처리
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find((item: { email?: string }) => item.email === email.trim());
     if (!user) {
-      setError('등록되지 않은 이메일입니다.');
+      setError("등록되지 않은 이메일입니다.");
       return;
     }
 
-    // In a real app, send reset email here
-    // For demo purposes, we'll just show success
     setSuccess(true);
-
-    // Auto redirect after 3 seconds
-    setTimeout(() => {
-      onNavigate?.('login');
-    }, 3000);
+    window.setTimeout(() => onNavigate?.("login"), 3000);
   };
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
-        <div className="h-[56px] flex items-center px-4">
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-            onClick={onBack}
-          >
-            <ChevronLeft className="w-6 h-6 text-black" />
-          </button>
-          <h1 className="flex-1 text-center font-['NEXON_Football_Gothic'] font-bold text-[17px] text-black pr-9">
-            비밀번호 찾기
-          </h1>
-        </div>
-      </div>
+    <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
+      <BackButton onClick={onBack} />
 
-      <div className="px-8 pt-12 pb-12">
+      <div className="mx-auto w-full max-w-[520px] px-6 pb-12 pt-4 sm:px-8">
         {!success ? (
           <>
-            <div className="text-center mb-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-gray-700" />
+            <div className="mb-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                <Mail className="h-8 w-8 text-gray-700" />
               </div>
-              <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[20px] text-black mb-3">
-                비밀번호 재설정
-              </h2>
-              <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] leading-relaxed">
-                가입하신 이메일 주소를 입력하시면<br />
+              <h2 className="mb-3 font-['NEXON_Football_Gothic'] text-[20px] font-bold text-black">비밀번호 재설정</h2>
+              <p className="font-['Noto_Sans_KR'] text-[14px] leading-relaxed text-[#6b6b6b]">
+                가입하신 이메일 주소를 입력하면
+                <br />
                 비밀번호 재설정 링크를 보내드립니다.
               </p>
             </div>
 
-            {/* Email Input */}
             <div className="mb-6">
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="이메일"
-                className={`w-full h-[52px] bg-[#f8f8f8] rounded-[16px] px-5 font-['Noto_Sans_KR'] text-[14px] text-black placeholder:text-[#6b6b6b] focus:outline-none focus:ring-2 ${
-                  error ? 'ring-2 ring-red-500' : 'focus:ring-black'
+                className={`h-[52px] w-full rounded-[16px] bg-[#f8f8f8] px-5 font-['Noto_Sans_KR'] text-[14px] text-black placeholder:text-[#6b6b6b] focus:outline-none focus:ring-2 ${
+                  error ? "ring-2 ring-red-500" : "focus:ring-black"
                 }`}
               />
-              {error && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-[12px] flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span className="font-['Noto_Sans_KR'] text-[13px] text-red-700">
-                    {error}
-                  </span>
+              {error ? (
+                <div className="mt-3 flex items-start gap-2 rounded-[12px] border border-red-200 bg-red-50 p-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+                  <span className="font-['Noto_Sans_KR'] text-[13px] text-red-700">{error}</span>
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Reset Button */}
             <button
               onClick={handleResetPassword}
-              className="w-full bg-black rounded-[16px] h-[52px] font-['Noto_Sans_KR'] font-semibold text-[15px] text-white flex items-center justify-center shadow-md mb-4"
+              className="mb-4 flex h-[52px] w-full items-center justify-center rounded-[16px] bg-black font-['Noto_Sans_KR'] text-[15px] font-semibold text-white shadow-md"
             >
               재설정 링크 보내기
             </button>
 
-            {/* Back to Login */}
             <div className="text-center">
               <button
-                onClick={() => onNavigate?.('login')}
-                className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] hover:text-black transition-colors"
+                onClick={() => onNavigate?.("login")}
+                className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] transition-colors hover:text-black"
               >
                 로그인으로 돌아가기
               </button>
@@ -123,32 +96,28 @@ export function ForgotPasswordPage({ onBack, onNavigate }: ForgotPasswordPagePro
           </>
         ) : (
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[20px] text-black mb-3">
-              이메일을 확인하세요
-            </h2>
-            <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b] leading-relaxed mb-8">
-              <span className="font-semibold text-black">{email}</span>로<br />
-              비밀번호 재설정 링크를 보냈습니다.<br />
-              이메일을 확인해주세요.
+            <h2 className="mb-3 font-['NEXON_Football_Gothic'] text-[20px] font-bold text-black">이메일을 확인해 주세요</h2>
+            <p className="mb-8 font-['Noto_Sans_KR'] text-[14px] leading-relaxed text-[#6b6b6b]">
+              <span className="font-semibold text-black">{email}</span>로
+              <br />
+              비밀번호 재설정 링크를 보냈습니다.
+              <br />
+              메일함을 확인해 주세요.
             </p>
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-[12px]">
+            <div className="rounded-[12px] border border-blue-200 bg-blue-50 p-4">
               <p className="font-['Noto_Sans_KR'] text-[13px] text-blue-800">
-                이메일이 오지 않았다면 스팸함을 확인하거나<br />
-                다시 시도해주세요.
+                이메일이 오지 않았다면 스팸함을 확인하거나
+                <br />
+                잠시 후 다시 시도해 주세요.
               </p>
             </div>
-            <p className="font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b] mt-6">
-              3초 후 로그인 페이지로 이동합니다...
-            </p>
+            <p className="mt-6 font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b]">3초 후 로그인 화면으로 이동합니다.</p>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-
-

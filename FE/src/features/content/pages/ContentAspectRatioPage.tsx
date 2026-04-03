@@ -1,126 +1,125 @@
-import { useState } from 'react';
-import { StatusBar } from '../../../shared/layout/StatusBar';
-import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
-import { BackButton } from '../../../shared/layout/BackButton';
+﻿import { useState } from "react";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+import { BackButton } from "../../../shared/layout/BackButton";
 
 interface ContentAspectRatioPageProps {
   onNext?: (ratio: string) => void;
   onBack?: () => void;
   onHome?: () => void;
-  skipPersonaSelection?: boolean; // 페르소나 선택을 건너뛰고 바로 생성
+  skipPersonaSelection?: boolean;
 }
 
 const ratios = [
-  { 
-    id: '1:1', 
-    label: '1:1', 
-    description: '정사각형',
-    detail: '인스타그램 프로필',
-    aspectClass: 'aspect-square'
+  {
+    id: "1:1",
+    label: "1:1",
+    description: "정사각형",
+    detail: "프로필 이미지에 적합",
+    aspectClass: "aspect-square",
   },
-  { 
-    id: '4:5', 
-    label: '4:5', 
-    description: '세로형',
-    detail: '인스타그램 게시물',
-    aspectClass: 'aspect-[4/5]'
+  {
+    id: "4:5",
+    label: "4:5",
+    description: "세로형",
+    detail: "인스타그램 피드 게시물에 적합",
+    aspectClass: "aspect-[4/5]",
   },
-  { 
-    id: '9:16', 
-    label: '9:16', 
-    description: '세로 풀스크린',
-    detail: '인스타그램 스토리',
-    aspectClass: 'aspect-[9/16]'
-  }
+  {
+    id: "9:16",
+    label: "9:16",
+    description: "세로 스토리",
+    detail: "인스타그램 스토리에 적합",
+    aspectClass: "aspect-[9/16]",
+  },
 ];
 
 export function ContentAspectRatioPage({ onNext, onBack, onHome, skipPersonaSelection }: ContentAspectRatioPageProps) {
-  const [selectedRatio, setSelectedRatio] = useState<string>('4:5');
+  const [selectedRatio, setSelectedRatio] = useState<string>("4:5");
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto flex flex-col">
+    <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
-      
-      <div className="flex-1 overflow-y-auto px-6 md:px-8 lg:px-10 pt-8 md:pt-10 pb-32 md:pb-12">
-        {/* Header */}
-        <div className="mb-8 md:mb-10">
-          <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[28px] md:text-[36px] text-black mb-3 leading-tight">
-            컨텐츠 비율 선택
-          </h2>
-          <p className="font-['Noto_Sans_KR'] text-[15px] md:text-[16px] text-[#6b6b6b]">
-            생성할 컨텐츠의 비율을 선택해주세요
-          </p>
-        </div>
 
-        {/* Ratio Cards */}
-        <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-3 md:gap-4 mb-8">
-          {ratios.map((ratio) => (
-            <button
-              key={ratio.id}
-              onClick={() => setSelectedRatio(ratio.id)}
-              className={`w-full rounded-[20px] p-5 flex items-center md:flex-col md:items-start gap-5 md:gap-4 transition-all ${
-                selectedRatio === ratio.id
-                  ? 'bg-black shadow-lg'
-                  : 'bg-[#f8f8f8] hover:bg-[#f0f0f0]'
-              }`}
-            >
-              {/* Preview Box */}
-              <div className={`w-[80px] h-[80px] md:w-full md:h-[160px] flex items-center justify-center bg-white rounded-[12px] flex-shrink-0 ${
-                selectedRatio === ratio.id ? 'shadow-md' : ''
-              }`}>
-                <div 
-                  className={`${ratio.aspectClass} bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0] rounded-[6px] max-w-[60px] max-h-[60px] md:max-w-[120px] md:max-h-[120px]`}
-                />
-              </div>
+      <div className="page-scroll">
+        <div className="mx-auto w-full max-w-[980px] px-4 pb-28 pt-2 sm:px-8 md:px-10 md:pb-8">
+          <div className="mb-6 md:mb-7">
+            <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[clamp(24px,4vw,34px)] font-bold leading-tight text-black">
+              콘텐츠 비율 선택
+            </h2>
+            <p className="font-['Noto_Sans_KR'] text-[clamp(13px,1.8vw,15px)] text-[#6b6b6b]">
+              생성할 콘텐츠의 비율을 선택해 주세요.
+            </p>
+          </div>
 
-              {/* Info */}
-              <div className="flex-1 text-left">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <h3 className={`font-['NEXON_Football_Gothic'] font-bold text-[22px] ${
-                    selectedRatio === ratio.id ? 'text-white' : 'text-black'
-                  }`}>
-                    {ratio.label}
-                  </h3>
-                  <span className={`font-['Noto_Sans_KR'] text-[14px] ${
-                    selectedRatio === ratio.id ? 'text-white/80' : 'text-[#6b6b6b]'
-                  }`}>
-                    {ratio.description}
-                  </span>
+          <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+            {ratios.map((ratio) => (
+              <button
+                key={ratio.id}
+                onClick={() => setSelectedRatio(ratio.id)}
+                className={`w-full rounded-[20px] p-4 sm:p-5 flex items-center md:flex-col md:items-start gap-4 md:gap-3 transition-all ${
+                  selectedRatio === ratio.id ? "bg-black shadow-lg" : "bg-[#f8f8f8] hover:bg-[#f0f0f0]"
+                }`}
+              >
+                <div
+                  className={`w-[72px] h-[72px] md:w-full md:h-[170px] flex items-center justify-center bg-white rounded-[12px] flex-shrink-0 ${
+                    selectedRatio === ratio.id ? "shadow-md" : ""
+                  }`}
+                >
+                  <div
+                    className={`${ratio.aspectClass} bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0] rounded-[6px] max-w-[52px] max-h-[52px] md:max-w-[126px] md:max-h-[126px]`}
+                  />
                 </div>
-                <p className={`font-['Noto_Sans_KR'] text-[13px] ${
-                  selectedRatio === ratio.id ? 'text-white/70' : 'text-[#999999]'
-                }`}>
-                  {ratio.detail}
-                </p>
-              </div>
 
-              {/* Radio */}
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 md:self-end ${
-                selectedRatio === ratio.id
-                  ? 'border-white bg-white'
-                  : 'border-[#c0c0c0]'
-              }`}>
-                {selectedRatio === ratio.id && (
-                  <div className="w-3 h-3 bg-black rounded-full" />
-                )}
-              </div>
-            </button>
-          ))}
+                <div className="flex-1 text-left">
+                  <div className="mb-1 flex items-baseline gap-2">
+                    <h3
+                      className={`font-['NEXON_Football_Gothic'] text-[20px] font-bold md:text-[18px] ${
+                        selectedRatio === ratio.id ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {ratio.label}
+                    </h3>
+                    <span
+                      className={`font-['Noto_Sans_KR'] text-[13px] ${
+                        selectedRatio === ratio.id ? "text-white/80" : "text-[#6b6b6b]"
+                      }`}
+                    >
+                      {ratio.description}
+                    </span>
+                  </div>
+                  <p
+                    className={`font-['Noto_Sans_KR'] text-[12px] ${
+                      selectedRatio === ratio.id ? "text-white/70" : "text-[#999999]"
+                    }`}
+                  >
+                    {ratio.detail}
+                  </p>
+                </div>
+
+                <div
+                  className={`h-6 w-6 flex-shrink-0 rounded-full border-2 flex items-center justify-center md:self-end ${
+                    selectedRatio === ratio.id ? "border-white bg-white" : "border-[#c0c0c0]"
+                  }`}
+                >
+                  {selectedRatio === ratio.id && <div className="h-3 w-3 rounded-full bg-black" />}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Fixed Action Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] p-6 max-w-[390px] mx-auto md:static md:border-t-0 md:p-8 md:pt-0">
-        <button
-          onClick={() => onNext?.(selectedRatio)}
-          className="w-full bg-black rounded-[16px] h-[56px] font-['Noto_Sans_KR'] font-semibold text-[16px] text-white flex items-center justify-center shadow-sm hover:bg-[#1a1a1a] transition-colors"
-        >
-          다음
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#f0f0f0] bg-white/95 backdrop-blur md:static md:border-t-0 md:bg-transparent md:backdrop-blur-0">
+        <div className="mx-auto w-full max-w-[980px] px-4 py-4 sm:px-8 md:px-10 md:pb-8 md:pt-3">
+          <button
+            onClick={() => onNext?.(selectedRatio)}
+            className="flex h-[52px] w-full items-center justify-center rounded-[16px] bg-black font-['Noto_Sans_KR'] text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1a1a1a] sm:h-[56px] sm:text-[16px]"
+          >
+            {skipPersonaSelection ? "바로 생성하기" : "다음"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
-

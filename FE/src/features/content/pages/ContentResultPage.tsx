@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronLeft, Download, Home, RefreshCw, User, X } from "lucide-react";
+import { Download, Home, RefreshCw, User, X } from "lucide-react";
+import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import type { ContentCreateResponse } from "../lib/contentApi";
 
@@ -16,13 +17,13 @@ interface ContentResultPageProps {
 const getRatioConfig = (ratio?: string) => {
   switch (ratio) {
     case "1:1":
-      return { title: "생성된 프로필용 사진", subtitle: "1:1 비율 · 프로필용", aspect: "aspect-square" };
+      return { title: "생성된 프로필 이미지", subtitle: "1:1 비율 · 프로필용", aspect: "aspect-square" };
     case "4:5":
-      return { title: "생성된 피드용 사진", subtitle: "4:5 비율 · 피드용", aspect: "aspect-[4/5]" };
+      return { title: "생성된 피드 이미지", subtitle: "4:5 비율 · 피드 게시물용", aspect: "aspect-[4/5]" };
     case "9:16":
-      return { title: "생성된 스토리용 사진", subtitle: "9:16 비율 · 스토리용", aspect: "aspect-[9/16]" };
+      return { title: "생성된 스토리 이미지", subtitle: "9:16 비율 · 스토리용", aspect: "aspect-[9/16]" };
     default:
-      return { title: "생성된 사진", subtitle: "피드용", aspect: "aspect-[4/5]" };
+      return { title: "생성된 이미지", subtitle: "4:5 비율", aspect: "aspect-[4/5]" };
   }
 };
 
@@ -42,85 +43,84 @@ export function ContentResultPage({ ratio, generatedContent, onRegenerate, onBac
   };
 
   return (
-    <div className="bg-gradient-to-b from-[#fafafa] to-white min-h-screen max-w-[390px] mx-auto flex flex-col">
+    <div className="flex min-h-[100dvh] w-full flex-col bg-gradient-to-b from-[#fafafa] to-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
 
-      <div className="px-8 mb-4">
-        <button onClick={onBack} className="flex items-center gap-2 text-[#6b6b6b] hover:text-black transition-colors">
-          <ChevronLeft className="w-5 h-5" />
-          <span className="font-['Noto_Sans_KR'] text-[14px] font-medium">뒤로가기</span>
-        </button>
-      </div>
+      <BackButton onClick={onBack} />
 
-      <div className="flex-1 overflow-y-auto px-8 pb-8">
-        <div className="mb-6 bg-white rounded-[20px] p-5 shadow-sm border border-[#f0f0f0]">
-          <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[18px] text-black mb-1">{ratioInfo.title}</h2>
-          <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b]">{ratioInfo.subtitle} · 총 {generatedContent ? 1 : 0}개 생성됨</p>
-        </div>
-
-        {!generatedContent ? (
-          <div className="rounded-[16px] border border-[#f2d6d6] bg-[#fff7f7] p-5">
-            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#b42318]">생성된 결과가 없습니다. 다시 생성을 시도해 주세요.</p>
+      <div className="page-scroll">
+        <div className="mx-auto w-full max-w-[1120px] px-4 pb-10 sm:px-8 md:px-10">
+          <div className="mb-5 rounded-[20px] border border-[#f0f0f0] bg-white p-4 shadow-sm sm:p-5">
+            <h2 className="mb-1 font-['NEXON_Football_Gothic'] text-[clamp(16px,2vw,22px)] font-bold text-black">{ratioInfo.title}</h2>
+            <p className="font-['Noto_Sans_KR'] text-[clamp(12px,1.4vw,13px)] text-[#6b6b6b]">
+              {ratioInfo.subtitle} · 총 {generatedContent ? 1 : 0}개 생성
+            </p>
           </div>
-        ) : (
-          <div className="space-y-4 mb-8">
-            <button
-              onClick={() => setIsViewerOpen(true)}
-              className={`w-full ${ratioInfo.aspect} rounded-[22px] overflow-hidden bg-[#f2f2f2] border border-[#ececec] shadow-sm`}
-            >
-              <img src={generatedContent.img} alt="generated-content" className="w-full h-full object-cover" />
-            </button>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleDownload}
-                className="h-[50px] rounded-[14px] bg-white border border-[#e5e5e5] text-black font-['Noto_Sans_KR'] text-[14px] font-semibold inline-flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                이미지 저장
-              </button>
-              <button
-                onClick={onRegenerate}
-                className="h-[50px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[14px] font-semibold inline-flex items-center justify-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                다시 생성
-              </button>
+          {!generatedContent ? (
+            <div className="rounded-[16px] border border-[#f2d6d6] bg-[#fff7f7] p-5">
+              <p className="font-['Noto_Sans_KR'] text-[13px] text-[#b42318]">생성된 결과가 없습니다. 다시 생성해 주세요.</p>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_340px]">
+              <button
+                onClick={() => setIsViewerOpen(true)}
+                className={`w-full ${ratioInfo.aspect} overflow-hidden rounded-[22px] border border-[#ececec] bg-[#f2f2f2] shadow-sm`}
+              >
+                <img src={generatedContent.img} alt="generated-content" className="h-full w-full object-cover" />
+              </button>
 
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={onViewPersona}
-              className="h-[52px] bg-white border-2 border-black rounded-[16px] flex items-center justify-center gap-2 font-['Noto_Sans_KR'] text-[14px] font-semibold text-black"
-            >
-              <User className="w-5 h-5" />
-              페르소나 보기
-            </button>
-            <button
-              onClick={onHome}
-              className="h-[52px] bg-white border-2 border-[#e5e5e5] rounded-[16px] flex items-center justify-center gap-2 font-['Noto_Sans_KR'] text-[14px] font-semibold text-black"
-            >
-              <Home className="w-5 h-5" />
-              홈으로
-            </button>
-          </div>
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
+                  <button
+                    onClick={handleDownload}
+                    className="inline-flex h-[48px] items-center justify-center gap-2 rounded-[14px] border border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[13px] font-semibold text-black transition-colors hover:border-black"
+                  >
+                    <Download className="h-4 w-4" />
+                    이미지 저장
+                  </button>
+                  <button
+                    onClick={onRegenerate}
+                    className="inline-flex h-[48px] items-center justify-center gap-2 rounded-[14px] bg-black font-['Noto_Sans_KR'] text-[13px] font-semibold text-white transition-colors hover:bg-[#1a1a1a]"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    다시 생성
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 md:mt-auto md:grid-cols-1">
+                  <button
+                    onClick={onViewPersona}
+                    className="flex h-[50px] items-center justify-center gap-2 rounded-[16px] border-2 border-black bg-white font-['Noto_Sans_KR'] text-[13px] font-semibold text-black transition-colors hover:bg-[#fafafa]"
+                  >
+                    <User className="h-4 w-4" />
+                    페르소나 보기
+                  </button>
+                  <button
+                    onClick={onHome}
+                    className="flex h-[50px] items-center justify-center gap-2 rounded-[16px] border-2 border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[13px] font-semibold text-black transition-colors hover:border-black hover:bg-[#fafafa]"
+                  >
+                    <Home className="h-4 w-4" />
+                    홈으로
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {isViewerOpen && generatedContent ? (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-6">
-          <div className="max-w-[390px] w-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-6">
+          <div className="w-full max-w-[520px]">
             <button
               onClick={() => setIsViewerOpen(false)}
-              className="absolute top-8 right-8 w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center"
+              className="absolute right-6 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 backdrop-blur-md"
             >
-              <X className="w-6 h-6 text-white" strokeWidth={2.5} />
+              <X className="h-6 w-6 text-white" strokeWidth={2.5} />
             </button>
-            <div className={`w-full ${ratioInfo.aspect} bg-[#111] rounded-[24px] overflow-hidden shadow-2xl`}>
-              <img src={generatedContent.img} alt="generated-content-full" className="w-full h-full object-cover" />
+            <div className={`w-full ${ratioInfo.aspect} overflow-hidden rounded-[24px] bg-[#111] shadow-2xl`}>
+              <img src={generatedContent.img} alt="generated-content-full" className="h-full w-full object-cover" />
             </div>
           </div>
         </div>

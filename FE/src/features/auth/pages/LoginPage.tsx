@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { AlertCircle, ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { getMemberInfo, saveAuth, signIn } from "../../../lib/auth";
+import { BackButton } from "../../../shared/layout/BackButton";
+import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface LoginPageProps {
   onLogin?: () => void;
@@ -45,16 +47,11 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
   };
 
   return (
-    <div className="bg-white min-h-screen max-w-[390px] mx-auto">
-      <div className="sticky top-0 z-10 bg-white">
-        <div className="h-[56px] flex items-center px-4">
-          <button className="w-9 h-9 flex items-center justify-center" onClick={onBack}>
-            <ChevronLeft className="w-6 h-6 text-black" />
-          </button>
-        </div>
-      </div>
+    <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
+      <BackButton onClick={onBack} />
 
-      <div className="px-8 pt-8">
+      <div className="mx-auto w-full max-w-[520px] px-6 pb-8 pt-2 sm:px-8">
         <div className="text-center mb-14">
           <h1 className="font-['Abhaya_Libre_ExtraBold'] text-[48px] text-black mb-3">Person:a</h1>
           <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">나만의 페르소나를 만들어 보세요</p>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { isAuthenticated } from "../../../lib/auth";
 import { raiseErrorToast } from "../../../lib/errorToastService";
-import { setPendingPersonaCode } from "../../persona/lib/personaShareCode";
+import { setPendingPersonaCode, setPendingPersonaIsSelf } from "../../persona/lib/personaShareCode";
 import type { PersonaResponse } from "../../persona/lib/personaApi";
 
 interface UseDiagnosisResultParams {
@@ -138,6 +138,7 @@ export function useDiagnosisResult({
   const handleMoveToSignup = () => {
     if (guestPersonaCode) {
       setPendingPersonaCode(guestPersonaCode);
+      setPendingPersonaIsSelf(true);
     }
     setShowGuestCodeModal(false);
     onNavigateToSignup?.();
@@ -146,6 +147,7 @@ export function useDiagnosisResult({
   const handleMoveToLogin = () => {
     if (guestPersonaCode) {
       setPendingPersonaCode(guestPersonaCode);
+      setPendingPersonaIsSelf(true);
     }
     setShowGuestCodeModal(false);
     onNavigateToLogin?.();

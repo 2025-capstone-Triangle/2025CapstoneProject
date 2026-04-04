@@ -17,11 +17,13 @@ import { ImageWithFallback } from "../../../shared/ui/ImageWithFallback";
 import {
   clearPendingPersonaCode,
   getPendingPersonaCode,
+  getPendingPersonaIsSelf,
   normalizePersonaCode,
 } from "../lib/personaShareCode";
 import {
   getPersonaList,
   removePersona,
+  saveNewPersona,
   saveSharedPersona,
   type PersonaResponse,
 } from "../lib/personaApi";
@@ -156,7 +158,12 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
     setIsImporting(true);
 
     try {
-      await saveSharedPersona(code, "공유 페르소나");
+      const isSelf = getPendingPersonaIsSelf();
+      if (isSelf) {
+        await saveNewPersona(code, "내 페르소나");
+      } else {
+        await saveSharedPersona(code, "공유 페르소나");
+      }
       await loadPersonas();
       setImportCode("");
       setImportMessage("코드 페르소나가 내 목록에 저장되었습니다.");

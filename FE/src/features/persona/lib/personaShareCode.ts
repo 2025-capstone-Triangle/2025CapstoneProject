@@ -1,4 +1,5 @@
 const PENDING_PERSONA_CODE_KEY = "pendingPersonaCode";
+const PENDING_PERSONA_IS_SELF_KEY = "pendingPersonaIsSelf";
 const CODE_PREFIX = "PRS";
 const CODE_SEGMENT_LENGTH = 4;
 
@@ -23,4 +24,17 @@ export function getPendingPersonaCode() {
 
 export function clearPendingPersonaCode() {
   localStorage.removeItem(PENDING_PERSONA_CODE_KEY);
+  localStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
+}
+
+export function setPendingPersonaIsSelf(isSelf: boolean) {
+  if (isSelf) {
+    localStorage.setItem(PENDING_PERSONA_IS_SELF_KEY, "1");
+  } else {
+    localStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
+  }
+}
+
+export function getPendingPersonaIsSelf() {
+  return localStorage.getItem(PENDING_PERSONA_IS_SELF_KEY) === "1";
 }

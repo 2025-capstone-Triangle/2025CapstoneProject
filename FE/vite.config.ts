@@ -64,7 +64,7 @@
       open: true,
       proxy: {
         "/api": {
-          target: "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080",
+          target: "https://13.209.98.117.nip.io",
           changeOrigin: true,
           secure: false,
         },

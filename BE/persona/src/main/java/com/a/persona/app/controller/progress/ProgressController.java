@@ -28,8 +28,11 @@ public class ProgressController {
             "sessionId에는 persona 진단 시에 함께 들어간 callback_url의 내용을, 그 외에는 직접 String type으로 생성하여 보내주세요.<br>" +
             "진단 완료 시에는 fe와 be의 SSE 연결 종료를 위해 꼭 step에 completed 라는 내용을 담아 보내주세요.")
     public ResponseEntity<CommonApiResponse<Void>> receiveProgress(
-        ProgressRequest request
+        @RequestBody ProgressRequest request
     ) {
+
+        log.info("{}",request.getSessionId());
+
         sseService.sendProgress(request);
 
         return ResponseEntity.ok(CommonApiResponse.noContent());
@@ -39,8 +42,12 @@ public class ProgressController {
             "sessionId는 직접 생성하여 보내주세요. 단 현재 연결되어 있는 SSE의 sessionId와는 겹치지 않도록 생성해주세요.<br>" +
             "페르소나 진단 요청을 보내기 전, connect라는 이벤트가 수신되었는지 확인하고 진단 요청을 보낼 수 있도록 조정해주세요.")
     @GetMapping(value = "/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter connect(@PathVariable String sessionId) {
-        return sseService.connect(sessionId);
+    public ResponseEntity<SseEmitter> connect(@PathVariable String sessionId) {
+        SseEmitter emitter = sseService.connect(sessionId);
+        return ResponseEntity.ok()
+                .header("X-Accel-Buffering", "no")
+                .header("Cache-Control", "no-cache, no-store")
+                .body(emitter);
     }
 
 

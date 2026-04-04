@@ -69,7 +69,7 @@ public class ReferenceController {
             "persona 코드와, reference id를 입력하면 해당하는 레퍼런스와 페르소나를 참고하여 생성합니다.")
     public ResponseEntity<CommonApiResponse<TrendContentResponse>> createTrendContent(
             @AuthenticationPrincipal UserDetails userDetails,
-            TrendContentRequest request
+            @RequestBody TrendContentRequest request
             ){
 
              TrendContentDto dto = referenceService.createContent(userDetails.getUsername(), request.getCode(), request.getReferenceId(), request.getType());

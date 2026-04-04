@@ -519,11 +519,14 @@ export default function App() {
         rejectConnect = reject;
       });
 
+      // Vercel 프록시가 SSE를 버퍼링해 connect 이벤트가 늦게 도착할 수 있음.
+      // 3초 후에도 미수신 시 일단 POST 진행 (SSE 스트림은 계속 열어둠).
       connectTimeout = window.setTimeout(() => {
         if (!connectAcked) {
-          rejectConnect?.(new Error("진단 진행 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."));
+          connectAcked = true;
+          resolveConnect?.();
         }
-      }, 25000);
+      }, 3000);
 
       setDiagnosisProgress({
         sessionId,

@@ -18,5 +18,5 @@ public class PersonaRequest {
     List<Long> q8_tone;
     String images;
     String voice;
-    String callback_url;
+    String session_id;
 }

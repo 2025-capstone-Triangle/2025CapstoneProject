@@ -1,7 +1,6 @@
 package com.a.persona.app.model.persona.service;
 
 import com.a.persona.app.controller.persona.payload.LikeAnswerRequest;
-import com.a.persona.app.model.content.code.ContentType;
 import com.a.persona.app.model.member.domain.Member;
 import com.a.persona.app.model.member.repo.MemberRepository;
 import com.a.persona.app.model.persona.domain.Persona;
@@ -149,7 +148,7 @@ public class PersonaService {
                 .q8_tone(tone)
                 .images(pictureUrl)
                 .voice(voiceUrl)
-                .callback_url(sessionId)
+                .session_id(sessionId)
                 .build();
 
         PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
@@ -209,6 +208,7 @@ public class PersonaService {
      * @param code 공유받은 페르소나 코드
      * @param name 혹시나 이름을 바꾼다면 이름
      */
+    // todo 공유받은 것도 프로필 수정 해줘
     public void saveSharedPersona(String username, String code, String name) {
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
         // 기존 페르소나

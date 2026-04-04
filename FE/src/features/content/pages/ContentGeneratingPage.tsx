@@ -1,7 +1,6 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { BackButton } from "../../../shared/layout/BackButton";
-import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
+import { ContentPageLayout } from "../components/ContentPageLayout";
 
 interface ContentGeneratingPageProps {
   errorMessage?: string;
@@ -46,11 +45,14 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
   }, [errorMessage]);
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
-      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
-      <BackButton onClick={onBack} />
-
-      <div className="flex flex-1 flex-col items-center justify-center px-6 pb-14 md:px-10">
+    <ContentPageLayout
+      onBack={onBack}
+      onHome={onHome}
+      scrollContent={false}
+      contentMaxWidthClassName="max-w-[980px]"
+      contentClassName="px-6 pb-14 pt-2 md:px-10"
+    >
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className="relative mb-12">
           <div className="h-28 w-28 rounded-full border-4 border-[#f0f0f0] md:h-32 md:w-32" />
           <div
@@ -89,6 +91,7 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
           </div>
         ) : null}
       </div>
-    </div>
+    </ContentPageLayout>
   );
 }
+

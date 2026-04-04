@@ -77,7 +77,7 @@ export function ImageInputPage({ onNext, onBack, onHome }: ImageInputPageProps) 
         </div>
       }
     >
-      <div className="flex h-full flex-col md:min-h-[calc(100dvh-320px)] md:justify-center">
+      <div className="flex min-h-0 flex-1 flex-col justify-center">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
           <div className="rounded-[22px] border border-[#edf1f5] bg-white p-4 shadow-[0_12px_30px_rgba(17,24,39,0.06)] sm:p-5">
           <h2 className="mb-1 text-center font-['Noto_Sans_KR'] text-[16px] font-semibold text-black lg:text-left">
@@ -100,7 +100,7 @@ export function ImageInputPage({ onNext, onBack, onHome }: ImageInputPageProps) 
             />
             <button
               onClick={() => firstInputRef.current?.click()}
-              className="group relative flex aspect-square min-h-[300px] w-full max-h-[min(48vh,520px)] items-center justify-center overflow-hidden rounded-[16px] bg-gradient-to-br from-[#f8f8f8] to-[#e8e8e8] transition-all hover:from-[#f0f0f0] hover:to-[#e0e0e0] sm:min-h-[340px]"
+              className="group relative flex aspect-square min-h-[220px] w-full max-h-[min(48vh,520px)] items-center justify-center overflow-hidden rounded-[16px] bg-gradient-to-br from-[#f8f8f8] to-[#e8e8e8] transition-all hover:from-[#f0f0f0] hover:to-[#e0e0e0] sm:min-h-[260px] lg:min-h-[300px]"
             >
               {uploadedImage ? (
                 <>

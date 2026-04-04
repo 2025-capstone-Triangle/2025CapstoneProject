@@ -1,8 +1,8 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
-interface DiagnosisPageLayoutProps {
+interface ContentPageLayoutProps {
   children: ReactNode;
   bottom?: ReactNode;
   onBack?: () => void;
@@ -13,44 +13,40 @@ interface DiagnosisPageLayoutProps {
   contentClassName?: string;
   bottomMaxWidthClassName?: string;
   bottomWrapperClassName?: string;
-  showNotification?: boolean;
   scrollContent?: boolean;
+  showNotification?: boolean;
 }
 
 function joinClassNames(...classNames: Array<string | undefined>) {
   return classNames.filter(Boolean).join(" ");
 }
 
-export function DiagnosisPageLayout({
+export function ContentPageLayout({
   children,
   bottom,
   onBack,
   onHome,
   rootClassName,
   pageMaxWidthClassName = "max-w-[1320px]",
-  contentMaxWidthClassName = "max-w-[760px]",
+  contentMaxWidthClassName = "max-w-[980px]",
   contentClassName,
   bottomMaxWidthClassName,
   bottomWrapperClassName,
+  scrollContent = true,
   showNotification = false,
-  scrollContent = false,
-}: DiagnosisPageLayoutProps) {
+}: ContentPageLayoutProps) {
   const contentBaseClassName = joinClassNames(
     "mx-auto flex-1 min-h-0 w-full",
     contentMaxWidthClassName,
     contentClassName,
   );
 
-  const contentNode = (
-    <div className={contentBaseClassName}>
-      {children}
-    </div>
-  );
+  const contentNode = <div className={contentBaseClassName}>{children}</div>;
 
   return (
     <div
       className={joinClassNames(
-        "diag-page-root relative mx-auto flex h-full min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:min-h-0",
+        "content-page-root relative mx-auto flex h-full min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:min-h-0",
         pageMaxWidthClassName,
         rootClassName,
       )}
@@ -61,7 +57,7 @@ export function DiagnosisPageLayout({
       {scrollContent ? (
         <div className="page-scroll">{contentNode}</div>
       ) : (
-        <div className="diag-content-frame">{contentNode}</div>
+        <div className="content-content-frame">{contentNode}</div>
       )}
 
       {bottom ? (
@@ -85,3 +81,4 @@ export function DiagnosisPageLayout({
     </div>
   );
 }
+

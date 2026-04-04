@@ -26,9 +26,9 @@ export function VoiceInputPage({ onNext, onBack, onHome }: VoiceInputPageProps) 
       bottomWrapperClassName="bg-white/95 backdrop-blur"
       bottom={<VoiceNextActionBar hasRecording={voice.hasRecording} disabled={!voice.canProceed} onNext={onNext} />}
     >
-      <div className="flex h-full flex-col md:min-h-[calc(100dvh-320px)] md:justify-center">
+      <div className="flex min-h-0 flex-1 flex-col justify-center">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-5">
-          <div className="md:-mt-2 lg:-mt-3">
+          <div className="lg:-mt-1 xl:-mt-3">
             <VoiceGuideCard
               sampleScript={SAMPLE_SCRIPT}
               permissionState={voice.microphonePermission}
@@ -37,7 +37,7 @@ export function VoiceInputPage({ onNext, onBack, onHome }: VoiceInputPageProps) 
             />
           </div>
 
-          <div className="md:-mt-2 lg:-mt-3">
+          <div className="lg:-mt-1 xl:-mt-3">
             <VoiceStatusCard
               hasRecording={voice.hasRecording}
               recordingMeta={voice.recordingMeta}

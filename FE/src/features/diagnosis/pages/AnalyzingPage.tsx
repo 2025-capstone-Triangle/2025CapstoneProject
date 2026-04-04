@@ -28,7 +28,7 @@ export function AnalyzingPage({
       contentClassName="px-5 pb-8 pt-2 sm:px-8 md:px-10"
       showNotification={false}
     >
-      <div className="mx-auto flex min-h-[calc(100dvh-320px)] w-full flex-col items-center justify-center py-6 md:min-h-[calc(100dvh-340px)]">
+      <div className="mx-auto flex min-h-0 flex-1 w-full flex-col items-center justify-center py-6 md:py-4">
         <div className="relative mb-10 md:mb-12">
           <div className="h-28 w-28 rounded-full border-4 border-[#f0f0f0] md:h-32 md:w-32" />
           <div

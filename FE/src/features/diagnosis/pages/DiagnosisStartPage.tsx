@@ -25,7 +25,7 @@ export function DiagnosisStartPage({ onStart, onBack, onHome }: DiagnosisStartPa
         </div>
       }
     >
-      <div className="flex flex-1 flex-col md:min-h-[calc(100dvh-300px)] md:justify-center md:-translate-y-8 lg:-translate-y-10">
+      <div className="flex min-h-0 flex-1 flex-col justify-center">
         <div className="grid gap-6 lg:grid-cols-[0.74fr_1.26fr] lg:items-center lg:gap-8">
           <div className="text-center lg:text-left">
             <h1 className="mb-3 font-['NEXON_Football_Gothic'] text-[clamp(32px,4vw,50px)] font-bold leading-[1.14] text-black">

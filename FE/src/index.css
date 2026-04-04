@@ -110,7 +110,7 @@ body {
 /* Safe-area padding for notched phones */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .fixed-bottom-safe {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
@@ -119,6 +119,30 @@ body {
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.diag-content-frame {
+  min-height: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+.content-content-frame {
+  min-height: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+@media (min-width: 768px) and (max-height: 900px) {
+  .diag-content-frame {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .content-content-frame {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .tone-slider {

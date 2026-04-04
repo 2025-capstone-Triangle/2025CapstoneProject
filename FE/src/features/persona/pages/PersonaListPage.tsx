@@ -200,14 +200,14 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
   const favoriteCount = personas.filter((persona) => persona.isFavorite).length;
 
   return (
-    <div className="flex min-h-[100dvh] w-full max-w-[980px] flex-col bg-white md:h-full md:min-h-0">
+    <div className="relative mx-auto flex h-full min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-white md:min-h-0">
       <DefaultTopBar title="My Persona" onTitleClick={onHome} />
       <BackButton onClick={onBack} />
 
       <div className="page-scroll">
-      <div className="mx-auto max-w-[920px] px-4 pb-24 pt-4 sm:px-8 sm:pt-6 lg:px-10">
+      <div className="mx-auto w-full max-w-[980px] px-4 pb-28 pt-2 sm:px-8 md:px-10 md:pb-8">
         <div className="mb-7">
-          <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[28px] text-black mb-2 leading-tight">
+          <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[clamp(24px,2.6vw,32px)] font-bold leading-tight text-black">
             저장된 페르소나
           </h2>
           <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">
@@ -299,25 +299,30 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
         )}
 
         {!loading && sortedPersonas.length > 0 && (
-          <div className="mb-6 grid gap-3 lg:grid-cols-2">
+          <div className="mb-6 grid gap-3 xl:grid-cols-2">
             {sortedPersonas.map((persona) => (
               <div key={persona.code} className="relative rounded-[16px] bg-[#f8f8f8] transition-all group hover:bg-[#f0f0f0]">
-                <button onClick={() => onPersonaClick?.(persona.code)} className="w-full flex items-center gap-4 p-5">
+                <button
+                  onClick={() => onPersonaClick?.(persona.code)}
+                  className="flex w-full items-start gap-3 p-4 sm:items-center sm:gap-4 sm:p-5"
+                >
                   {persona.thumbnail ? (
                     <ImageWithFallback
                       src={persona.thumbnail}
                       alt={persona.name}
-                      className="w-[70px] h-[70px] rounded-[12px] object-cover flex-shrink-0"
+                      className="h-[62px] w-[62px] flex-shrink-0 rounded-[12px] object-cover sm:h-[70px] sm:w-[70px]"
                     />
                   ) : (
-                    <div className="w-[70px] h-[70px] bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0] rounded-[12px] flex-shrink-0" />
+                    <div className="h-[62px] w-[62px] flex-shrink-0 rounded-[12px] bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0] sm:h-[70px] sm:w-[70px]" />
                   )}
 
                   <div className="flex-1 text-left min-w-0">
-                    <h3 className="font-['NEXON_Football_Gothic'] font-bold text-[18px] text-black mb-1 truncate">
+                    <h3 className="mb-1 truncate font-['NEXON_Football_Gothic'] text-[17px] font-bold text-black sm:text-[18px]">
                       {persona.name}
                     </h3>
-                    <p className="font-['Noto_Sans_KR'] text-[13px] text-[#6b6b6b] mb-3 truncate">{persona.description}</p>
+                    <p className="mb-3 truncate font-['Noto_Sans_KR'] text-[12px] text-[#6b6b6b] sm:text-[13px]">
+                      {persona.description}
+                    </p>
 
                     <div className="flex gap-1.5">
                       {persona.colors.map((color, colorIndex) => (

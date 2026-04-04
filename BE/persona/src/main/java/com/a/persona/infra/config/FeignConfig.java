@@ -13,7 +13,7 @@ public class FeignConfig {
 
     @Bean
     public Options requestOptions(){
-        return new Options(5, TimeUnit.SECONDS, 10, TimeUnit.MINUTES, true);
+        return new Options(5, TimeUnit.SECONDS, 5, TimeUnit.MINUTES, true);
     }
 
     @Bean

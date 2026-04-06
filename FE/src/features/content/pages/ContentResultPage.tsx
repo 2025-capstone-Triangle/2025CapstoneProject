@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Home, RefreshCw, User, X } from "lucide-react";
+import { Download, Home, RefreshCw, User, X, List } from "lucide-react";
 import type { ContentCreateResponse } from "../lib/contentApi";
 import { ContentPageLayout } from "../components/ContentPageLayout";
 
@@ -11,6 +11,7 @@ interface ContentResultPageProps {
   onBack?: () => void;
   onHome?: () => void;
   onViewPersona?: () => void;
+  onViewContentList?: () => void;
 }
 
 const getRatioConfig = (ratio?: string) => {
@@ -33,6 +34,7 @@ export function ContentResultPage({
   onBack,
   onHome,
   onViewPersona,
+  onViewContentList,
 }: ContentResultPageProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const ratioInfo = getRatioConfig(ratio);
@@ -97,13 +99,20 @@ export function ContentResultPage({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 md:mt-auto md:grid-cols-1">
+            <div className="grid grid-cols-1 gap-3 md:mt-auto">
               <button
                 onClick={onViewPersona}
                 className="flex h-[50px] items-center justify-center gap-2 rounded-[16px] border-2 border-black bg-white font-['Noto_Sans_KR'] text-[13px] font-semibold text-black transition-colors hover:bg-[#fafafa]"
               >
                 <User className="h-4 w-4" />
                 페르소나 보기
+              </button>
+              <button
+                onClick={onViewContentList}
+                className="flex h-[50px] items-center justify-center gap-2 rounded-[16px] border-2 border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[13px] font-semibold text-black transition-colors hover:border-black hover:bg-[#fafafa]"
+              >
+                <List className="h-4 w-4" />
+                콘텐츠 리스트 보기
               </button>
               <button
                 onClick={onHome}
@@ -135,4 +144,3 @@ export function ContentResultPage({
     </ContentPageLayout>
   );
 }
-

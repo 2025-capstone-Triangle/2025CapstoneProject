@@ -901,6 +901,9 @@ export default function App() {
           onBack={handleBackSkipLoading}
           onHome={handleNavigateToHome}
           onViewPersona={() => handleNavigate(selectedPersonaCode ? "persona-detail" : "persona-list")}
+          onViewContentList={() =>
+            handleNavigate(selectedPersonaCode ? "persona-saved-contents" : "persona-list")
+          }
         />
       )}
 

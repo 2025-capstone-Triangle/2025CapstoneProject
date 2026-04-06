@@ -19,6 +19,8 @@ interface DiagnosisResultPageProps {
   onNavigateToLogin?: () => void;
   viewLeftActionLabel?: string;
   viewLeftAction?: () => void;
+  viewMiddleActionLabel?: string;
+  viewMiddleAction?: () => void;
   viewRightActionLabel?: string;
   viewRightAction?: () => void;
   statusBadgeLabel?: string;
@@ -36,6 +38,8 @@ export function DiagnosisResultPage({
   onNavigateToLogin,
   viewLeftActionLabel = "목록으로",
   viewLeftAction,
+  viewMiddleActionLabel,
+  viewMiddleAction,
   viewRightActionLabel = "콘텐츠 만들기",
   viewRightAction,
   statusBadgeLabel,
@@ -66,8 +70,10 @@ export function DiagnosisResultPage({
               onRecreate={onRecreate}
               onSave={diagnosisResult.handleSaveClick}
               viewLeftActionLabel={viewLeftActionLabel}
+              viewMiddleActionLabel={viewMiddleActionLabel}
               viewRightActionLabel={viewRightActionLabel}
               onViewLeftAction={viewLeftAction ?? onBack}
+              onViewMiddleAction={viewMiddleAction}
               onViewRightAction={viewRightAction}
             />
           ) : null

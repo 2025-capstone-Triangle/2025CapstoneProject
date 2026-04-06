@@ -148,13 +148,14 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
   const likedCount = contents.filter((item) => item.isLiked).length;
 
   return (
-    <div className="bg-gradient-to-b from-[#fafafa] to-white min-h-screen max-w-[390px] mx-auto pb-[80px]">
+    <div className="relative mx-auto flex h-full min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-gradient-to-b from-[#fafafa] to-white md:min-h-0">
       <DefaultTopBar onTitleClick={onHome} showNotification={false} />
       <BackButton onClick={onBack} />
 
-      <div className="px-8 pt-6">
+      <div className="page-scroll">
+      <div className="mx-auto w-full max-w-[1120px] px-4 pb-[92px] pt-2 sm:px-8 md:px-10 md:pb-8">
         <div className="mb-5">
-          <h2 className="font-['NEXON_Football_Gothic'] font-bold text-[28px] text-black mb-1">저장된 콘텐츠</h2>
+          <h2 className="mb-1 font-['NEXON_Football_Gothic'] text-[clamp(24px,2.7vw,30px)] font-bold text-black">저장된 콘텐츠</h2>
           <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b]">
             {personaName} · 총 {contents.length}개
           </p>
@@ -162,7 +163,7 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
 
         <button
           onClick={onCreateContent}
-          className="w-full h-[50px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] text-[14px] font-semibold flex items-center justify-center gap-2 mb-5 hover:bg-[#1a1a1a] transition-colors"
+          className="mb-5 flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-black font-['Noto_Sans_KR'] text-[14px] font-semibold text-white transition-colors hover:bg-[#1a1a1a] sm:h-[52px]"
         >
           <Sparkles className="w-4 h-4" />
           이 페르소나로 새 콘텐츠 만들기
@@ -178,7 +179,7 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
           </button>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-5">
+        <div className="mb-5 flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
           <button
             onClick={() => setFilter("all")}
             className={`px-3.5 py-2 rounded-full font-['Noto_Sans_KR'] text-[12px] whitespace-nowrap ${
@@ -254,14 +255,18 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
         )}
 
         {!loading && !error && sortedContents.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 pb-4">
+          <div className="columns-2 pb-4 [column-gap:0.75rem] sm:columns-3 xl:columns-4">
             {sortedContents.map((content) => {
               const ratio = mapContentTypeToRatio(content.type);
               const likePending = likePendingIds.includes(content.id);
               const isDeleting = deletingId === content.id;
 
               return (
-                <div key={content.id} className="bg-white rounded-[16px] p-2.5 shadow-sm border border-[#efefef] cursor-pointer" onClick={() => setExpandedImage(content.id)}>
+                <div
+                  key={content.id}
+                  className="mb-3 break-inside-avoid cursor-pointer rounded-[16px] border border-[#efefef] bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md"
+                  onClick={() => setExpandedImage(content.id)}
+                >
                   <div
                     className={`rounded-[12px] overflow-hidden bg-[#e6e6e6] relative ${ratioToAspectClass(ratio)}`}
                   >
@@ -315,12 +320,13 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
           </div>
         )}
       </div>
+      </div>
 
       <BottomTab activeTab="persona" onTabChange={onTabChange} />
 
       {expandedContent && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          <div className="p-5 bg-black/60 backdrop-blur-md flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+          <div className="flex items-center justify-between bg-black/60 p-4 backdrop-blur-md sm:p-5">
             <div>
               <p className="font-['Noto_Sans_KR'] text-[12px] text-white/80">{formatDate(expandedContent.createdAt)}</p>
               <p className="font-['Noto_Sans_KR'] text-[14px] text-white font-semibold">{mapContentTypeToRatio(expandedContent.type)}</p>
@@ -330,18 +336,18 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
             </button>
           </div>
 
-          <div className="flex-1 flex items-center justify-center relative px-8">
-            <button onClick={handlePrevImage} className="absolute left-3 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+          <div className="relative flex flex-1 items-center justify-center px-6 sm:px-10">
+            <button onClick={handlePrevImage} className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 sm:left-4">
               <ChevronLeft className="w-5 h-5 text-white" />
             </button>
 
             <div
               className={`w-full rounded-[20px] overflow-hidden bg-[#d6d6d6] ${
                 mapContentTypeToRatio(expandedContent.type) === "1:1"
-                  ? "aspect-square max-w-[320px]"
+                  ? "aspect-square max-w-[82vw] md:max-w-[560px]"
                   : mapContentTypeToRatio(expandedContent.type) === "4:5"
-                    ? "aspect-[4/5] max-w-[280px]"
-                    : "aspect-[9/16] max-w-[230px]"
+                    ? "aspect-[4/5] max-w-[76vw] md:max-w-[460px]"
+                    : "aspect-[9/16] max-w-[62vw] md:max-w-[340px]"
               }`}
             >
               {expandedContent.img ? (
@@ -351,13 +357,13 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
               )}
             </div>
 
-            <button onClick={handleNextImage} className="absolute right-3 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <button onClick={handleNextImage} className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 sm:right-4">
               <ChevronRight className="w-5 h-5 text-white" />
             </button>
           </div>
 
-          <div className="p-5 bg-black/60 backdrop-blur-md">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="bg-black/60 p-4 backdrop-blur-md sm:p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 onClick={(event) => toggleLike(expandedContent.id, event)}
                 className={`h-[48px] rounded-[14px] font-['Noto_Sans_KR'] text-[14px] font-semibold flex items-center justify-center gap-1.5 ${

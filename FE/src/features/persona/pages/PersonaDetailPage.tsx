@@ -26,7 +26,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function PersonaDetailPage(props: PersonaDetailPageProps) {
-  const { personaCode, onCreateContent, onBack, onHome, onDelete } = props;
+  const { personaCode, onCreateContent, onBack, onHome, onDelete, onViewAllContents } = props;
   const [persona, setPersona] = useState<PersonaResponse | null>(null);
   const [loadingPersona, setLoadingPersona] = useState(true);
   const [personaError, setPersonaError] = useState("");
@@ -162,6 +162,8 @@ export function PersonaDetailPage(props: PersonaDetailPageProps) {
         onHome={onHome}
         viewLeftActionLabel="목록으로"
         viewLeftAction={onBack}
+        viewMiddleActionLabel="콘텐츠 리스트"
+        viewMiddleAction={onViewAllContents}
         viewRightActionLabel="콘텐츠 만들기"
         viewRightAction={onCreateContent}
         statusBadgeLabel="저장된 페르소나"

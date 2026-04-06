@@ -128,8 +128,8 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         onNavigate={(page) => {
-          if (page === "persona-list") onTabChange?.("persona");
-          if (page === "content-aspect-ratio") onTabChange?.("content");
+          if (page.startsWith("persona")) onTabChange?.("persona");
+          if (page.startsWith("content") || page === "saved-templates") onTabChange?.("content");
           onNavigate?.(page);
         }}
         currentPage="home"

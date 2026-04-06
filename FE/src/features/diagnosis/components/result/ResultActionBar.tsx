@@ -8,8 +8,10 @@ interface ResultActionBarProps {
   onRecreate?: () => void;
   onSave?: () => void;
   viewLeftActionLabel: string;
+  viewMiddleActionLabel?: string;
   viewRightActionLabel: string;
   onViewLeftAction?: () => void;
+  onViewMiddleAction?: () => void;
   onViewRightAction?: () => void;
 }
 
@@ -20,8 +22,10 @@ export function ResultActionBar({
   onRecreate,
   onSave,
   viewLeftActionLabel,
+  viewMiddleActionLabel,
   viewRightActionLabel,
   onViewLeftAction,
+  onViewMiddleAction,
   onViewRightAction,
 }: ResultActionBarProps) {
   let content: ReactNode;
@@ -50,13 +54,23 @@ export function ResultActionBar({
     );
   } else {
     content = (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-3 ${viewMiddleActionLabel ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+      >
         <button
           onClick={onViewLeftAction}
           className="flex h-[52px] items-center justify-center rounded-[16px] border-2 border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[14px] font-semibold text-black transition-all hover:border-black hover:bg-[#fafafa] sm:h-[56px] sm:text-[16px]"
         >
           {viewLeftActionLabel}
         </button>
+        {viewMiddleActionLabel ? (
+          <button
+            onClick={onViewMiddleAction}
+            className="flex h-[52px] items-center justify-center rounded-[16px] border-2 border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[14px] font-semibold text-black transition-all hover:border-black hover:bg-[#fafafa] sm:h-[56px] sm:text-[16px]"
+          >
+            {viewMiddleActionLabel}
+          </button>
+        ) : null}
         <button
           onClick={onViewRightAction}
           className="flex h-[52px] items-center justify-center rounded-[16px] bg-gradient-to-r from-black to-[#2d2d2d] font-['Noto_Sans_KR'] text-[14px] font-semibold text-white shadow-lg transition-all hover:shadow-xl sm:h-[56px] sm:text-[16px]"

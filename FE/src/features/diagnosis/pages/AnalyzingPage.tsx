@@ -26,7 +26,6 @@ export function AnalyzingPage({
       onHome={onHome}
       contentMaxWidthClassName="max-w-[980px]"
       contentClassName="px-5 pb-8 pt-2 sm:px-8 md:px-10"
-      showNotification={false}
     >
       <div className="mx-auto flex min-h-0 flex-1 w-full flex-col items-center justify-center py-6 md:py-4">
         <div className="relative mb-10 md:mb-12">

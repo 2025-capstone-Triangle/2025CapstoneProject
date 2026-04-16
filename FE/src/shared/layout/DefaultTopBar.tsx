@@ -41,7 +41,7 @@ export function DefaultTopBar({
             onClick={onTitleClick}
             className="rounded-[10px] px-2 py-1 transition-colors duration-200 hover:bg-black/[0.04]"
           >
-            <h1 className="font-serifkr text-[24px] font-black leading-none tracking-[0.15px] text-[#161616] md:text-[28px]">
+            <h1 className="topbar-title-gothic font-serifkr text-[24px] font-black leading-none tracking-[0.15px] text-[#161616] md:text-[28px]">
               {title}
             </h1>
           </button>

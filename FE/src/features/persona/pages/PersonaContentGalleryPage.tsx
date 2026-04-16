@@ -127,7 +127,8 @@ export function PersonaContentGalleryPage({ onBack, onHome }: PersonaContentGall
   );
 
   return (
-    <div className="bg-gradient-to-b from-[#fafafa] to-white min-h-screen max-w-[390px] mx-auto">      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
+    <div className="persona-page-root persona-pretendard relative min-h-screen max-w-[390px] mx-auto overflow-hidden bg-white">
+      <DefaultTopBar onTitleClick={onHome} showNotification={true} />
       <BackButton onClick={onBack} />
 
       {/* Header */}

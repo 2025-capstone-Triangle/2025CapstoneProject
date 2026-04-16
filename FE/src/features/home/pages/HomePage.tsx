@@ -98,7 +98,7 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
   };
 
   return (
-    <div className="home-page-root relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#eef2f7] md:h-full md:min-h-0">
+    <div className="home-page-root home-pretendard relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:h-full md:min-h-0">
       <div className="relative mx-auto flex h-full w-full max-w-[1320px] flex-1 flex-col">
         <DefaultTopBar
           title="Person:a"
@@ -108,8 +108,8 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-2 md:px-6 md:pb-6 md:pt-3 xl:px-8">
-          <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-3 md:gap-4">
-            <section className="rounded-[28px] border border-white/75 bg-white/65 p-2.5 shadow-[0_14px_36px_rgba(15,23,42,0.08)] backdrop-blur-md md:p-4">
+          <div className="mx-auto flex w-full max-w-[1140px] flex-col gap-4 md:gap-5">
+            <section className="rounded-[26px] border border-[#edf1f5] bg-white p-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.06)] md:p-3.5">
               <div className="flex flex-col gap-2 md:gap-3">
                 <MainBanner onClick={() => onNavigate?.("diagnosis-start")} />
                 <SubBanners
@@ -119,11 +119,9 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
               </div>
             </section>
 
-            <section className="rounded-[24px]">
-              <div className="px-2.5 md:px-3">
-                <SectionHeader onViewAll={() => onNavigate?.("content-explore")} />
-              </div>
-              <div className="mt-2 rounded-[22px] border border-white/75 bg-white/65 p-2.5 shadow-[0_14px_36px_rgba(15,23,42,0.08)] backdrop-blur-md md:p-3">
+            <section className="mt-1 rounded-[24px] md:mt-2">
+              <SectionHeader onViewAll={() => onNavigate?.("content-explore")} />
+              <div className="mt-2 rounded-[22px] border border-[#edf1f5] bg-white p-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.06)] md:p-3">
                 <FeaturedReferenceSection
                   items={referenceItems}
                   loading={referenceLoading}

@@ -59,7 +59,7 @@ export function DiagnosisResultPage({
         onHome={onHome}
         scrollContent
         contentMaxWidthClassName="max-w-[1120px]"
-        contentClassName="px-5 pt-2 pb-28 sm:px-8 md:pb-28 lg:px-10"
+        contentClassName="px-4 pt-2 pb-36 sm:px-6 sm:pb-32 md:px-8 md:pb-28 lg:px-10"
         bottomMaxWidthClassName="max-w-[1120px]"
         bottom={
           result ? (
@@ -82,7 +82,7 @@ export function DiagnosisResultPage({
         {!result ? (
           <ResultEmptyState onRetry={onRecreate} />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-5">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-2 lg:items-start lg:gap-5">
             <div className="lg:sticky lg:top-0">
               <ResultStatusBadge mode={mode} customLabel={statusBadgeLabel} />
               <div className="rounded-[24px] border border-[#eceff3] bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] sm:p-5">

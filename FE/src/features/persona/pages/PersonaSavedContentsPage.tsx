@@ -148,12 +148,12 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
   const likedCount = contents.filter((item) => item.isLiked).length;
 
   return (
-    <div className="relative mx-auto flex h-full min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-gradient-to-b from-[#fafafa] to-white md:min-h-0">
-      <DefaultTopBar onTitleClick={onHome} showNotification={false} />
-      <BackButton onClick={onBack} />
+    <div className="persona-page-root persona-pretendard relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-white md:h-full md:min-h-0">
+      <DefaultTopBar onTitleClick={onHome} showNotification={true} />
 
       <div className="page-scroll">
       <div className="mx-auto w-full max-w-[1120px] px-4 pb-[92px] pt-2 sm:px-8 md:px-10 md:pb-8">
+        <BackButton onClick={onBack} />
         <div className="mb-5">
           <h2 className="mb-1 font-['NEXON_Football_Gothic'] text-[clamp(24px,2.7vw,30px)] font-bold text-black">저장된 콘텐츠</h2>
           <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b]">

@@ -1,3 +1,5 @@
+import { Check } from "lucide-react";
+
 interface RatioOptionCardProps {
   ratio: {
     id: string;
@@ -5,64 +7,41 @@ interface RatioOptionCardProps {
     description: string;
     detail: string;
     aspectClass: string;
+    platform?: string;
   };
   selected: boolean;
   onSelect: (ratioId: string) => void;
 }
 
 export function RatioOptionCard({ ratio, selected, onSelect }: RatioOptionCardProps) {
-  const previewClassName =
-    ratio.id === "1:1"
-      ? "aspect-square"
-      : ratio.id === "4:5"
-        ? "aspect-[4/5]"
-        : "aspect-[9/16]";
-
   return (
     <button
       onClick={() => onSelect(ratio.id)}
-      className={`w-full rounded-[18px] p-4 flex items-center gap-3 transition-all ${
-        selected ? "bg-black shadow-lg" : "bg-[#f8f8f8] hover:bg-[#f0f0f0]"
+      className={`group w-full rounded-[18px] border p-4 text-left transition-all duration-200 md:p-5 ${
+        selected
+          ? "border-[#111827] bg-white shadow-[0_14px_28px_rgba(15,23,42,0.12)]"
+          : "border-[#e7ebf0] bg-white hover:border-[#cfd8e3] hover:shadow-[0_10px_22px_rgba(15,23,42,0.08)]"
       }`}
     >
-      <div className="flex h-11 w-[74px] flex-shrink-0 items-center justify-center rounded-[10px] bg-white">
-        <div
-          className={`${previewClassName} w-full max-w-[32px] rounded-[4px] bg-gradient-to-br from-[#e0e0e0] to-[#c0c0c0]`}
-        />
-      </div>
-
-      <div className="flex-1 text-left">
-        <div className="mb-0.5 flex items-baseline gap-2">
-          <h3
-            className={`font-['NEXON_Football_Gothic'] text-[19px] font-bold ${
-              selected ? "text-white" : "text-black"
-            }`}
-          >
-            {ratio.label}
-          </h3>
-          <span
-            className={`font-['Noto_Sans_KR'] text-[13px] ${
-              selected ? "text-white/80" : "text-[#6b6b6b]"
-            }`}
-          >
-            {ratio.description}
-          </span>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="mb-1 flex items-end gap-2">
+            <h3 className="font-['Noto_Sans_KR'] text-[23px] font-bold leading-none tracking-[-0.01em] text-[#0f172a] md:text-[24px]">
+              {ratio.label}
+            </h3>
+            <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#64748b] md:text-[13px]">
+              {ratio.description}
+            </span>
+          </div>
+          <p className="font-['Noto_Sans_KR'] text-[12px] text-[#94a3b8] md:text-[13px]">{ratio.detail}</p>
         </div>
-        <p
-          className={`font-['Noto_Sans_KR'] text-[12px] ${
-            selected ? "text-white/70" : "text-[#999999]"
+        <div
+          className={`flex h-6 w-6 items-center justify-center rounded-full border transition-colors ${
+            selected ? "border-black bg-black text-white" : "border-[#cbd5e1] bg-white text-transparent"
           }`}
         >
-          {ratio.detail}
-        </p>
-      </div>
-
-      <div
-        className={`h-6 w-6 flex-shrink-0 rounded-full border-2 flex items-center justify-center ${
-          selected ? "border-white bg-white" : "border-[#c0c0c0]"
-        }`}
-      >
-        {selected ? <div className="h-3 w-3 rounded-full bg-black" /> : null}
+          <Check className="h-3.5 w-3.5" strokeWidth={2.6} />
+        </div>
       </div>
     </button>
   );

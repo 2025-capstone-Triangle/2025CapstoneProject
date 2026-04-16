@@ -19,7 +19,6 @@ export function VoiceInputPage({ onNext, onBack, onHome }: VoiceInputPageProps) 
     <DiagnosisPageLayout
       onBack={onBack}
       onHome={onHome}
-      rootClassName="bg-gradient-to-b from-[#f7f8fa] via-white to-white"
       contentMaxWidthClassName="max-w-[1120px]"
       contentClassName="px-5 pb-28 pt-1 sm:px-8 md:pb-28 lg:px-10"
       bottomMaxWidthClassName="max-w-[1120px]"

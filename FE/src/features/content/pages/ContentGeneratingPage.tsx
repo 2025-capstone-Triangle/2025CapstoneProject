@@ -23,14 +23,14 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
 
     const stepInterval = setInterval(() => {
       setStep((prev) => (prev + 1) % steps.length);
-    }, 900);
+    }, 1800);
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 92) return 92;
-        return prev + 2;
+        return prev + 1;
       });
-    }, 120);
+    }, 420);
 
     return () => {
       clearInterval(stepInterval);
@@ -94,4 +94,3 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
     </ContentPageLayout>
   );
 }
-

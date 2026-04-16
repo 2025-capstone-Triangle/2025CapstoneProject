@@ -243,6 +243,7 @@ export default function App() {
   const [pageHistory, setPageHistory] = useState<Page[]>(bootstrap.history);
   const [selectedRatio, setSelectedRatio] = useState<string>("4:5");
   const [isRegeneratingContent, setIsRegeneratingContent] = useState<boolean>(false);
+  const [autoSelectPersonaForContent, setAutoSelectPersonaForContent] = useState<boolean>(false);
   const [contentGenerationError, setContentGenerationError] = useState<string>("");
   const [latestGeneratedContent, setLatestGeneratedContent] = useState<ContentCreateResponse | null>(null);
   const [loginGateMessage, setLoginGateMessage] = useState<string | null>(null);
@@ -288,10 +289,14 @@ export default function App() {
     setLoginGateMessage(getLoginGateMessage(page));
   };
 
-  const handleNavigate = (page: Page) => {
+  const handleNavigate = (page: Page, options?: { autoSelectPersonaForContent?: boolean }) => {
     if (!canAccessPage(page)) {
       requestLoginForPage(page);
       return;
+    }
+
+    if (page === "content-aspect-ratio") {
+      setAutoSelectPersonaForContent(Boolean(options?.autoSelectPersonaForContent));
     }
 
     setPageHistory((prev) => [...prev, page]);
@@ -312,6 +317,7 @@ export default function App() {
     setCurrentPage("home");
     setActiveTab("home");
     setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
+    setAutoSelectPersonaForContent(false);
   };
 
   useEffect(() => {
@@ -448,7 +454,7 @@ export default function App() {
     } else if (tab === "persona") {
       handleNavigate("persona-list");
     } else {
-      handleNavigate("content-aspect-ratio");
+      handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: false });
     }
   };
 
@@ -797,7 +803,7 @@ export default function App() {
       {currentPage === "save-complete" && (
         <SaveResultCompletePage
           onGoToPersona={() => handleNavigate("persona-list")}
-          onCreateContent={() => handleNavigate("content-aspect-ratio")}
+          onCreateContent={() => handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: true })}
           onHome={handleNavigateToHome}
           onBack={handleBack}
         />
@@ -820,7 +826,7 @@ export default function App() {
         <PersonaDetailPage
           personaCode={selectedPersonaCode}
           onDelete={() => handleNavigate("persona-list")}
-          onCreateContent={() => handleNavigate("content-aspect-ratio")}
+          onCreateContent={() => handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: true })}
           onBack={handleBack}
           onTabChange={handleTabChange}
           onHome={handleNavigateToHome}
@@ -834,7 +840,7 @@ export default function App() {
           onBack={handleBack}
           onTabChange={handleTabChange}
           onHome={handleNavigateToHome}
-          onCreateContent={() => handleNavigate("content-aspect-ratio")}
+          onCreateContent={() => handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: true })}
         />
       )}
 
@@ -855,13 +861,22 @@ export default function App() {
               setContentGenerationError("");
               handleNavigateWithoutHistory("content-generating");
               void runContentGeneration(ratio, selectedPersonaCode);
+            } else if (autoSelectPersonaForContent) {
+              if (!selectedPersonaCode) {
+                setContentGenerationError("생성할 페르소나를 먼저 선택해 주세요.");
+                handleNavigate("content-select-persona");
+                return;
+              }
+              setContentGenerationError("");
+              handleNavigateWithoutHistory("content-generating");
+              void runContentGeneration(ratio, selectedPersonaCode);
             } else {
               handleNavigate("content-select-persona");
             }
           }}
           onBack={handleBack}
           onHome={handleNavigateToHome}
-          skipPersonaSelection={isRegeneratingContent}
+          skipPersonaSelection={isRegeneratingContent || autoSelectPersonaForContent}
         />
       )}
 
@@ -894,9 +909,10 @@ export default function App() {
           onSave={() => handleNavigate(selectedPersonaCode ? "persona-detail" : "persona-list")}
           onRegenerate={() => {
             setIsRegeneratingContent(true);
+            setAutoSelectPersonaForContent(false);
             setLatestGeneratedContent(null);
             setContentGenerationError("");
-            handleNavigate("content-aspect-ratio");
+            handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: false });
           }}
           onBack={handleBackSkipLoading}
           onHome={handleNavigateToHome}

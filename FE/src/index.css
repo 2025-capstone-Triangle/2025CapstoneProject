@@ -2,6 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-4Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-5Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-6SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-7Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-8ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-9Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* App-specific styles can go below */
 :focus-visible {
   outline: 2px solid #000;
@@ -18,10 +74,7 @@ body,
 body {
   margin: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(1200px 560px at -12% -12%, rgba(255, 216, 224, 0.5), transparent 60%),
-    radial-gradient(980px 640px at 112% 0%, rgba(204, 227, 253, 0.56), transparent 62%),
-    linear-gradient(180deg, #f4f7fb 0%, #e9eff7 100%);
+  background: #ffffff;
 }
 
 :root {
@@ -79,8 +132,70 @@ body {
 }
 
 .home-page-root,
-.diag-page-root {
+.diag-page-root,
+.content-page-root,
+.persona-page-root {
   width: 100%;
+}
+
+.home-page-root.home-pretendard,
+.home-page-root.home-pretendard * {
+  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important;
+}
+
+.home-page-root.home-pretendard .font-brand {
+  font-family: "Paperlogy", "Pretendard Variable", "Noto Sans KR", sans-serif !important;
+}
+
+.home-page-root.home-pretendard .home-trend-title,
+.home-page-root.home-pretendard .home-trend-subtitle {
+  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important;
+}
+
+.home-page-root.home-pretendard .topbar-title-gothic {
+  /* Person:a title must remain Myeongjo */
+  font-family: "Noto Serif KR", "Nanum Myeongjo", "Batang", serif !important;
+  font-weight: 900 !important;
+}
+
+.diag-page-root.diag-pretendard,
+.diag-page-root.diag-pretendard * {
+  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important;
+}
+
+.diag-page-root.diag-pretendard .font-brand {
+  font-family: "Paperlogy", "Pretendard Variable", "Noto Sans KR", sans-serif !important;
+}
+
+.content-page-root.content-pretendard,
+.content-page-root.content-pretendard * {
+  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important;
+}
+
+.content-page-root.content-pretendard .font-brand {
+  font-family: "Paperlogy", "Pretendard Variable", "Noto Sans KR", sans-serif !important;
+}
+
+.persona-page-root.persona-pretendard,
+.persona-page-root.persona-pretendard * {
+  font-family: "Pretendard Variable", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important;
+}
+
+.persona-page-root.persona-pretendard .font-brand {
+  font-family: "Paperlogy", "Pretendard Variable", "Noto Sans KR", sans-serif !important;
+}
+
+.diag-page-root.diag-pretendard .topbar-title-gothic {
+  /* Person:a title must remain Myeongjo */
+  font-family: "Noto Serif KR", "Nanum Myeongjo", "Batang", serif !important;
+  font-weight: 900 !important;
+}
+
+.content-page-root.content-pretendard .topbar-title-gothic,
+.persona-page-root.persona-pretendard .topbar-title-gothic {
+  /* Person:a title must remain Myeongjo */
+  font-family: "Noto Serif KR", "Nanum Myeongjo", "Batang", serif !important;
+  font-weight: 900 !important;
 }
 
 .fit-distribute {
@@ -119,6 +234,8 @@ body {
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .diag-content-frame {

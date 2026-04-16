@@ -33,7 +33,7 @@ export function ContentPageLayout({
   bottomMaxWidthClassName,
   bottomWrapperClassName,
   scrollContent = true,
-  showNotification = false,
+  showNotification = true,
 }: ContentPageLayoutProps) {
   const contentBaseClassName = joinClassNames(
     "mx-auto flex-1 min-h-0 w-full",
@@ -41,29 +41,33 @@ export function ContentPageLayout({
     contentClassName,
   );
 
-  const contentNode = <div className={contentBaseClassName}>{children}</div>;
+  const contentNodeWithBack = (
+    <div className={contentBaseClassName}>
+      {onBack ? <BackButton onClick={onBack} /> : null}
+      {children}
+    </div>
+  );
 
   return (
     <div
       className={joinClassNames(
-        "content-page-root relative mx-auto flex h-full min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:min-h-0",
+        "content-page-root content-pretendard relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:h-full md:min-h-0",
         pageMaxWidthClassName,
         rootClassName,
       )}
     >
       <DefaultTopBar onTitleClick={onHome} showNotification={showNotification} />
-      <BackButton onClick={onBack} />
 
       {scrollContent ? (
-        <div className="page-scroll">{contentNode}</div>
+        <div className="page-scroll">{contentNodeWithBack}</div>
       ) : (
-        <div className="content-content-frame">{contentNode}</div>
+        <div className="content-content-frame">{contentNodeWithBack}</div>
       )}
 
       {bottom ? (
         <div
           className={joinClassNames(
-            "fixed inset-x-0 bottom-0 z-20 mx-auto w-full border-t border-[#f0f0f0] bg-white/95 backdrop-blur md:absolute",
+            "fixed inset-x-0 bottom-0 z-20 mx-auto w-full border-t border-white/70 bg-white/82 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur md:absolute",
             pageMaxWidthClassName,
             bottomWrapperClassName,
           )}
@@ -81,4 +85,3 @@ export function ContentPageLayout({
     </div>
   );
 }
-

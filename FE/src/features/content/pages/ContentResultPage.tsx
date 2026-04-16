@@ -54,7 +54,6 @@ export function ContentResultPage({
     <ContentPageLayout
       onBack={onBack}
       onHome={onHome}
-      rootClassName="bg-gradient-to-b from-[#fafafa] to-white"
       contentMaxWidthClassName="max-w-[1120px]"
       contentClassName="px-4 pb-10 pt-2 sm:px-8 md:px-10"
       scrollContent

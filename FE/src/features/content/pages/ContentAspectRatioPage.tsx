@@ -42,9 +42,9 @@ export function ContentAspectRatioPage({ onNext, onBack, onHome, skipPersonaSele
     <ContentPageLayout
       onBack={onBack}
       onHome={onHome}
-      contentMaxWidthClassName="max-w-[980px]"
+      contentMaxWidthClassName="max-w-[760px]"
       contentClassName="px-4 pb-28 pt-2 sm:px-8 md:px-10 md:pb-8"
-      bottomMaxWidthClassName="max-w-[980px]"
+      bottomMaxWidthClassName="max-w-[760px]"
       bottom={
         <ContentBottomActionBar
           label={skipPersonaSelection ? "바로 생성하기" : "다음"}
@@ -52,19 +52,20 @@ export function ContentAspectRatioPage({ onNext, onBack, onHome, skipPersonaSele
         />
       }
     >
-      <ContentSectionHeader title="콘텐츠 비율 선택" description="생성할 콘텐츠의 비율을 선택해 주세요." />
+      <div className="mx-auto w-full max-w-[620px]">
+        <ContentSectionHeader title="콘텐츠 비율 선택" description="생성할 콘텐츠의 비율을 선택해 주세요." />
 
-      <div className="grid gap-3 md:grid-cols-3 md:gap-4">
-        {ratios.map((ratio) => (
-          <RatioOptionCard
-            key={ratio.id}
-            ratio={ratio}
-            selected={selectedRatio === ratio.id}
-            onSelect={setSelectedRatio}
-          />
-        ))}
+        <div className="grid gap-3 md:gap-4">
+          {ratios.map((ratio) => (
+            <RatioOptionCard
+              key={ratio.id}
+              ratio={ratio}
+              selected={selectedRatio === ratio.id}
+              onSelect={setSelectedRatio}
+            />
+          ))}
+        </div>
       </div>
     </ContentPageLayout>
   );
 }
-

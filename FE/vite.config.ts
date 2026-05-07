@@ -64,7 +64,7 @@
       open: true,
       proxy: {
         "/api": {
-          target: "https://13.209.98.117.nip.io",
+          target: "http://13.209.17.191:8080",
           changeOrigin: true,
           secure: false,
         },

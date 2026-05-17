@@ -1,4 +1,6 @@
-﻿const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
+const PROGRESS_API_BASE_URL =
+  import.meta.env.VITE_PROGRESS_API_BASE_URL?.trim() || "https://13.209.17.191.nip.io";
 const IS_HTTPS_PAGE = typeof window !== "undefined" && window.location.protocol === "https:";
 const IS_DEV = Boolean(import.meta.env.DEV);
 const API_BASE =
@@ -15,6 +17,15 @@ function buildApiUrl(path: string) {
   const base = API_BASE.replace(/\/+$/, "");
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${base}${normalizedPath}`;
+}
+
+function buildProgressApiUrl(sessionId: string) {
+  const normalizedPath = `/api/v1/progress/${encodeURIComponent(sessionId)}`;
+  if (PROGRESS_API_BASE_URL) {
+    const base = PROGRESS_API_BASE_URL.replace(/\/+$/, "");
+    return `${base}${normalizedPath}`;
+  }
+  return buildApiUrl(normalizedPath);
 }
 
 function getSavedAccessToken() {
@@ -114,7 +125,7 @@ export function openDiagnosisProgressStream({
 
   void (async () => {
     try {
-      const url = buildApiUrl(`/api/v1/progress/${encodeURIComponent(sessionId)}`);
+      const url = buildProgressApiUrl(sessionId);
       const headers = new Headers({
         Accept: "text/event-stream",
         "Cache-Control": "no-cache",

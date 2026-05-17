@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://13.209.98.117.nip.io/api/$1"
+      "destination": "http://13.209.17.191:8080/api/:path*"
     },
     {
       "source": "/((?!.*\\..*).*)",

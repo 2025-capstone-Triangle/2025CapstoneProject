@@ -47,10 +47,10 @@ def harmonic(frame, sampling_rate):
     
     # 인덱스 범위를 벗어날 수 있는 잠재적인 문제 방지 (원본 코드 로직 유지)
     if m > m0 and m <= len(cumulative_sum) and m0 >= 0 and m > 0:
-        gamma[m0:m] = r[m0:m] / (np.sqrt((g * cumulative_sum[m:m0:-1])) + eps)
+        gamma[m0:m] = r[m0:m] / (np.sqrt(np.maximum(g * cumulative_sum[m:m0:-1], 0)) + eps)
     elif m0 == 0 and m > 0:
         # m0가 0일 경우, [m:0:-1]은 [m, m-1, ..., 1]이 됨.
-        gamma[:m] = r[:m] / (np.sqrt((g * cumulative_sum[m:0:-1])) + eps)
+        gamma[:m] = r[:m] / (np.sqrt(np.maximum(g * cumulative_sum[m:0:-1], 0)) + eps)
 
     zcr = zero_crossing_rate(gamma)
 

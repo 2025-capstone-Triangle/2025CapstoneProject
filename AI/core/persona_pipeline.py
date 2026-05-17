@@ -207,6 +207,9 @@ class PersonaPipeline:
         self.analyzer = PersonaAnalyzer(self.api_key)
         self.generator = ImageGenerator(self.api_key)
 
+        be_base_url = os.getenv("BE_BASE_URL", "").rstrip("/")
+        self.progress_url = f"{be_base_url}/api/v1/progress"
+
     def _build_base_prompt(self, answers, tones):
         framing_map = {
             1: "tightly framed extreme close-up focusing on expressive eyes and skin texture",
@@ -252,15 +255,13 @@ class PersonaPipeline:
             f"Saturation level {s_val}/100, Brightness {v_val}/100, Contrast {c_val}/100."
         )
 
-    PROGRESS_URL = "http://ec2-13-209-98-117.ap-northeast-2.compute.amazonaws.com:8080/api/v1/progress"
-
     async def _notify(self, session_id: str | None, step: str, progress: int, message: str):
         """각 단계 완료 시 BE로 진행 상태를 POST합니다. session_id가 없으면 스킵합니다."""
         if not session_id:
             return
         try:
             async with httpx.AsyncClient() as client:
-                await client.post(self.PROGRESS_URL, json={
+                await client.post(self.progress_url, json={
                     "sessionId": session_id,
                     "step": step,
                     "progress": progress,
@@ -308,9 +309,11 @@ class PersonaPipeline:
                 ts = int(time.time())
                 unique_name = f"persona_{ts}.png"
                 final_s3_url = uploader.upload_to_s3(temp_image_path, unique_name)
-                os.remove(temp_image_path)
             except Exception as e:
                 print(f"❌ S3 업로드 오류: {e}")
+            finally:
+                if os.path.exists(temp_image_path):
+                    os.remove(temp_image_path)
 
         await self._notify(session_id, "completed", 100, "페르소나 진단 완료")
 

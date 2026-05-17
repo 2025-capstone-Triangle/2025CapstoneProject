@@ -1,22 +1,4 @@
 ﻿import { useMemo, useState } from "react";
-import trait11 from "../../../assets/traitTest/1-1.png";
-import trait12 from "../../../assets/traitTest/1-2.png";
-import trait13 from "../../../assets/traitTest/1-3.png";
-import trait14 from "../../../assets/traitTest/1-4.png";
-import trait21 from "../../../assets/traitTest/2-1.png";
-import trait22 from "../../../assets/traitTest/2-2.png";
-import trait31 from "../../../assets/traitTest/3-1.png";
-import trait32 from "../../../assets/traitTest/3-2.png";
-import trait41 from "../../../assets/traitTest/4-1.png";
-import trait42 from "../../../assets/traitTest/4-2.png";
-import trait51 from "../../../assets/traitTest/5-1.png";
-import trait52 from "../../../assets/traitTest/5-2.png";
-import trait61 from "../../../assets/traitTest/6-1.png";
-import trait62 from "../../../assets/traitTest/6-2.png";
-import trait63 from "../../../assets/traitTest/6-3.png";
-import trait64 from "../../../assets/traitTest/6-4.png";
-import trait65 from "../../../assets/traitTest/6-5.png";
-import trait71 from "../../../assets/traitTest/7-1.png";
 import { DiagnosisPageLayout } from "../components/DiagnosisPageLayout";
 import { PreferenceImageQuestion } from "../components/preference/PreferenceImageQuestion";
 import { PreferenceProgressHeader } from "../components/preference/PreferenceProgressHeader";
@@ -44,53 +26,53 @@ const START_GUIDE = `잠시 후 여러 이미지가 순서대로 제시됩니다
 더 정확한 스타일 제안에 활용됩니다.`;
 
 const COMMON_QUESTION = "지금 가장 끌리는 이미지를 1개 선택해 주세요";
-
+const imageSrc = (name: string) => `/images/${name}.png`;
 const IMAGE_QUESTIONS: ImageQuestion[] = [
   {
     number: 1,
     options: [
-      { id: "1-1", src: trait11 },
-      { id: "1-2", src: trait12 },
-      { id: "1-3", src: trait13 },
-      { id: "1-4", src: trait14 },
+      { id: "1-1", src: imageSrc("1-1") },
+      { id: "1-2", src: imageSrc("1-2") },
+      { id: "1-3", src: imageSrc("1-3") },
+      { id: "1-4", src: imageSrc("1-4") },
     ],
   },
   {
     number: 2,
     options: [
-      { id: "2-1", src: trait21 },
-      { id: "2-2", src: trait22 },
+      { id: "2-1", src: imageSrc("2-1") },
+      { id: "2-2", src: imageSrc("2-2") },
     ],
   },
   {
     number: 3,
     options: [
-      { id: "3-1", src: trait31 },
-      { id: "3-2", src: trait32 },
+      { id: "3-1", src: imageSrc("3-1") },
+      { id: "3-2", src: imageSrc("3-2") },
     ],
   },
   {
     number: 4,
     options: [
-      { id: "4-1", src: trait41 },
-      { id: "4-2", src: trait42 },
+      { id: "4-1", src: imageSrc("4-1") },
+      { id: "4-2", src: imageSrc("4-2") },
     ],
   },
   {
     number: 5,
     options: [
-      { id: "5-1", src: trait51 },
-      { id: "5-2", src: trait52 },
+      { id: "5-1", src: imageSrc("5-1") },
+      { id: "5-2", src: imageSrc("5-2") },
     ],
   },
   {
     number: 6,
     options: [
-      { id: "6-1", src: trait61 },
-      { id: "6-2", src: trait62 },
-      { id: "6-3", src: trait63 },
-      { id: "6-4", src: trait64 },
-      { id: "6-5", src: trait65 },
+      { id: "6-1", src: imageSrc("6-1") },
+      { id: "6-2", src: imageSrc("6-2") },
+      { id: "6-3", src: imageSrc("6-3") },
+      { id: "6-4", src: imageSrc("6-4") },
+      { id: "6-5", src: imageSrc("6-5") },
     ],
   },
 ];
@@ -162,7 +144,7 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
     return IMAGE_QUESTIONS.map((question) => ({
       questionNumber: question.number,
       selectedOptionId: selectedOptionByQuestion[question.number],
-      selectedImageKey: `traitTest/${selectedOptionByQuestion[question.number]}.png`,
+      selectedImageKey: `images/${selectedOptionByQuestion[question.number]}.png`,
     }));
   };
 
@@ -245,7 +227,7 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
 
           {isToneStep ? (
             <PreferenceToneStep
-              toneImageSrc={trait71}
+              toneImageSrc={imageSrc("6-1")}
               toneAdjustment={toneAdjustment}
               imageFilterStyle={imageFilterStyle}
               temperatureOverlayStyle={temperatureOverlayStyle}

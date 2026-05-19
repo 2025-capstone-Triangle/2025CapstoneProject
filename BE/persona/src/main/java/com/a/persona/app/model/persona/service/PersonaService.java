@@ -9,20 +9,15 @@ import com.a.persona.app.model.persona.dto.PersonaDto;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
 import com.a.persona.app.model.persona.repo.PreferenceRepository;
 import com.a.persona.app.model.personaLog.service.PersonaLogService;
-import com.a.persona.infra.config.AmazonConfig;
 import com.a.persona.infra.error.exceptions.NotFoundException;
-import com.a.persona.infra.feign.AiServerApi;
-import com.a.persona.infra.feign.dto.*;
+import com.a.persona.infra.feign.dto.PersonaResponseWrapper;
 import com.a.persona.infra.nanoid.CodeGenerator;
 import com.a.persona.infra.response.ResponseCode;
-import com.a.persona.infra.s3.AmazonS3Manager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -34,10 +29,7 @@ public class PersonaService {
 
     private final PersonaRepository personaRepository;
     private final MemberRepository memberRepository;
-    private final AmazonS3Manager s3Manager;
-    private final AmazonConfig amazonConfig;
     private final PersonaLogService personaLogService;
-    private final AiServerApi aiServerApi;
     private final PreferenceRepository preferenceRepository;
 
 
@@ -100,17 +92,9 @@ public class PersonaService {
     }
 
     /**
-     * 페르소나 생성을 위한 데이터를 받아 ai 서버로 보내어 persona를 생성하는 메소드
-     * @param username 유저 아이디
-     * @param profile 유저의 대표 이미지
-     * @param image 유저 참고 이미지
-     * @param voice 유저 목소리
-     * @param preferenceType 유저 선호 타입
-     * @return PersonaDto 
-     * @throws IOException 업로드 예외
+     * Preference를 저장하고 ID를 반환합니다. PersonaCreationService에서 호출됩니다.
      */
-    public PersonaDto createPersona(String username, MultipartFile profile, MultipartFile image, MultipartFile voice, LikeAnswerRequest preferenceType, List<Long> tone, String sessionId) throws IOException {
-
+    public Long savePreference(LikeAnswerRequest preferenceType, List<Long> tone) {
         Preference preference = Preference.builder()
                 .q1Environment(preferenceType.getQ1_environment())
                 .q2Style(preferenceType.getQ2_style())
@@ -121,40 +105,22 @@ public class PersonaService {
                 .q7Framing(preferenceType.getQ7_framing())
                 .q8Tone(tone)
                 .build();
+        return preferenceRepository.save(preference).getId();
+    }
 
-        preferenceRepository.save(preference);
-
+    /**
+     * AI 결과를 받아 Persona를 저장합니다. PersonaCreationService에서 호출됩니다.
+     */
+    public PersonaDto finalizePersona(String username, Long preferenceId, PersonaResponseWrapper result, String profileUrl) {
         Member member = null;
-        if(username!=null){
-            member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+        if (username != null) {
+            member = memberRepository.findByUsernameAndIsActive(username, true)
+                    .orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
         }
 
-        // UUID 생성 및 저장
-        String uuid = UUID.randomUUID().toString();
-        String fileName = username+"_"+uuid;
-
-        // 프로필 이미지 업로드
-        String profileUrl = s3Manager.upload(profile, amazonConfig.getImagePath(), fileName);
-
-        // 이미지 파일 업로드 및 URL 리스트 반환
-        String pictureUrl = s3Manager.upload(image, amazonConfig.getImagePath(), fileName);
-
-        // 이미지 파일 업로드 및 URL 리스트 반환
-        String voiceUrl = s3Manager.upload(voice, amazonConfig.getVoicePath(), fileName);
-
-        // AI 서버에 페르소나 진단 요청
-        PersonaRequest request = PersonaRequest.builder()
-                .answers(preferenceType)
-                .q8_tone(tone)
-                .images(pictureUrl)
-                .voice(voiceUrl)
-                .session_id(sessionId)
-                .build();
-
-        PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
+        Preference preference = preferenceRepository.findById(preferenceId);
 
         String code;
-        // 코드가 중복이 아니도록
         do {
             code = CodeGenerator.generateShareCode();
         } while (isExistCode(code));
@@ -173,8 +139,7 @@ public class PersonaService {
                 .build();
 
         personaRepository.save(persona);
-        // 페르소나 생성 로그
-        personaLogService.createPersonaLog(member,persona);
+        personaLogService.createPersonaLog(member, persona);
 
         return PersonaDto.fromEntity(persona);
     }

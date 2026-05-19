@@ -4,6 +4,7 @@ import com.a.persona.app.controller.persona.payload.PersonaRequest;
 import com.a.persona.app.controller.persona.payload.PersonaResponse;
 import com.a.persona.app.controller.persona.payload.PersonaSaveRequest;
 import com.a.persona.app.model.persona.dto.PersonaDto;
+import com.a.persona.app.model.persona.service.PersonaCreationService;
 import com.a.persona.app.model.persona.service.PersonaService;
 import com.a.persona.infra.response.CommonApiResponse;
 import com.a.persona.infra.response.ResponseCode;
@@ -19,8 +20,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Tag(name="페르소나", description = "페르소나 관련 API입니다.")
 @RestController
@@ -31,6 +32,7 @@ import java.util.List;
 public class PersonaController {
 
     private final PersonaService personaService;
+    private final PersonaCreationService personaCreationService;
 
     /**
      * 현재 로그인한 멤버의 페르소나 리스트를 가져옵니다.
@@ -75,26 +77,27 @@ public class PersonaController {
             "이목구비가 잘 드러난 profile에, 그 외의 사진 image에 첨부해주세요. <br>" +
             "json 파일로는 이미지나 음성 파일을 보낼 수 없어서 form data로 보내주세요 <br>" +
             "선호 테스트의 값이 들어가는 answer 안에 값을 넣을 때, json 파일을 안에 넣어주세요. ")
-    public ResponseEntity<CommonApiResponse<PersonaResponse>> createPersona(
+    public CompletableFuture<ResponseEntity<CommonApiResponse<PersonaResponse>>> createPersona(
             @AuthenticationPrincipal UserDetails userDetails,
             @ModelAttribute PersonaRequest personaRequest
     ) {
-        PersonaDto personaDto;
-        String username = null;
+        String username = userDetails != null ? userDetails.getUsername() : null;
 
-        try {
-            // 비회원 유저 고려
-            if(userDetails!=null)
-                username = userDetails.getUsername();
-            
-            // 페르소나 진단
-            personaDto = personaService.createPersona(username, personaRequest.getProfile(), personaRequest.getImage(), personaRequest.getVoice(), personaRequest.getLikeAnswerRequest(), personaRequest.getQ8_tone(), personaRequest.getSessionId());
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
-        }
-
-        PersonaResponse response = PersonaResponse.from(personaDto);
-        return ResponseEntity.ok(CommonApiResponse.success(response));
+        return personaCreationService.createPersona(
+                        username,
+                        personaRequest.getProfile(),
+                        personaRequest.getImage(),
+                        personaRequest.getVoice(),
+                        personaRequest.getLikeAnswerRequest(),
+                        personaRequest.getQ8_tone(),
+                        personaRequest.getSessionId()
+                )
+                .thenApply(dto -> ResponseEntity.ok(CommonApiResponse.success(PersonaResponse.from(dto))))
+                .exceptionally(e -> {
+                    log.error("페르소나 생성 실패: {}", e.getMessage());
+                    return ResponseEntity.<CommonApiResponse<PersonaResponse>>internalServerError()
+                            .body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+                });
     }
 
     /**

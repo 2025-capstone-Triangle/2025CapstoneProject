@@ -1,6 +1,7 @@
 package com.a.persona.infra.auth.jwt.filter;
 
 import com.a.persona.app.model.auth.code.AuthToken;
+import com.a.persona.app.model.auth.token.AccessTokenBlackListRepository;
 import com.a.persona.app.model.auth.token.RefreshTokenService;
 import com.a.persona.app.model.auth.token.UserBlackListRepository;
 import com.a.persona.app.model.auth.token.entity.RefreshToken;
@@ -36,6 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final RefreshTokenService refreshTokenService;
     private final UserBlackListRepository userBlackListRepository;
+    private final AccessTokenBlackListRepository accessTokenBlackListRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${app.domain-only}")
@@ -47,31 +49,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         excludePath.addAll(List.of("/api/v1/auth/signup", "/api/v1/auth/signin", "/favicon.ico", "/img", "/js", "/css", "/download","/api/v1/notify/subscribe"));
         excludePath.addAll(List.of("/api/v1/check", "/api/v1/auth/email", "/api/v1/auth/code", "/error"));
         String path = request.getRequestURI();
-        boolean shouldNotFilter = excludePath.stream().anyMatch(path::startsWith);
-        if (shouldNotFilter) {
-            log.info("JwtAuthenticationFilter: Skipping filter for path: {}", path);
-        }
-        return shouldNotFilter;
+        return excludePath.stream().anyMatch(path::startsWith);
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        log.info("JwtAuthenticationFilter: Processing request for: {}", request.getRequestURI());
 
         String accessToken = jwtTokenProvider.resolveToken(request, AuthToken.ACCESS_TOKEN);
 
         if (accessToken == null) {
-            log.warn("JwtAuthenticationFilter: Access token not found in request (checked header and cookies).");
             filterChain.doFilter(request, response);
             return;
         }
 
-        log.info("JwtAuthenticationFilter: Found access token: {}", accessToken);
-
         try {
             if (jwtTokenProvider.validateToken(accessToken, request)) {
-                log.info("JwtAuthenticationFilter: Access token is valid.");
+
+                Claims claims = jwtTokenProvider.getClaims(accessToken);
+                if (accessTokenBlackListRepository.existsById(claims.getSubject() + ":" + claims.getId())) {
+                    log.warn("JwtAuthenticationFilter: Access token {} is blacklisted.", claims.getId());
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
 
                 if (userBlackListRepository.existsById(authentication.getName())) {
@@ -80,7 +81,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                log.info("JwtAuthenticationFilter: Setting SecurityContext for user: {}", authentication.getName());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
                 log.warn("JwtAuthenticationFilter: Access token is invalid.");
@@ -125,7 +125,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throw new CommonException(ResponseCode.SECURITY_INCIDENT);
         }
 
-        log.info("JwtAuthenticationFilter: Refreshing tokens for user: {}", claims.getSubject());
         addToken(response, claims, rt);
     }
 
@@ -149,6 +148,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         response.addHeader("Set-Cookie", accessTokenCookie.toString());
         response.addHeader("Set-Cookie", refreshTokenCookie.toString());
-        log.info("JwtAuthenticationFilter: New access and refresh tokens have been issued and set in cookies.");
     }
 }

@@ -41,7 +41,6 @@ public class PersonaCreationService {
             List<Long> tone,
             String sessionId
     ) {
-
         try {
             // 1. Preference 저장 (짧은 트랜잭션으로 즉시 커밋)
             Long preferenceId = personaService.savePreference(preferenceType, tone);
@@ -66,7 +65,7 @@ public class PersonaCreationService {
                 // 5. 처리 시작 알림
                 progressService.sendProcessing(sessionId);
 
-                // 6. AI 서버 호출
+                // 6. AI 서버 호출 (thumbnail null이면 1회 재요청)
                 PersonaRequest request = PersonaRequest.builder()
                         .answers(preferenceType)
                         .q8_tone(tone)
@@ -75,7 +74,7 @@ public class PersonaCreationService {
                         .session_id(sessionId)
                         .build();
 
-                PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
+                PersonaResponseWrapper result = analyzeWithRetry(request);
 
                 // 7. Persona 저장 (짧은 트랜잭션으로 즉시 커밋)
                 return CompletableFuture.completedFuture(
@@ -87,11 +86,29 @@ public class PersonaCreationService {
                 aiWaitingQueueService.release();
             }
 
-        } catch (IOException | InterruptedException e) {
-            log.error("페르소나 생성 중 오류: {}", e.getMessage());
+        } catch (IOException e) {
+            log.error("페르소나 생성 중 I/O 오류: {}", e.getMessage());
+            CompletableFuture<PersonaDto> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("페르소나 생성 중단됨 (스레드 인터럽트): {}", e.getMessage());
             CompletableFuture<PersonaDto> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);
             return failed;
         }
+    }
+
+    private PersonaResponseWrapper analyzeWithRetry(PersonaRequest request) {
+        PersonaResponseWrapper result = aiServerApi.analyzePersona(request);
+        if (result.getImage_url() == null) {
+            log.warn("AI 서버 응답에 thumbnail이 없습니다. 재요청합니다.");
+            result = aiServerApi.analyzePersona(request);
+            if (result.getImage_url() == null) {
+                log.error("재요청 후에도 thumbnail이 null입니다.");
+            }
+        }
+        return result;
     }
 }

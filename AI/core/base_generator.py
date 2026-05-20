@@ -151,8 +151,19 @@ class BaseContentGenerator:
             else:
                 raise ValueError(f"유저 이미지 다운로드 실패: {response.status_code}")
 
+    @staticmethod
+    def _resize_for_gemini(image: Image.Image, max_px: int = 1024) -> Image.Image:
+        """Gemini 전송 전 참조 이미지를 max_px 이하로 리사이즈. 서버 처리 시간을 줄여 503 방지."""
+        if image.width <= max_px and image.height <= max_px:
+            return image
+        resized = image.copy()
+        resized.thumbnail((max_px, max_px), Image.LANCZOS)
+        print(f"📐 참조 이미지 리사이즈: {image.size} → {resized.size}")
+        return resized
+
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> bytes | None:
         """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 PNG bytes를 반환. 503 발생 시 최대 3회 재시도."""
+        ref_image = self._resize_for_gemini(user_pil_image)
         for attempt, delay in enumerate([0] + _GEMINI_IMAGE_RETRY_DELAYS):
             if delay:
                 print(f"⏳ {delay}초 후 재시도 ({attempt}/3)...")
@@ -161,7 +172,7 @@ class BaseContentGenerator:
                 print(f"🎨 Gemini 이미지 생성 요청 중... (시도 {attempt + 1})")
                 response = self.gemini_client.models.generate_content(
                     model="gemini-3.1-flash-image-preview",
-                    contents=[prompt, user_pil_image],
+                    contents=[prompt, ref_image],
                     config=types.GenerateContentConfig(
                         response_modalities=['TEXT', 'IMAGE'],
                         image_config=types.ImageConfig(

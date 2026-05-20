@@ -3,6 +3,8 @@
 interface AnalyzingPageProps {
   progress?: number;
   message?: string;
+  status?: "idle" | "connecting" | "connected" | "queued" | "running" | "completed" | "error";
+  queuePosition?: number | null;
   onBack?: () => void;
   onHome?: () => void;
 }
@@ -15,10 +17,13 @@ function clampProgress(value: number | undefined) {
 export function AnalyzingPage({
   progress,
   message = "AI가 페르소나를 분석하고 있습니다...",
+  status = "running",
+  queuePosition = null,
   onBack,
   onHome,
 }: AnalyzingPageProps) {
   const safeProgress = clampProgress(progress);
+  const isQueued = status === "queued";
 
   return (
     <DiagnosisPageLayout
@@ -36,12 +41,23 @@ export function AnalyzingPage({
           />
         </div>
 
-        <div className="mb-7 w-full max-w-[420px] md:mb-8">
-          <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
-            <div className="h-full bg-black transition-all duration-300" style={{ width: `${safeProgress}%` }} />
+        {isQueued ? (
+          <div className="mb-7 rounded-[20px] border border-[#e7e7e7] bg-[#fafafa] px-6 py-5 text-center md:mb-8">
+            <p className="mb-1 font-['Noto_Sans_KR'] text-[13px] font-medium text-[#6d6d6d]">현재 대기 순번</p>
+            <p className="font-['NEXON_Football_Gothic'] text-[34px] leading-none text-black">
+              {queuePosition ?? "-"}번
+            </p>
           </div>
-          <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">{safeProgress}%</p>
-        </div>
+        ) : (
+          <div className="mb-7 w-full max-w-[420px] md:mb-8">
+            <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+              <div className="h-full bg-black transition-all duration-300" style={{ width: `${safeProgress}%` }} />
+            </div>
+            <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">
+              {safeProgress}%
+            </p>
+          </div>
+        )}
 
         <p className="max-w-[520px] text-center font-['Noto_Sans_KR'] text-[15px] leading-[1.7] text-[#4d4d4d] md:text-[16px]">
           {message}

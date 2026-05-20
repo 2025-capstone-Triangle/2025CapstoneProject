@@ -50,6 +50,19 @@ export async function createContent(payload: ContentCreateRequest) {
   });
 }
 
+export interface TrendContentCreateRequest {
+  code: string;
+  referenceId: number;
+  type: ContentType;
+}
+
+export async function createTrendContent(payload: TrendContentCreateRequest) {
+  return apiRequest<ContentCreateResponse>("/api/v1/reference", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function toggleContentLike(id: number, like: boolean) {
   return apiRequest<Record<string, never>>("/api/v1/content", {
     method: "PATCH",

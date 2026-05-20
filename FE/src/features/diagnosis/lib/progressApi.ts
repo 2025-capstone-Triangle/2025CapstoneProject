@@ -91,6 +91,9 @@ export type DiagnosisProgressEventPayload = {
   progress?: number;
   message?: string;
   step?: string;
+  position?: number;
+  queuePosition?: number;
+  rank?: number;
   [key: string]: unknown;
 };
 

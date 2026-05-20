@@ -13,6 +13,7 @@ interface ContentExplorePageProps {
   onBack?: () => void;
   onNavigate?: (page: string) => void;
   onHome?: () => void;
+  onSelectReference?: (id: number) => void;
 }
 
 type CardHeight = "short" | "medium" | "tall";
@@ -91,7 +92,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-export function ContentExplorePage({ onBack, onNavigate, onHome }: ContentExplorePageProps) {
+export function ContentExplorePage({ onBack, onNavigate, onHome, onSelectReference }: ContentExplorePageProps) {
   const [items, setItems] = useState<ReferenceStatResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -169,7 +170,13 @@ export function ContentExplorePage({ onBack, onNavigate, onHome }: ContentExplor
                     key={item.id}
                     item={item}
                     height={getHeight(index)}
-                    onOpen={() => onNavigate?.("content-aspect-ratio")}
+                    onOpen={() => {
+                      if (onSelectReference) {
+                        onSelectReference(item.id);
+                        return;
+                      }
+                      onNavigate?.("content-aspect-ratio");
+                    }}
                     onToggleLike={handleToggleLike}
                     disabled={pendingLikeId === item.id}
                   />
@@ -181,7 +188,13 @@ export function ContentExplorePage({ onBack, onNavigate, onHome }: ContentExplor
                     key={item.id}
                     item={item}
                     height={getHeight(index + 1)}
-                    onOpen={() => onNavigate?.("content-aspect-ratio")}
+                    onOpen={() => {
+                      if (onSelectReference) {
+                        onSelectReference(item.id);
+                        return;
+                      }
+                      onNavigate?.("content-aspect-ratio");
+                    }}
                     onToggleLike={handleToggleLike}
                     disabled={pendingLikeId === item.id}
                   />

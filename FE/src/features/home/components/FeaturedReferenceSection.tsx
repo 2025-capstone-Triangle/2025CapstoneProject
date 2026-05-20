@@ -28,14 +28,16 @@ function FeaturedReferenceCard({
   item,
   onToggleLike,
   pendingLikeId,
+  onSelect,
 }: {
   item: ReferenceStatResponse;
   onToggleLike: (item: ReferenceStatResponse) => void;
   pendingLikeId: number | null;
+  onSelect?: (item: ReferenceStatResponse) => void;
 }) {
   return (
     <div className="w-full md:min-w-0">
-      <div className="group relative cursor-pointer md:min-w-0">
+      <div className="group relative cursor-pointer md:min-w-0" onClick={() => onSelect?.(item)}>
         <div className="relative h-[clamp(150px,23vh,250px)] overflow-hidden rounded-[18px] border border-white/45 shadow-[0_8px_18px_rgba(15,23,42,0.1)] transition-all duration-500 group-hover:shadow-[0_12px_24px_rgba(15,23,42,0.14)] md:h-[clamp(126px,18vh,196px)] md:rounded-[18px]">
           <ImageWithFallback
             alt={item.name}
@@ -71,6 +73,7 @@ interface FeaturedSectionProps {
   error: string;
   pendingLikeId: number | null;
   onToggleLike: (item: ReferenceStatResponse) => void;
+  onSelect?: (item: ReferenceStatResponse) => void;
 }
 
 export function FeaturedReferenceSection({
@@ -79,6 +82,7 @@ export function FeaturedReferenceSection({
   error,
   pendingLikeId,
   onToggleLike,
+  onSelect,
 }: FeaturedSectionProps) {
   if (loading) {
     return (
@@ -112,6 +116,7 @@ export function FeaturedReferenceSection({
             item={item}
             pendingLikeId={pendingLikeId}
             onToggleLike={onToggleLike}
+            onSelect={onSelect}
           />
         </div>
       ))}

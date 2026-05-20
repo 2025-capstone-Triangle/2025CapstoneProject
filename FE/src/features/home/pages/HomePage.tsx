@@ -17,9 +17,10 @@ import { NoticeBottomSheet } from "../components/NoticeBottomSheet";
 interface HomePageProps {
   onNavigate?: (page: string) => void;
   onTabChange?: (tab: "home" | "persona" | "content") => void;
+  onSelectTrendingReference?: (id: number) => void;
 }
 
-export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
+export function HomePage({ onNavigate, onTabChange, onSelectTrendingReference }: HomePageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [noticeLoading, setNoticeLoading] = useState(false);
@@ -128,6 +129,7 @@ export function HomePage({ onNavigate, onTabChange }: HomePageProps) {
                   error={referenceError}
                   pendingLikeId={pendingReferenceLikeId}
                   onToggleLike={handleReferenceBookmarkToggle}
+                  onSelect={(item) => onSelectTrendingReference?.(item.id)}
                 />
               </div>
             </section>

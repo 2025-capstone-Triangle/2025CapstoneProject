@@ -43,7 +43,12 @@ import {
   openDiagnosisProgressStream,
   type DiagnosisProgressEventPayload,
 } from "./features/diagnosis/lib/progressApi";
-import { createContent, type ContentCreateResponse, type ContentType } from "./features/content/lib/contentApi";
+import {
+  createContent,
+  createTrendContent,
+  type ContentCreateResponse,
+  type ContentType,
+} from "./features/content/lib/contentApi";
 import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth, signOut } from "./lib/auth";
 import { ErrorToast } from "./shared/ui/ErrorToast";
 
@@ -80,8 +85,9 @@ type DiagnosisProgressState = {
   progress: number;
   message: string;
   step: string;
+  queuePosition: number | null;
   connected: boolean;
-  status: "idle" | "connecting" | "connected" | "running" | "completed" | "error";
+  status: "idle" | "connecting" | "connected" | "queued" | "running" | "completed" | "error";
 };
 
 const UNAUTH_ALLOWED_PAGES = new Set<Page>([
@@ -157,6 +163,7 @@ const DEFAULT_DIAGNOSIS_PROGRESS: DiagnosisProgressState = {
   progress: 0,
   message: "AI가 페르소나를 분석하고 있습니다...",
   step: "idle",
+  queuePosition: null,
   connected: false,
   status: "idle",
 };
@@ -174,9 +181,22 @@ function normalizeServerProgress(raw: unknown): number | null {
   return null;
 }
 
+function normalizeQueuePosition(raw: unknown): number | null {
+  const numeric =
+    typeof raw === "number"
+      ? raw
+      : typeof raw === "string" && raw.trim().length > 0
+        ? Number(raw)
+        : NaN;
+  if (!Number.isFinite(numeric)) return null;
+  return Math.max(1, Math.round(numeric));
+}
+
 function inferProgressByStep(step: string, current: number) {
   const normalized = step.toLowerCase();
   if (normalized.includes("connect")) return Math.max(current, 10);
+  if (normalized.includes("queue")) return Math.max(current, 10);
+  if (normalized.includes("process")) return Math.max(current, 15);
   if (normalized.includes("upload")) return Math.max(current, 25);
   if (normalized.includes("analy")) return Math.max(current, 55);
   if (normalized.includes("report")) return Math.max(current, 75);
@@ -189,7 +209,14 @@ function inferMessage(payload: DiagnosisProgressEventPayload | null, fallback: s
   if (payload?.message && payload.message.trim().length > 0) {
     const message = payload.message.trim();
     const lower = message.toLowerCase();
-    if (lower === "connect" || lower.includes("진행상황 채널") || lower.includes("채널 연결")) {
+    if (
+      lower === "connect" ||
+      lower === "connected" ||
+      lower === "started" ||
+      lower === "queued" ||
+      lower.includes("진행상황 채널") ||
+      lower.includes("채널 연결")
+    ) {
       return fallback;
     }
     return message;
@@ -246,6 +273,7 @@ export default function App() {
   const [autoSelectPersonaForContent, setAutoSelectPersonaForContent] = useState<boolean>(false);
   const [contentGenerationError, setContentGenerationError] = useState<string>("");
   const [latestGeneratedContent, setLatestGeneratedContent] = useState<ContentCreateResponse | null>(null);
+  const [selectedTrendReferenceId, setSelectedTrendReferenceId] = useState<number | null>(null);
   const [loginGateMessage, setLoginGateMessage] = useState<string | null>(null);
   const [selectedPersonaCode, setSelectedPersonaCode] = useState<string>("");
   const [latestDiagnosisCode, setLatestDiagnosisCode] = useState<string>(bootstrap.diagnosisCode);
@@ -297,6 +325,12 @@ export default function App() {
 
     if (page === "content-aspect-ratio") {
       setAutoSelectPersonaForContent(Boolean(options?.autoSelectPersonaForContent));
+      const keepTrendReference =
+        (currentPage === "content-select-persona" || currentPage === "content-result") &&
+        selectedTrendReferenceId !== null;
+      if (!keepTrendReference) {
+        setSelectedTrendReferenceId(null);
+      }
     }
 
     setPageHistory((prev) => [...prev, page]);
@@ -312,12 +346,21 @@ export default function App() {
     setCurrentPage(page);
   };
 
+  const handleStartTrendingContentFlow = (referenceId: number) => {
+    setSelectedTrendReferenceId(referenceId);
+    setIsRegeneratingContent(false);
+    setAutoSelectPersonaForContent(false);
+    setContentGenerationError("");
+    handleNavigate("content-select-persona");
+  };
+
   const handleNavigateToHome = () => {
     setPageHistory(["home"]);
     setCurrentPage("home");
     setActiveTab("home");
     setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
     setAutoSelectPersonaForContent(false);
+    setSelectedTrendReferenceId(null);
   };
 
   useEffect(() => {
@@ -539,6 +582,7 @@ export default function App() {
         progress: currentProgress,
         message: "AI가 페르소나를 분석하고 있습니다...",
         step: "connecting",
+        queuePosition: null,
         connected: false,
         status: "connecting",
       });
@@ -550,28 +594,79 @@ export default function App() {
           const eventName = event.event.toLowerCase();
           const rawStep = String(payload?.step ?? "").toLowerCase();
           const rawMessage = String(payload?.message ?? "").toLowerCase();
+          const rawData = event.rawData.trim().toLowerCase();
           const isConnectEvent =
             eventName === "connect" ||
             rawStep === "connect" ||
             rawMessage === "connect" ||
-            event.rawData.trim().toLowerCase() === "connect";
+            rawData === "connect";
+          const isQueuedEvent =
+            eventName === "queued" || rawStep === "queued" || rawMessage === "queued";
+          const isProcessingStartEvent =
+            eventName === "processing" &&
+            (rawStep === "started" ||
+              rawMessage === "started" ||
+              rawData === "started" ||
+              rawStep === "processing" ||
+              rawMessage === "processing");
 
-          if (isConnectEvent && !connectAcked) {
+          if (!connectAcked && (isConnectEvent || isQueuedEvent || eventName === "processing")) {
             connectAcked = true;
             currentProgress = Math.max(currentProgress, 10);
+            resolveConnect?.();
+          }
+
+          if (isConnectEvent) {
             setDiagnosisProgress((prev) => ({
               sessionId,
               progress: currentProgress,
               message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
               step: String(payload?.step ?? "connect"),
+              queuePosition: prev.queuePosition,
               connected: true,
-              status: "connected",
+              status: prev.status === "queued" ? "queued" : "connected",
             }));
-            resolveConnect?.();
             return;
           }
 
           if (!connectAcked) return;
+
+          if (isQueuedEvent) {
+            const queuePosition = normalizeQueuePosition(
+              payload?.position ?? payload?.queuePosition ?? payload?.rank
+            );
+            const queueMessage = payload?.message?.trim()
+              ? payload.message.trim()
+              : queuePosition
+                ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 분석이 시작됩니다.`
+                : "진단 요청이 접수되어 대기열에 등록되었습니다.";
+
+            currentProgress = Math.max(currentProgress, 10);
+            setDiagnosisProgress({
+              sessionId,
+              progress: currentProgress,
+              message: queueMessage,
+              step: "queued",
+              queuePosition,
+              connected: true,
+              status: "queued",
+            });
+            return;
+          }
+
+          if (isProcessingStartEvent) {
+            currentProgress = Math.max(currentProgress, 15);
+            setDiagnosisProgress((prev) => ({
+              sessionId,
+              progress: currentProgress,
+              message: inferMessage(payload, prev.message || "AI가 분석을 시작했습니다..."),
+              step: "processing",
+              queuePosition: null,
+              connected: true,
+              status: "running",
+            }));
+            return;
+          }
 
           const step = String(payload?.step ?? event.event ?? "running");
           const normalizedProgress = normalizeServerProgress(payload?.progress);
@@ -590,6 +685,7 @@ export default function App() {
             progress: currentProgress,
             message: inferMessage(payload, prev.message || "진행상황을 반영하고 있습니다..."),
             step,
+            queuePosition: null,
             connected: true,
             status: completedFromStream ? "completed" : "running",
           }));
@@ -621,10 +717,11 @@ export default function App() {
 
       setDiagnosisProgress((prev) => ({
         ...prev,
-        status: "running",
-        progress: Math.max(prev.progress, 12),
+        status: prev.status === "queued" ? "queued" : "running",
+        progress: Math.max(prev.progress, prev.status === "queued" ? 10 : 12),
         message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
         step: prev.step === "connect" ? "requested" : prev.step,
+        queuePosition: prev.status === "queued" ? prev.queuePosition : null,
       }));
 
       const { answer, q8_tone } = buildBackendPreferencePayload(preference);
@@ -648,6 +745,7 @@ export default function App() {
           status: "completed",
           message: "페르소나 진단이 완료되었습니다.",
           step: "completed",
+          queuePosition: null,
           connected: prev.connected,
         }));
         return true;
@@ -732,7 +830,11 @@ export default function App() {
       )}
 
       {currentPage === "home" && (
-        <HomePage onNavigate={handleNavigate} onTabChange={handleTabChange} />
+        <HomePage
+          onNavigate={handleNavigate}
+          onTabChange={handleTabChange}
+          onSelectTrendingReference={handleStartTrendingContentFlow}
+        />
       )}
 
       {currentPage === "diagnosis-start" && (
@@ -783,6 +885,8 @@ export default function App() {
         <AnalyzingPage
           progress={diagnosisProgress.progress}
           message={diagnosisProgress.message}
+          status={diagnosisProgress.status}
+          queuePosition={diagnosisProgress.queuePosition}
           onBack={handleBack}
           onHome={handleNavigateToHome}
         />
@@ -849,13 +953,32 @@ export default function App() {
       )}
 
       {currentPage === "content-explore" && (
-        <ContentExplorePage onBack={handleBack} onNavigate={handleNavigate} onHome={handleNavigateToHome} />
+        <ContentExplorePage
+          onBack={handleBack}
+          onNavigate={handleNavigate}
+          onHome={handleNavigateToHome}
+          onSelectReference={handleStartTrendingContentFlow}
+        />
       )}
 
       {currentPage === "content-aspect-ratio" && (
         <ContentAspectRatioPage
           onNext={(ratio) => {
             setSelectedRatio(ratio);
+
+            if (selectedTrendReferenceId !== null) {
+              if (!selectedPersonaCode) {
+                setContentGenerationError("Please select a persona before generating content.");
+                handleNavigate("content-select-persona");
+                return;
+              }
+              setIsRegeneratingContent(false);
+              setContentGenerationError("");
+              handleNavigateWithoutHistory("content-generating");
+              void runContentGeneration(ratio, selectedPersonaCode);
+              return;
+            }
+
             if (isRegeneratingContent) {
               setIsRegeneratingContent(false);
               setContentGenerationError("");
@@ -885,6 +1008,10 @@ export default function App() {
           onNext={(personaCode) => {
             setSelectedPersonaCode(personaCode);
             setContentGenerationError("");
+            if (selectedTrendReferenceId !== null) {
+              handleNavigate("content-aspect-ratio");
+              return;
+            }
             handleNavigateWithoutHistory("content-generating");
             void runContentGeneration(selectedRatio, personaCode);
           }}

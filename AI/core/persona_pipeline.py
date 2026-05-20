@@ -140,7 +140,7 @@ class ImageGenerator:
         )
         # Gemini 클라이언트 (GOOGLE_API_KEY 환경변수 자동 참조)
         self.gemini_client = genai.Client(
-            http_options=types.HttpOptions(timeout=180)
+            http_options=types.HttpOptions(timeout=300000)
         )
 
     async def generate_profile_prompt(self, report, user_pref):

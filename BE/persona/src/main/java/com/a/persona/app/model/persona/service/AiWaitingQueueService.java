@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 @Service
@@ -26,6 +27,14 @@ public class AiWaitingQueueService {
         long pos = position != null ? position : 1;
         log.info("[AI 대기열] sessionId={} 진입 | 현재 대기 순서: {}번째", sessionId, pos);
         return pos;
+    }
+
+    // 현재 대기열에서 내 순서 반환 (없으면 0)
+    public long getPosition(String sessionId) {
+        List<Object> queue = redisTemplate.opsForList().range(WAITING_KEY, 0, -1);
+        if (queue == null) return 0;
+        int index = queue.indexOf(sessionId);
+        return index >= 0 ? index + 1 : 0;
     }
 
     // 슬롯 획득 후 대기열에서 제거

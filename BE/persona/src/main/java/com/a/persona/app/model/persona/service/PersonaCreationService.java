@@ -18,6 +18,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -55,8 +59,22 @@ public class PersonaCreationService {
             long position = aiWaitingQueueService.enterQueue(sessionId);
             progressService.sendQueued(sessionId, position);
 
-            // 4. 슬롯 대기 (블로킹, DB 커넥션 미점유)
-            aiWaitingQueueService.acquire();
+            // 4. 슬롯 대기 중 5초마다 현재 대기 순서 갱신 전송
+            ScheduledExecutorService positionScheduler = Executors.newSingleThreadScheduledExecutor();
+            ScheduledFuture<?> positionTask = positionScheduler.scheduleAtFixedRate(() -> {
+                long currentPos = aiWaitingQueueService.getPosition(sessionId);
+                if (currentPos > 0) {
+                    progressService.sendQueued(sessionId, currentPos);
+                }
+            }, 3, 3, TimeUnit.SECONDS);
+
+            // 5. 슬롯 대기 (블로킹, DB 커넥션 미점유)
+            try {
+                aiWaitingQueueService.acquire();
+            } finally {
+                positionTask.cancel(false);
+                positionScheduler.shutdown();
+            }
 
             // acquire() 성공 직후 바로 try로 감싸야 release() 누락 방지
             try {

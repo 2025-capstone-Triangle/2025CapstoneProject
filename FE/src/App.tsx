@@ -117,15 +117,15 @@ const DIAGNOSIS_FLOW_PAGES = new Set<Page>([
 
 function getLoginGateMessage(page: Page) {
   if (page.startsWith("content") || page === "saved-templates") {
-    return "肄섑뀗痢??앹꽦怨???μ? 濡쒓렇?????댁슜?????덉뼱??";
+    return "콘텐츠 생성과 저장은 로그인 후 이용할 수 있어요.";
   }
   if (page.startsWith("persona")) {
-    return "???섎Ⅴ?뚮굹 湲곕뒫? 濡쒓렇?????댁슜?????덉뼱??";
+    return "내 페르소나 기능은 로그인 후 이용할 수 있어요.";
   }
   if (page === "settings" || page === "help") {
-    return "??硫붾돱??濡쒓렇?????댁슜?????덉뼱??";
+    return "이 메뉴는 로그인 후 이용할 수 있어요.";
   }
-  return "??湲곕뒫? 濡쒓렇?????댁슜?????덉뼱??";
+  return "이 기능은 로그인 후 이용할 수 있어요.";
 }
 
 function decodeJwtPayload(token?: string) {
@@ -190,19 +190,6 @@ function normalizeQueuePosition(raw: unknown): number | null {
         : NaN;
   if (!Number.isFinite(numeric)) return null;
   return Math.max(1, Math.round(numeric));
-}
-
-function inferProgressByStep(step: string, current: number) {
-  const normalized = step.toLowerCase();
-  if (normalized.includes("connect")) return Math.max(current, 10);
-  if (normalized.includes("queue")) return Math.max(current, 10);
-  if (normalized.includes("process")) return Math.max(current, 15);
-  if (normalized.includes("upload")) return Math.max(current, 25);
-  if (normalized.includes("analy")) return Math.max(current, 55);
-  if (normalized.includes("report")) return Math.max(current, 75);
-  if (normalized.includes("save") || normalized.includes("final")) return Math.max(current, 90);
-  if (normalized.includes("complete")) return 100;
-  return Math.min(95, Math.max(current + 4, 15));
 }
 
 function inferMessage(payload: DiagnosisProgressEventPayload | null, fallback: string) {
@@ -557,7 +544,7 @@ export default function App() {
       }
 
       const sessionId = createDiagnosisSessionId();
-      let currentProgress = 3;
+      let currentProgress = 0;
       let connectAcked = false;
       let completedFromStream = false;
       let resolveConnect: (() => void) | null = null;
@@ -580,11 +567,11 @@ export default function App() {
       setDiagnosisProgress({
         sessionId,
         progress: currentProgress,
-        message: "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
-        step: "connecting",
+        message: "대기열을 확인하고 있습니다...",
+        step: "queued",
         queuePosition: null,
         connected: false,
-        status: "connecting",
+        status: "queued",
       });
 
       closeProgressStream = openDiagnosisProgressStream({
@@ -612,7 +599,6 @@ export default function App() {
 
           if (!connectAcked && (isConnectEvent || isQueuedEvent || eventName === "processing")) {
             connectAcked = true;
-            currentProgress = Math.max(currentProgress, 10);
             resolveConnect?.();
           }
 
@@ -641,7 +627,6 @@ export default function App() {
                 ? `?꾩옱 ?湲곗뿴 ${queuePosition}踰덉엯?덈떎. ?쒖꽌媛 ?섎㈃ ?먮룞?쇰줈 遺꾩꽍???쒖옉?⑸땲??`
                 : "吏꾨떒 ?붿껌???묒닔?섏뼱 ?湲곗뿴???깅줉?섏뿀?듬땲??";
 
-            currentProgress = Math.max(currentProgress, 10);
             setDiagnosisProgress({
               sessionId,
               progress: currentProgress,
@@ -655,7 +640,8 @@ export default function App() {
           }
 
           if (isProcessingStartEvent) {
-            currentProgress = Math.max(currentProgress, 15);
+            const processingStartProgress = normalizeServerProgress(payload?.progress);
+            currentProgress = processingStartProgress !== null ? clampProgress(processingStartProgress) : 0;
             setDiagnosisProgress((prev) => ({
               sessionId,
               progress: currentProgress,
@@ -673,7 +659,7 @@ export default function App() {
           currentProgress =
             normalizedProgress !== null
               ? clampProgress(normalizedProgress)
-              : inferProgressByStep(step, currentProgress);
+              : currentProgress;
 
           if (step.toLowerCase().includes("complete")) {
             currentProgress = 100;
@@ -714,15 +700,6 @@ export default function App() {
           connectTimeout = null;
         }
       }
-
-      setDiagnosisProgress((prev) => ({
-        ...prev,
-        status: prev.status === "queued" ? "queued" : "running",
-        progress: Math.max(prev.progress, prev.status === "queued" ? 10 : 12),
-        message: prev.message || "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
-        step: prev.step === "connect" ? "requested" : prev.step,
-        queuePosition: prev.status === "queued" ? prev.queuePosition : null,
-      }));
 
       const { answer, q8_tone } = buildBackendPreferencePayload(preference);
       const profileImage = images[0];
@@ -1065,7 +1042,7 @@ export default function App() {
               <div className="w-9 h-9 rounded-full bg-[#fff3f5] flex items-center justify-center">
                 <Lock className="w-5 h-5 text-[#EF466F]" />
               </div>
-              <p className="font-['NEXON_Football_Gothic'] text-[18px] text-black">濡쒓렇???꾩슂</p>
+              <p className="font-['NEXON_Football_Gothic'] text-[18px] text-black">로그인 필요</p>
             </div>
             <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] leading-[1.6] mb-5">
               {loginGateMessage}
@@ -1078,7 +1055,7 @@ export default function App() {
                 }}
                 className="w-full h-[48px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] font-semibold text-[14px]"
               >
-                濡쒓렇??
+                로그인
               </button>
               <button
                 onClick={() => {
@@ -1087,13 +1064,13 @@ export default function App() {
                 }}
                 className="w-full h-[48px] rounded-[14px] border border-[#e5e5e5] bg-white text-black font-['Noto_Sans_KR'] font-semibold text-[14px]"
               >
-                ?뚯썝媛??
+                회원가입
               </button>
               <button
                 onClick={() => setLoginGateMessage(null)}
                 className="w-full h-[44px] rounded-[12px] bg-[#f7f7f7] text-[#555] font-['Noto_Sans_KR'] text-[13px]"
               >
-                ?リ린
+                닫기
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { HomePage } from "./features/home/pages/HomePage";
 import { DiagnosisStartPage } from "./features/diagnosis/pages/DiagnosisStartPage";
@@ -117,15 +117,15 @@ const DIAGNOSIS_FLOW_PAGES = new Set<Page>([
 
 function getLoginGateMessage(page: Page) {
   if (page.startsWith("content") || page === "saved-templates") {
-    return "콘텐츠 생성과 저장은 로그인 후 이용할 수 있어요.";
+    return "肄섑뀗痢??앹꽦怨???μ? 濡쒓렇?????댁슜?????덉뼱??";
   }
   if (page.startsWith("persona")) {
-    return "내 페르소나 기능은 로그인 후 이용할 수 있어요.";
+    return "???섎Ⅴ?뚮굹 湲곕뒫? 濡쒓렇?????댁슜?????덉뼱??";
   }
   if (page === "settings" || page === "help") {
-    return "이 메뉴는 로그인 후 이용할 수 있어요.";
+    return "??硫붾돱??濡쒓렇?????댁슜?????덉뼱??";
   }
-  return "이 기능은 로그인 후 이용할 수 있어요.";
+  return "??湲곕뒫? 濡쒓렇?????댁슜?????덉뼱??";
 }
 
 function decodeJwtPayload(token?: string) {
@@ -161,7 +161,7 @@ const DIAGNOSIS_RESULT_PAGE_STORAGE_KEY = "app.diagnosis.last-page";
 const DEFAULT_DIAGNOSIS_PROGRESS: DiagnosisProgressState = {
   sessionId: "",
   progress: 0,
-  message: "AI가 페르소나를 분석하고 있습니다...",
+  message: "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
   step: "idle",
   queuePosition: null,
   connected: false,
@@ -214,8 +214,8 @@ function inferMessage(payload: DiagnosisProgressEventPayload | null, fallback: s
       lower === "connected" ||
       lower === "started" ||
       lower === "queued" ||
-      lower.includes("진행상황 채널") ||
-      lower.includes("채널 연결")
+      lower.includes("吏꾪뻾?곹솴 梨꾨꼸") ||
+      lower.includes("梨꾨꼸 ?곌껐")
     ) {
       return fallback;
     }
@@ -398,7 +398,7 @@ export default function App() {
   useEffect(() => {
     const handleAuthExpired = () => {
       clearAuth();
-      setLoginGateMessage("세션이 만료되었습니다. 다시 로그인해 주세요.");
+      setLoginGateMessage("?몄뀡??留뚮즺?섏뿀?듬땲?? ?ㅼ떆 濡쒓렇?명빐 二쇱꽭??");
       setPageHistory(["home"]);
       setCurrentPage("login");
       setActiveTab("home");
@@ -550,7 +550,7 @@ export default function App() {
         setDiagnosisProgress({
           ...DEFAULT_DIAGNOSIS_PROGRESS,
           status: "error",
-          message: "입력 데이터가 부족합니다. 이미지/음성/선호 테스트를 확인해 주세요.",
+          message: "?낅젰 ?곗씠?곌? 遺議깊빀?덈떎. ?대?吏/?뚯꽦/?좏샇 ?뚯뒪?몃? ?뺤씤??二쇱꽭??",
           step: "invalid-input",
         });
         return false;
@@ -568,8 +568,8 @@ export default function App() {
         rejectConnect = reject;
       });
 
-      // Vercel 프록시가 SSE를 버퍼링해 connect 이벤트가 늦게 도착할 수 있음.
-      // 3초 후에도 미수신 시 일단 POST 진행 (SSE 스트림은 계속 열어둠).
+      // Vercel ?꾨줉?쒓? SSE瑜?踰꾪띁留곹빐 connect ?대깽?멸? ??쾶 ?꾩갑?????덉쓬.
+      // 3珥??꾩뿉??誘몄닔?????쇰떒 POST 吏꾪뻾 (SSE ?ㅽ듃由쇱? 怨꾩냽 ?댁뼱??.
       connectTimeout = window.setTimeout(() => {
         if (!connectAcked) {
           connectAcked = true;
@@ -580,7 +580,7 @@ export default function App() {
       setDiagnosisProgress({
         sessionId,
         progress: currentProgress,
-        message: "AI가 페르소나를 분석하고 있습니다...",
+        message: "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
         step: "connecting",
         queuePosition: null,
         connected: false,
@@ -620,7 +620,7 @@ export default function App() {
             setDiagnosisProgress((prev) => ({
               sessionId,
               progress: currentProgress,
-              message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
+              message: prev.message || "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
               step: String(payload?.step ?? "connect"),
               queuePosition: prev.queuePosition,
               connected: true,
@@ -638,8 +638,8 @@ export default function App() {
             const queueMessage = payload?.message?.trim()
               ? payload.message.trim()
               : queuePosition
-                ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 분석이 시작됩니다.`
-                : "진단 요청이 접수되어 대기열에 등록되었습니다.";
+                ? `?꾩옱 ?湲곗뿴 ${queuePosition}踰덉엯?덈떎. ?쒖꽌媛 ?섎㈃ ?먮룞?쇰줈 遺꾩꽍???쒖옉?⑸땲??`
+                : "吏꾨떒 ?붿껌???묒닔?섏뼱 ?湲곗뿴???깅줉?섏뿀?듬땲??";
 
             currentProgress = Math.max(currentProgress, 10);
             setDiagnosisProgress({
@@ -659,7 +659,7 @@ export default function App() {
             setDiagnosisProgress((prev) => ({
               sessionId,
               progress: currentProgress,
-              message: inferMessage(payload, prev.message || "AI가 분석을 시작했습니다..."),
+              message: inferMessage(payload, "AI가 분석을 시작했습니다..."),
               step: "processing",
               queuePosition: null,
               connected: true,
@@ -683,7 +683,7 @@ export default function App() {
           setDiagnosisProgress((prev) => ({
             sessionId,
             progress: currentProgress,
-            message: inferMessage(payload, prev.message || "진행상황을 반영하고 있습니다..."),
+            message: inferMessage(payload, prev.status === "queued" ? "AI가 분석을 진행하고 있습니다..." : prev.message || "진행상황을 반영하고 있습니다..."),
             step,
             queuePosition: null,
             connected: true,
@@ -699,7 +699,7 @@ export default function App() {
           setDiagnosisProgress((prev) => ({
             ...prev,
             status: "error",
-            message: error.message || "진단 진행 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.",
+            message: error.message || "吏꾨떒 吏꾪뻾 ?곌껐??遺덉븞?뺥빀?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??",
             step: "stream-error",
             connected: false,
           }));
@@ -719,7 +719,7 @@ export default function App() {
         ...prev,
         status: prev.status === "queued" ? "queued" : "running",
         progress: Math.max(prev.progress, prev.status === "queued" ? 10 : 12),
-        message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
+        message: prev.message || "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
         step: prev.step === "connect" ? "requested" : prev.step,
         queuePosition: prev.status === "queued" ? prev.queuePosition : null,
       }));
@@ -743,7 +743,7 @@ export default function App() {
           ...prev,
           progress: 100,
           status: "completed",
-          message: "페르소나 진단이 완료되었습니다.",
+          message: "?섎Ⅴ?뚮굹 吏꾨떒???꾨즺?섏뿀?듬땲??",
           step: "completed",
           queuePosition: null,
           connected: prev.connected,
@@ -758,7 +758,7 @@ export default function App() {
       setDiagnosisProgress((prev) => ({
         ...prev,
         status: "error",
-        message: error instanceof Error ? error.message : "진단 요청에 실패했습니다.",
+        message: error instanceof Error ? error.message : "吏꾨떒 ?붿껌???ㅽ뙣?덉뒿?덈떎.",
         step: "error",
       }));
       return false;
@@ -772,7 +772,7 @@ export default function App() {
 
   const runContentGeneration = async (ratio: string, personaCode: string) => {
     if (!personaCode) {
-      setContentGenerationError("생성할 페르소나를 먼저 선택해 주세요.");
+      setContentGenerationError("?앹꽦???섎Ⅴ?뚮굹瑜?癒쇱? ?좏깮??二쇱꽭??");
       return;
     }
 
@@ -787,7 +787,7 @@ export default function App() {
       setLatestGeneratedContent(result);
       handleNavigate("content-result");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "콘텐츠 생성에 실패했습니다.";
+      const message = error instanceof Error ? error.message : "肄섑뀗痢??앹꽦???ㅽ뙣?덉뒿?덈떎.";
       setContentGenerationError(message);
     }
   };
@@ -986,7 +986,7 @@ export default function App() {
               void runContentGeneration(ratio, selectedPersonaCode);
             } else if (autoSelectPersonaForContent) {
               if (!selectedPersonaCode) {
-                setContentGenerationError("생성할 페르소나를 먼저 선택해 주세요.");
+                setContentGenerationError("?앹꽦???섎Ⅴ?뚮굹瑜?癒쇱? ?좏깮??二쇱꽭??");
                 handleNavigate("content-select-persona");
                 return;
               }
@@ -1065,7 +1065,7 @@ export default function App() {
               <div className="w-9 h-9 rounded-full bg-[#fff3f5] flex items-center justify-center">
                 <Lock className="w-5 h-5 text-[#EF466F]" />
               </div>
-              <p className="font-['NEXON_Football_Gothic'] text-[18px] text-black">로그인 필요</p>
+              <p className="font-['NEXON_Football_Gothic'] text-[18px] text-black">濡쒓렇???꾩슂</p>
             </div>
             <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] leading-[1.6] mb-5">
               {loginGateMessage}
@@ -1078,7 +1078,7 @@ export default function App() {
                 }}
                 className="w-full h-[48px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] font-semibold text-[14px]"
               >
-                로그인
+                濡쒓렇??
               </button>
               <button
                 onClick={() => {
@@ -1087,13 +1087,13 @@ export default function App() {
                 }}
                 className="w-full h-[48px] rounded-[14px] border border-[#e5e5e5] bg-white text-black font-['Noto_Sans_KR'] font-semibold text-[14px]"
               >
-                회원가입
+                ?뚯썝媛??
               </button>
               <button
                 onClick={() => setLoginGateMessage(null)}
                 className="w-full h-[44px] rounded-[12px] bg-[#f7f7f7] text-[#555] font-['Noto_Sans_KR'] text-[13px]"
               >
-                닫기
+                ?リ린
               </button>
             </div>
           </div>

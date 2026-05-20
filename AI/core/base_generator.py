@@ -16,6 +16,8 @@ from PIL import Image
 
 from image_crop import image_crop
 
+_GEMINI_IMAGE_RETRY_DELAYS = [5, 15, 30]
+
 
 class BaseContentGenerator:
     """
@@ -45,7 +47,9 @@ class BaseContentGenerator:
             temperature=0.7
         )
 
-        self.gemini_client = genai.Client()
+        self.gemini_client = genai.Client(
+            http_options=types.HttpOptions(timeout=180)
+        )
 
         # MediaPipe Pose Landmarker 초기화 (스마트 크롭용)
         model_path = os.path.join(current_dir, 'pose_landmarker_heavy.task')
@@ -148,40 +152,48 @@ class BaseContentGenerator:
                 raise ValueError(f"유저 이미지 다운로드 실패: {response.status_code}")
 
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> bytes | None:
-        """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 PNG bytes를 반환"""
-        try:
-            print("🎨 Gemini로 이미지 생성 요청 중...")
-            response = self.gemini_client.models.generate_content(
-                model="gemini-3.1-flash-image-preview",
-                contents=[prompt, user_pil_image],
-                config=types.GenerateContentConfig(
-                    response_modalities=['TEXT', 'IMAGE'],
-                    image_config=types.ImageConfig(
-                        aspect_ratio=self._gemini_aspect_ratio,
-                        image_size="1K",
-                    ),
+        """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 PNG bytes를 반환. 503 발생 시 최대 3회 재시도."""
+        for attempt, delay in enumerate([0] + _GEMINI_IMAGE_RETRY_DELAYS):
+            if delay:
+                print(f"⏳ {delay}초 후 재시도 ({attempt}/3)...")
+                time.sleep(delay)
+            try:
+                print(f"🎨 Gemini 이미지 생성 요청 중... (시도 {attempt + 1})")
+                response = self.gemini_client.models.generate_content(
+                    model="gemini-3.1-flash-image-preview",
+                    contents=[prompt, user_pil_image],
+                    config=types.GenerateContentConfig(
+                        response_modalities=['TEXT', 'IMAGE'],
+                        image_config=types.ImageConfig(
+                            aspect_ratio=self._gemini_aspect_ratio,
+                            image_size="1K",
+                        ),
+                    )
                 )
-            )
 
-            for part in response.parts:
-                if part.text is not None:
-                    print(f"💬 Gemini 응답: {part.text}")
-                elif image := part.as_image():
-                    ts = int(time.time())
-                    temp_path = f"temp_gemini_{ts}.png"
-                    image.save(temp_path)
-                    with open(temp_path, "rb") as f:
-                        image_bytes = f.read()
-                    os.remove(temp_path)
-                    print("✨ 이미지 데이터 획득 성공!")
-                    return image_bytes
+                for part in response.parts:
+                    if part.text is not None:
+                        print(f"💬 Gemini 응답: {part.text}")
+                    elif image := part.as_image():
+                        ts = int(time.time())
+                        temp_path = f"temp_gemini_{ts}.png"
+                        image.save(temp_path)
+                        with open(temp_path, "rb") as f:
+                            image_bytes = f.read()
+                        os.remove(temp_path)
+                        print("✨ 이미지 데이터 획득 성공!")
+                        return image_bytes
 
-            print("⚠️ Gemini 응답에 이미지가 없습니다.")
-            return None
+                print("⚠️ Gemini 응답에 이미지가 없습니다.")
+                return None
 
-        except Exception as e:
-            print(f"❌ 이미지 생성 에러: {e}")
-            return None
+            except Exception as e:
+                err = str(e)
+                if attempt < len(_GEMINI_IMAGE_RETRY_DELAYS) and ("503" in err or "UNAVAILABLE" in err or "Deadline" in err):
+                    print(f"⚠️ Gemini 503 에러 (재시도 예정): {e}")
+                    continue
+                print(f"❌ 이미지 생성 에러: {e}")
+                return None
 
     def apply_smart_crop(self, image_bytes: bytes, aspect_ratio: float, mode: str):
         """image_crop 모듈의 image_crop() 함수를 호출해 크롭된 cv2 이미지를 반환"""

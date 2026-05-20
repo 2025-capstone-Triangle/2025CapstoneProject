@@ -139,7 +139,9 @@ class ImageGenerator:
             temperature=0.7,
         )
         # Gemini 클라이언트 (GOOGLE_API_KEY 환경변수 자동 참조)
-        self.gemini_client = genai.Client()
+        self.gemini_client = genai.Client(
+            http_options=types.HttpOptions(timeout=180)
+        )
 
     async def generate_profile_prompt(self, report, user_pref):
         prompt_msg = (
@@ -172,43 +174,46 @@ class ImageGenerator:
                 raise ValueError(f"유저 이미지 다운로드 실패: {response.status_code}")
 
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> str | None:
-        """
-        Gemini로 유저 얼굴을 유지한 채 새 이미지를 생성하고,
-        로컬에 임시 저장 후 경로를 반환합니다.
-        """
-        try:
-            print("🎨 Gemini로 페르소나 이미지를 생성하고 있습니다...")
-            response = self.gemini_client.models.generate_content(
-                model="gemini-3.1-flash-image-preview",
-                contents=[
-                    prompt,
-                    user_pil_image,
-                ],
-                config=types.GenerateContentConfig(
-                    response_modalities=['TEXT', 'IMAGE'],
-                    image_config=types.ImageConfig(
-                        aspect_ratio="1:1",
-                        image_size="1K",
-                    ),
+        """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 로컬 임시 경로를 반환. 503 발생 시 최대 3회 재시도."""
+        _retry_delays = [5, 15, 30]
+        for attempt, delay in enumerate([0] + _retry_delays):
+            if delay:
+                print(f"⏳ {delay}초 후 재시도 ({attempt}/3)...")
+                time.sleep(delay)
+            try:
+                print(f"🎨 Gemini 이미지 생성 요청 중... (시도 {attempt + 1})")
+                response = self.gemini_client.models.generate_content(
+                    model="gemini-3.1-flash-image-preview",
+                    contents=[prompt, user_pil_image],
+                    config=types.GenerateContentConfig(
+                        response_modalities=['TEXT', 'IMAGE'],
+                        image_config=types.ImageConfig(
+                            aspect_ratio="1:1",
+                            image_size="1K",
+                        ),
+                    )
                 )
-            )
 
-            for part in response.parts:
-                if part.text is not None:
-                    print(f"💬 Gemini 응답: {part.text}")
-                elif image := part.as_image():
-                    ts = int(time.time())
-                    temp_path = f"temp_gemini_{ts}.png"
-                    image.save(temp_path)
-                    print(f"✅ Gemini 이미지 임시 저장: {temp_path}")
-                    return temp_path  # S3 업로드용 로컬 경로 반환
+                for part in response.parts:
+                    if part.text is not None:
+                        print(f"💬 Gemini 응답: {part.text}")
+                    elif image := part.as_image():
+                        ts = int(time.time())
+                        temp_path = f"temp_gemini_{ts}.png"
+                        image.save(temp_path)
+                        print(f"✅ Gemini 이미지 임시 저장: {temp_path}")
+                        return temp_path
 
-            print("⚠️ Gemini 응답에 이미지가 없습니다.")
-            return None
+                print("⚠️ Gemini 응답에 이미지가 없습니다.")
+                return None
 
-        except Exception as e:
-            print(f"이미지 생성 에러: {e}")
-            return None
+            except Exception as e:
+                err = str(e)
+                if attempt < len(_retry_delays) and ("503" in err or "UNAVAILABLE" in err or "Deadline" in err):
+                    print(f"⚠️ Gemini 503 에러 (재시도 예정): {e}")
+                    continue
+                print(f"❌ 이미지 생성 에러: {e}")
+                return None
 
 
 # 4. 통합 분석 파이프라인

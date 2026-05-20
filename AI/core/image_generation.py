@@ -15,9 +15,22 @@ class ImageGeneration(BaseContentGenerator):
     async def generate_profile_prompt(self, report, answers, tones):
         base_elements = self._build_base_prompt(answers, tones)
 
+        if answers.get('q1_environment') == 1:
+            camera_aesthetic = (
+                "Shot on iPhone 15 Pro (ProRAW mode) — authentic candid Instagram lifestyle photo quality, "
+                "natural ambient light, slight lens bokeh in background, real-skin texture with no over-smoothing, "
+                "feels like a genuine photo a 20-something Korean woman would post on her Instagram feed."
+            )
+        else:
+            camera_aesthetic = (
+                "Shot on Sony A7III with 85mm f/1.4 portrait lens — professional editorial quality, "
+                "intentional soft-box or large-window studio lighting, creamy background bokeh, "
+                "sharp subject with soft catchlights in eyes, polished yet natural feel suitable for Instagram."
+            )
+
         prompt_refine_msg = f"""
         당신은 상업 사진 작가이자 AI 프롬프트 엔지니어입니다.
-        사용자의 정체성을 유지하면서 인스타그램 감성 사진을 생성하기 위한 영문 지시문을 작성하세요.
+        사용자의 정체성을 유지하면서 20대 한국 여성의 자연스러운 인스타그램 업로드용 사진을 생성하기 위한 영문 지시문을 작성하세요.
 
         [분석 데이터]
         - 구도 및 조명: {base_elements}
@@ -26,10 +39,10 @@ class ImageGeneration(BaseContentGenerator):
 
         [지침]
         1. "Framing": 위 '구도 및 조명'의 첫 번째 항목(프레이밍)을 반드시 그대로 적용할 것. 사용자가 선택한 구도(예: full-body, half-body 등)를 임의로 변경하지 말 것.
-        2. "Mood & Setting": 위 '구도 및 조명'에 명시된 환경, 분위기, 채도, 명도, 조명 설정을 모두 반영할 것.
+        2. "Mood & Setting": 위 '구도 및 조명'에 명시된 환경, 분위기, 채도, 명도, 조명 설정을 모두 반영할 것. 조명 방향(순광/역광/측광), 색온도, 그림자 질감을 구체적으로 표현할 것.
         3. "Extreme Identity Consistency": 원본 사진 속 인물의 얼굴형과 특징을 유지하세요.
-        4. "Instagram Aesthetic": Shot on iPhone 15 Pro, cinematic lighting 포함.
-        5. "Natural Texture": 실제 사진 같은 Grain과 질감 추가.
+        4. "Camera & Aesthetic": {camera_aesthetic}
+        5. "Natural Texture": 실제 사진 같은 Film grain과 피부 질감 추가. 과도한 디지털 보정 느낌 없이 자연스러울 것.
         6. 영어로 작성하세요.
         """
         res = await self.llm.ainvoke(prompt_refine_msg)

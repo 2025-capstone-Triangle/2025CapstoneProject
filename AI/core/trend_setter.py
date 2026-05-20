@@ -15,6 +15,19 @@ class ContentGeneration(BaseContentGenerator):
     async def generate_profile_prompt(self, be_input, report, answers, tones):
         base_elements = self._build_base_prompt(answers, tones)
 
+        if answers.get('q1_environment') == 1:
+            camera_style = (
+                "Shot on iPhone 15 Pro (ProRAW) — natural ambient light, authentic candid quality, "
+                "feels like a genuine photo a 20-something Korean woman would post on Instagram, "
+                "slight background bokeh, true skin texture with no heavy retouching."
+            )
+        else:
+            camera_style = (
+                "Shot on Sony A7III with 85mm f/1.4 — professional studio or large-window interior lighting, "
+                "editorial-quality depth of field, soft and intentional light shaping, "
+                "polished yet natural feel that a 20-something Korean influencer would post on Instagram."
+            )
+
         prompt_refine_msg = f"""
             당신은 인스타그램 트렌드를 선도하는 비주얼 디렉터입니다.
             Back-end에서 넘어온 [트렌드 컨셉]을 바탕으로 이미지를 생성하는 것을 기본 목표로 하되,
@@ -32,8 +45,8 @@ class ContentGeneration(BaseContentGenerator):
             - 구도(Framing): [기술적 스타일]의 첫 번째 항목에 명시된 프레이밍을 반드시 그대로 따를 것. 사용자가 선택한 구도를 임의로 변경하지 말 것.
             - 트렌드 반영: BE의 [트렌드 컨셉]에 묘사된 상황(장소, 소품, 의상)을 반영하되, 구도는 위 사용자 선택을 우선시할 것.
             - 색상: 사용자의 [선호 색상]을 의상 포인트나 배경 조명에 자연스럽게 녹이세요.
-            - 스타일: [기술적 스타일]에 명시된 채도, 명도, 분위기, 조명 설정을 모두 반영할 것.
-            - 인물은 20대 한국 여성의 자연스러운 모습으로, 'Shot on iPhone 15 Pro' 느낌의 고해상도 실사여야 합니다.
+            - 조명: [기술적 스타일]에 명시된 채도, 명도, 분위기, 조명 방향 및 색온도 설정을 모두 구체적으로 반영할 것.
+            - 카메라 & 스타일: {camera_style}
 
             결과는 영어로만, "A high-quality realistic photo of..."로 시작해서 출력하세요.
         """

@@ -74,8 +74,22 @@ class BaseContentGenerator:
             5: "wide cinematic shot, person full-body being speck in a landscape, harmonized with the vast background environment"
         }
 
-        env = "at a trendy outdoor cafe in Seoul or a sun-drenched street" if answers.get('q1_environment') == 1 \
-              else "inside a minimalist, aesthetically pleasing studio or a modern interior with soft window light"
+        if answers.get('q1_environment') == 1:
+            env = (
+                "Shot on iPhone 15 Pro (ProRAW). "
+                "Casual outdoor setting — trendy street-side cafe terrace in Seongsu-dong or Hongdae, Seoul. "
+                "Natural ambient sunlight filtering through a cafe awning or dappled through urban trees, "
+                "warm mid-afternoon sun casting gentle directional shadows. "
+                "Authentic candid Instagram lifestyle vibe, slight background bokeh from wide aperture mode."
+            )
+        else:
+            env = (
+                "Shot on Sony A7III with 85mm f/1.4 portrait lens. "
+                "Minimalist indoor studio or aesthetically curated modern apartment interior in Seoul. "
+                "Soft diffused natural window light from a large north-facing window, "
+                "supplemented by a single white umbrella fill light to lift shadows. "
+                "Clean seamless white or warm-toned background, professional editorial quality with soft catchlights in eyes."
+            )
 
         style = "candid, natural everyday lifestyle look, unposed and effortless" if answers.get('q2_style') == 1 \
                 else "editorial, carefully styled and directed pose, fashion-shoot aesthetic"
@@ -83,8 +97,15 @@ class BaseContentGenerator:
         density = "clean minimalist background, focus strictly on the subject" if answers.get('q3_minimal_maximal') == 1 \
                   else "richly detailed environment with plants, books, and sophisticated props"
 
-        mood_str = "bright, airy, and high-key lighting with a fresh feel" if answers.get('q4_mood') == 1 \
-                   else "moody, calm, and slightly dark cinematic atmosphere"
+        mood_str = (
+            "bright airy high-key lighting — soft, fully diffused natural light with no harsh shadows, "
+            "even illumination across skin and background, fresh and clean Instagram aesthetic, "
+            "delicate lens flare or light leak at frame edge"
+        ) if answers.get('q4_mood') == 1 else (
+            "moody low-key cinematic lighting — single directional light source creating dramatic side shadows, "
+            "deep contrast between lit and shadow sides of the face, atmospheric and intimate atmosphere, "
+            "subtle ambient light wrapping around background"
+        )
         contrast_str = "with deep shadows and striking highlights" if answers.get('q5_contrast_type') == 1 \
                        else "with soft, low-contrast, and dreamy transitions"
 
@@ -97,17 +118,17 @@ class BaseContentGenerator:
         elif s_val < 30: saturation = "muted, desaturated, almost pastel-like color palette"
         else: saturation = "natural color balance, realistic saturation"
 
-        if v_val > 80: brightness = "bright, overexposed aesthetic, high-key lighting"
-        elif v_val < 30: brightness = "underexposed, low-key lighting, dark and mysterious"
-        else: brightness = "well-lit, balanced exposure"
+        if v_val > 80: brightness = "overexposed bright aesthetic — blown-out highlights, shot toward backlight or bright overcast sky, sun-drenched feel"
+        elif v_val < 30: brightness = "underexposed, dark and shadowy — dim indoor or dusk light, low ambient fill"
+        else: brightness = "well-exposed, balanced natural daylight, skin tones rendered accurately"
 
         if c_val > 80: contrast = "extreme contrast, deep black shadows and bright highlights"
         elif c_val < 30: contrast = "soft, low contrast, hazy and dreamy look"
         else: contrast = "standard cinematic contrast"
 
-        if t_val > 70: temp = "warm golden hour glow, amber and orange tint"
-        elif t_val < 30: temp = "cool blue hour tint, icy and crisp atmosphere"
-        else: temp = "neutral daylight white balance"
+        if t_val > 70: temp = "warm golden hour glow — late afternoon sun at ~4000K, amber and honey tones washing the scene"
+        elif t_val < 30: temp = "cool blue hour atmosphere — overcast shade at ~7500K, crisp and icy tones"
+        else: temp = "neutral midday daylight at ~5500K white balance, clean and true-to-life"
 
         return (
             f"{framing_map.get(answers.get('q7_framing'), 'portrait')}, {env}, {style}, {motion}. "

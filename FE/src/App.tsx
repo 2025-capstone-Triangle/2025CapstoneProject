@@ -624,7 +624,7 @@ export default function App() {
             const queueMessage = payload?.message?.trim()
               ? payload.message.trim()
               : queuePosition
-                ? `?꾩옱 ?湲곗뿴 ${queuePosition}踰덉엯?덈떎. ?쒖꽌媛 ?섎㈃ ?먮룞?쇰줈 遺꾩꽍???쒖옉?⑸땲??`
+                ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 분석이 시작됩니다.`
                 : "吏꾨떒 ?붿껌???묒닔?섏뼱 ?湲곗뿴???깅줉?섏뿀?듬땲??";
 
             setDiagnosisProgress({

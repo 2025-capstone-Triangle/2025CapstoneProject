@@ -42,10 +42,16 @@ export function AnalyzingPage({
         </div>
 
         {isQueued ? (
-          <div className="mb-7 rounded-[20px] border border-[#e7e7e7] bg-[#fafafa] px-6 py-5 text-center md:mb-8">
-            <p className="mb-1 font-['Noto_Sans_KR'] text-[13px] font-medium text-[#6d6d6d]">현재 대기 순번</p>
-            <p className="font-['NEXON_Football_Gothic'] text-[34px] leading-none text-black">
-              {queuePosition ?? "-"}번
+          <div className="mb-7 space-y-3 text-center md:mb-8">
+            <div className="rounded-[20px] border border-[#e7e7e7] bg-[#fafafa] px-6 py-5">
+              <p className="mb-1 font-['Noto_Sans_KR'] text-[13px] font-medium text-[#6d6d6d]">현재 대기 순번</p>
+              <p className="font-['NEXON_Football_Gothic'] text-[34px] leading-none text-black">
+                {queuePosition ?? "-"}번
+              </p>
+            </div>
+            <p className="max-w-[520px] px-1 text-[12px] leading-[1.6] text-[#6b6b6b] md:text-[13px]">
+              서버 용량을 늘리려면 추가 비용이 발생해서, 현재 데모 환경에서는 동시에 최대 2명만 진단할 수
+              있어 대기열이 있습니다. 양해 부탁드려요 :)
             </p>
           </div>
         ) : (

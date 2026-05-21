@@ -292,6 +292,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
     <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
       <BackButton onClick={handleBackStep} />
+      <div className="page-scroll">
 
       {step === "basic" && (
         <div className="mx-auto w-full max-w-[560px] px-6 pb-12 sm:px-8">
@@ -676,6 +677,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

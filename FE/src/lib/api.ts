@@ -24,6 +24,11 @@ type ApiErrorResponse = {
   data?: unknown;
 };
 
+type ApiRequestError = Error & {
+  code?: string;
+  __toastShown?: boolean;
+};
+
 const AUTH_STORAGE_KEY = "auth";
 
 function getAuth() {
@@ -82,9 +87,12 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
         clearAuth();
         window.dispatchEvent(new CustomEvent("auth:expired"));
       }
+
       raiseErrorToast(message);
-      const error = new Error(message);
-      (error as Error & { code?: string }).code = errorPayload?.code ?? errorPayload?.status;
+
+      const error = new Error(message) as ApiRequestError;
+      error.code = errorPayload?.code ?? errorPayload?.status;
+      error.__toastShown = true;
       throw error;
     }
 
@@ -96,8 +104,11 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
     return (payload as ApiResponse<T>).data;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "요청에 실패했습니다.";
-    raiseErrorToast(message);
+    const apiError = error as ApiRequestError;
+    if (!apiError?.__toastShown) {
+      const message = error instanceof Error ? error.message : "요청에 실패했습니다.";
+      raiseErrorToast(message);
+    }
     throw error;
   }
 }

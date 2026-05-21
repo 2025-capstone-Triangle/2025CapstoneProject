@@ -46,7 +46,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-export function HelpPage({ onBack }: HelpPageProps) {
+export function HelpPage({ onBack, onNavigate }: HelpPageProps) {
   const faqs = [
     {
       question: "페르소나는 어떻게 생성하나요?",
@@ -76,7 +76,7 @@ export function HelpPage({ onBack }: HelpPageProps) {
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-gradient-to-b from-[#fafafa] to-white md:h-full md:min-h-0">
-      <DefaultTopBar onTitleClick={() => undefined} showNotification={false} />
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
       <BackButton onClick={onBack} />
 
       <div className="mx-auto mb-3 w-full max-w-[1120px] px-4 sm:px-8 md:px-10">

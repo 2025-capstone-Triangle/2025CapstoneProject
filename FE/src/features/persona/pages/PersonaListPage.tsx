@@ -47,6 +47,16 @@ interface PersonaCardItem {
 
 const FAVORITE_STORAGE_KEY = "personaFavoriteCodes";
 
+function canonicalizePersonaCode(value: string) {
+  return value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+}
+
+function buildCodeCandidates(rawCode: string) {
+  const trimmed = rawCode.trim();
+  const normalized = normalizePersonaCode(rawCode);
+  return Array.from(new Set([trimmed, normalized].filter(Boolean)));
+}
+
 function readFavoriteCodes() {
   const raw = localStorage.getItem(FAVORITE_STORAGE_KEY);
   if (!raw) return [] as string[];
@@ -149,8 +159,14 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
       return;
     }
 
-    const code = normalizePersonaCode(importCode);
-    if (personas.some((persona) => normalizePersonaCode(persona.code) === code)) {
+    const codeCandidates = buildCodeCandidates(importCode);
+    if (!codeCandidates.length) {
+      setImportError("페르소나 코드를 입력해 주세요.");
+      return;
+    }
+
+    const compareTargets = new Set(personas.map((persona) => canonicalizePersonaCode(persona.code)));
+    if (codeCandidates.some((code) => compareTargets.has(canonicalizePersonaCode(code)))) {
       setImportError("이미 추가된 페르소나 코드입니다.");
       return;
     }
@@ -159,16 +175,32 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
 
     try {
       const isSelf = getPendingPersonaIsSelf();
-      if (isSelf) {
-        await saveNewPersona(code, "내 페르소나");
-      } else {
-        await saveSharedPersona(code, "공유 페르소나");
+      let savedCode = "";
+      let lastError: unknown = null;
+
+      for (const codeCandidate of codeCandidates) {
+        try {
+          if (isSelf) {
+            await saveNewPersona(codeCandidate, "내 페르소나");
+          } else {
+            await saveSharedPersona(codeCandidate, "공유 페르소나");
+          }
+          savedCode = codeCandidate;
+          break;
+        } catch (error) {
+          lastError = error;
+        }
       }
+
+      if (!savedCode) {
+        throw lastError;
+      }
+
       await loadPersonas();
       setImportCode("");
       setImportMessage("코드 페르소나가 내 목록에 저장되었습니다.");
       const pendingCode = getPendingPersonaCode();
-      if (pendingCode && normalizePersonaCode(pendingCode) === code) {
+      if (pendingCode && canonicalizePersonaCode(pendingCode) === canonicalizePersonaCode(savedCode)) {
         clearPendingPersonaCode();
       }
     } catch (error) {
@@ -250,10 +282,13 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
                 <input
                   value={importCode}
                   onChange={(event) => {
-                    setImportCode(event.target.value.toUpperCase());
+                    setImportCode(event.target.value);
                     setImportError("");
                   }}
                   placeholder="PRS-XXXX-XXXX"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="flex-1 h-[46px] rounded-[12px] border border-[#d9d9d9] bg-white px-4 font-['Noto_Sans_KR'] text-[13px] text-black placeholder:text-[#999] focus:outline-none focus:border-black"
                 />
                 <button

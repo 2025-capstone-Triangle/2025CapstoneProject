@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { HomePage } from "./features/home/pages/HomePage";
 import { DiagnosisStartPage } from "./features/diagnosis/pages/DiagnosisStartPage";
@@ -51,6 +51,7 @@ import {
 } from "./features/content/lib/contentApi";
 import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth, signOut } from "./lib/auth";
 import { ErrorToast } from "./shared/ui/ErrorToast";
+import { HamburgerMenu } from "./shared/layout/HamburgerMenu";
 
 type Page =
   | "home"
@@ -158,15 +159,40 @@ function getContentTypeByRatio(ratio: string): ContentType {
 
 const DIAGNOSIS_RESULT_STORAGE_KEY = "app.diagnosis.latest-result";
 const DIAGNOSIS_RESULT_PAGE_STORAGE_KEY = "app.diagnosis.last-page";
+const APP_TRANSIENT_STATE_STORAGE_KEY = "app.transient.state";
+const TRANSIENT_RESTORE_PAGES = new Set<Page>(["analyzing", "content-generating"]);
 const DEFAULT_DIAGNOSIS_PROGRESS: DiagnosisProgressState = {
   sessionId: "",
   progress: 0,
-  message: "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
+  message: "AI가 페르소나를 분석하고 있습니다...",
   step: "idle",
   queuePosition: null,
   connected: false,
   status: "idle",
 };
+
+interface AppTransientState {
+  page: Page;
+  history: Page[];
+  diagnosisProgress?: DiagnosisProgressState;
+  selectedRatio?: string;
+  selectedPersonaCode?: string;
+  selectedTrendReferenceId?: number | null;
+  isRegeneratingContent?: boolean;
+  autoSelectPersonaForContent?: boolean;
+}
+interface AppBootstrap {
+  page: Page;
+  history: Page[];
+  diagnosisCode: string;
+  diagnosisResult: PersonaResponse | null;
+  diagnosisProgress: DiagnosisProgressState;
+  selectedRatio: string;
+  selectedPersonaCode: string;
+  selectedTrendReferenceId: number | null;
+  isRegeneratingContent: boolean;
+  autoSelectPersonaForContent: boolean;
+}
 
 function clampProgress(value: number) {
   if (!Number.isFinite(value)) return 0;
@@ -223,8 +249,24 @@ function getStoredDiagnosisResult() {
   }
 }
 
-function getInitialAppBootstrap() {
+function isHistoryArray(value: unknown): value is Page[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function getStoredTransientState() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(APP_TRANSIENT_STATE_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AppTransientState;
+  } catch {
+    return null;
+  }
+}
+
+function getInitialAppBootstrap(): AppBootstrap {
   const storedDiagnosisResult = getStoredDiagnosisResult();
+  const storedTransientState = getStoredTransientState();
   const storedPage =
     typeof window !== "undefined"
       ? window.sessionStorage.getItem(DIAGNOSIS_RESULT_PAGE_STORAGE_KEY)
@@ -238,6 +280,31 @@ function getInitialAppBootstrap() {
       history: ["diagnosis-result"] as Page[],
       diagnosisCode: storedDiagnosisResult?.code ?? "",
       diagnosisResult: storedDiagnosisResult,
+      diagnosisProgress: DEFAULT_DIAGNOSIS_PROGRESS,
+      selectedRatio: "4:5",
+      selectedPersonaCode: "",
+      selectedTrendReferenceId: null,
+      isRegeneratingContent: false,
+      autoSelectPersonaForContent: false,
+    };
+  }
+
+  if (
+    storedTransientState &&
+    TRANSIENT_RESTORE_PAGES.has(storedTransientState.page) &&
+    isHistoryArray(storedTransientState.history)
+  ) {
+    return {
+      page: storedTransientState.page,
+      history: storedTransientState.history.length ? storedTransientState.history : [storedTransientState.page],
+      diagnosisCode: "",
+      diagnosisResult: null,
+      diagnosisProgress: storedTransientState.diagnosisProgress ?? DEFAULT_DIAGNOSIS_PROGRESS,
+      selectedRatio: storedTransientState.selectedRatio ?? "4:5",
+      selectedPersonaCode: storedTransientState.selectedPersonaCode ?? "",
+      selectedTrendReferenceId: storedTransientState.selectedTrendReferenceId ?? null,
+      isRegeneratingContent: Boolean(storedTransientState.isRegeneratingContent),
+      autoSelectPersonaForContent: Boolean(storedTransientState.autoSelectPersonaForContent),
     };
   }
 
@@ -247,6 +314,12 @@ function getInitialAppBootstrap() {
     history: [defaultPage as Page],
     diagnosisCode: "",
     diagnosisResult: null as PersonaResponse | null,
+    diagnosisProgress: DEFAULT_DIAGNOSIS_PROGRESS,
+    selectedRatio: "4:5",
+    selectedPersonaCode: "",
+    selectedTrendReferenceId: null,
+    isRegeneratingContent: false,
+    autoSelectPersonaForContent: false,
   };
 }
 
@@ -255,21 +328,42 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>(bootstrap.page);
   const [activeTab, setActiveTab] = useState<"home" | "persona" | "content">("home");
   const [pageHistory, setPageHistory] = useState<Page[]>(bootstrap.history);
-  const [selectedRatio, setSelectedRatio] = useState<string>("4:5");
-  const [isRegeneratingContent, setIsRegeneratingContent] = useState<boolean>(false);
-  const [autoSelectPersonaForContent, setAutoSelectPersonaForContent] = useState<boolean>(false);
+  const [selectedRatio, setSelectedRatio] = useState<string>(bootstrap.selectedRatio);
+  const [isRegeneratingContent, setIsRegeneratingContent] = useState<boolean>(bootstrap.isRegeneratingContent);
+  const [autoSelectPersonaForContent, setAutoSelectPersonaForContent] = useState<boolean>(bootstrap.autoSelectPersonaForContent);
   const [contentGenerationError, setContentGenerationError] = useState<string>("");
   const [latestGeneratedContent, setLatestGeneratedContent] = useState<ContentCreateResponse | null>(null);
-  const [selectedTrendReferenceId, setSelectedTrendReferenceId] = useState<number | null>(null);
+  const [selectedTrendReferenceId, setSelectedTrendReferenceId] = useState<number | null>(bootstrap.selectedTrendReferenceId);
   const [loginGateMessage, setLoginGateMessage] = useState<string | null>(null);
-  const [selectedPersonaCode, setSelectedPersonaCode] = useState<string>("");
+  const [selectedPersonaCode, setSelectedPersonaCode] = useState<string>(bootstrap.selectedPersonaCode);
   const [latestDiagnosisCode, setLatestDiagnosisCode] = useState<string>(bootstrap.diagnosisCode);
   const [latestDiagnosisResult, setLatestDiagnosisResult] = useState<PersonaResponse | null>(bootstrap.diagnosisResult);
-  const [diagnosisProgress, setDiagnosisProgress] = useState<DiagnosisProgressState>(DEFAULT_DIAGNOSIS_PROGRESS);
+  const [diagnosisProgress, setDiagnosisProgress] = useState<DiagnosisProgressState>(bootstrap.diagnosisProgress);
+  const [isGlobalMenuOpen, setIsGlobalMenuOpen] = useState(false);
+  const [showLeaveDiagnosisWarning, setShowLeaveDiagnosisWarning] = useState(false);
   const previousPageRef = useRef<Page>(currentPage);
+  const currentPageRef = useRef<Page>(currentPage);
+  const diagnosisRunActiveRef = useRef(false);
+  const contentGenerationRunActiveRef = useRef(false);
   const isAdminPage = currentPage === "admin";
 
   const loggedIn = isAuthenticated();
+
+  useEffect(() => {
+    if (isAdminPage) {
+      setIsGlobalMenuOpen(false);
+    }
+  }, [isAdminPage]);
+
+  useEffect(() => {
+    if (currentPage !== "analyzing") {
+      setShowLeaveDiagnosisWarning(false);
+    }
+  }, [currentPage]);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -294,6 +388,156 @@ export default function App() {
 
     window.sessionStorage.removeItem(DIAGNOSIS_RESULT_PAGE_STORAGE_KEY);
   }, [currentPage, latestDiagnosisResult]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (currentPage === "analyzing" || currentPage === "content-generating") {
+      const transientState: AppTransientState = {
+        page: currentPage,
+        history: pageHistory,
+        diagnosisProgress,
+        selectedRatio,
+        selectedPersonaCode,
+        selectedTrendReferenceId,
+        isRegeneratingContent,
+        autoSelectPersonaForContent,
+      };
+      window.sessionStorage.setItem(APP_TRANSIENT_STATE_STORAGE_KEY, JSON.stringify(transientState));
+      return;
+    }
+
+    window.sessionStorage.removeItem(APP_TRANSIENT_STATE_STORAGE_KEY);
+  }, [
+    currentPage,
+    pageHistory,
+    diagnosisProgress,
+    selectedRatio,
+    selectedPersonaCode,
+    selectedTrendReferenceId,
+    isRegeneratingContent,
+    autoSelectPersonaForContent,
+  ]);
+
+  useEffect(() => {
+    const handleOpenMenu = () => setIsGlobalMenuOpen(true);
+    const handleTopbarHomeClickEvent = () => {
+      if (
+        currentPage === "analyzing" &&
+        diagnosisProgress.status !== "completed" &&
+        diagnosisProgress.status !== "error"
+      ) {
+        setShowLeaveDiagnosisWarning(true);
+        return;
+      }
+      handleNavigateToHome();
+    };
+
+    window.addEventListener("app:menu:open", handleOpenMenu);
+    window.addEventListener("app:topbar-home-click", handleTopbarHomeClickEvent);
+    return () => {
+      window.removeEventListener("app:menu:open", handleOpenMenu);
+      window.removeEventListener("app:topbar-home-click", handleTopbarHomeClickEvent);
+    };
+  }, [currentPage, diagnosisProgress.status]);
+
+  useEffect(() => {
+    if (currentPage !== "analyzing") return;
+    if (!diagnosisProgress.sessionId) return;
+    if (diagnosisProgress.status === "completed" || diagnosisProgress.status === "error") return;
+    if (diagnosisRunActiveRef.current) return;
+
+    const closeProgressStream = openDiagnosisProgressStream({
+      sessionId: diagnosisProgress.sessionId,
+      onEvent: (event) => {
+        const payload = event.data;
+        const eventName = event.event.toLowerCase();
+        const rawStep = String(payload?.step ?? "").toLowerCase();
+        const rawMessage = String(payload?.message ?? "").toLowerCase();
+        const rawData = event.rawData.trim().toLowerCase();
+        const isConnectEvent =
+          eventName === "connect" ||
+          rawStep === "connect" ||
+          rawMessage === "connect" ||
+          rawData === "connect";
+        const isQueuedEvent =
+          eventName === "queued" || rawStep === "queued" || rawMessage === "queued";
+
+        if (isConnectEvent) {
+          setDiagnosisProgress((prev) => ({
+            ...prev,
+            connected: true,
+            status: prev.status === "queued" ? "queued" : "connected",
+          }));
+          return;
+        }
+
+        if (isQueuedEvent) {
+          const queuePosition = normalizeQueuePosition(
+            payload?.position ?? payload?.queuePosition ?? payload?.rank,
+          );
+          const queueMessage = payload?.message?.trim()
+            ? payload.message.trim()
+            : queuePosition
+              ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 분석이 시작됩니다.`
+              : "진단 요청이 접수되어 대기열에 등록되었습니다.";
+          setDiagnosisProgress((prev) => ({
+            ...prev,
+            message: queueMessage,
+            step: "queued",
+            queuePosition,
+            connected: true,
+            status: "queued",
+          }));
+          return;
+        }
+
+        const step = String(payload?.step ?? event.event ?? "running");
+        const normalizedProgress = normalizeServerProgress(payload?.progress);
+        const completed = step.toLowerCase().includes("complete");
+        setDiagnosisProgress((prev) => ({
+          ...prev,
+          progress:
+            normalizedProgress !== null
+              ? clampProgress(normalizedProgress)
+              : completed
+                ? 100
+                : prev.progress,
+          message: inferMessage(payload, prev.message || "진행상황을 반영하고 있습니다..."),
+          step,
+          queuePosition: null,
+          connected: true,
+          status: completed ? "completed" : "running",
+        }));
+      },
+      onError: (error) => {
+        setDiagnosisProgress((prev) => ({
+          ...prev,
+          status: "error",
+          message: error.message || "진단 진행 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.",
+          step: "stream-error",
+          connected: false,
+        }));
+      },
+    });
+
+    return closeProgressStream;
+  }, [currentPage, diagnosisProgress.sessionId, diagnosisProgress.status]);
+
+  useEffect(() => {
+    if (currentPage !== "content-generating") return;
+    if (contentGenerationRunActiveRef.current) return;
+    if (latestGeneratedContent || contentGenerationError) return;
+    if (!selectedPersonaCode) return;
+
+    void runContentGeneration(selectedRatio, selectedPersonaCode);
+  }, [
+    currentPage,
+    latestGeneratedContent,
+    contentGenerationError,
+    selectedPersonaCode,
+    selectedRatio,
+  ]);
 
   const canAccessPage = (page: Page) => {
     if (loggedIn) return true;
@@ -341,13 +585,31 @@ export default function App() {
     handleNavigate("content-select-persona");
   };
 
+  const isDiagnosisLoading =
+    currentPage === "analyzing" &&
+    diagnosisProgress.status !== "completed" &&
+    diagnosisProgress.status !== "error";
+
   const handleNavigateToHome = () => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(APP_TRANSIENT_STATE_STORAGE_KEY);
+    }
+    setIsGlobalMenuOpen(false);
+    setShowLeaveDiagnosisWarning(false);
     setPageHistory(["home"]);
     setCurrentPage("home");
     setActiveTab("home");
     setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
     setAutoSelectPersonaForContent(false);
     setSelectedTrendReferenceId(null);
+  };
+
+  const handleTopbarHomeClick = () => {
+    if (isDiagnosisLoading) {
+      setShowLeaveDiagnosisWarning(true);
+      return;
+    }
+    handleNavigateToHome();
   };
 
   useEffect(() => {
@@ -360,6 +622,9 @@ export default function App() {
       clearStagedVoiceRecording();
       clearPreferenceTestResult();
       clearStagedDiagnosisPreferencePayload();
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(APP_TRANSIENT_STATE_STORAGE_KEY);
+      }
       setLatestDiagnosisCode("");
       setLatestDiagnosisResult(null);
       setDiagnosisProgress(DEFAULT_DIAGNOSIS_PROGRESS);
@@ -488,6 +753,18 @@ export default function App() {
     }
   };
 
+  const handleGlobalMenuNavigate = (page: string) => {
+    const targetPage = page as Page;
+    if (page === "home") {
+      setActiveTab("home");
+    } else if (page.startsWith("persona")) {
+      setActiveTab("persona");
+    } else if (page.startsWith("content") || page === "saved-templates") {
+      setActiveTab("content");
+    }
+    handleNavigate(targetPage);
+  };
+
   const handleSignupComplete = () => {
     setLoginGateMessage(null);
     if (getPendingPersonaCode()) {
@@ -524,6 +801,7 @@ export default function App() {
   };
 
   const runPersonaDiagnosis = async () => {
+    diagnosisRunActiveRef.current = true;
     setLatestDiagnosisResult(null);
     setLatestDiagnosisCode("");
     let closeProgressStream: (() => void) | null = null;
@@ -577,6 +855,7 @@ export default function App() {
       closeProgressStream = openDiagnosisProgressStream({
         sessionId,
         onEvent: (event) => {
+          if (currentPageRef.current !== "analyzing") return;
           const payload = event.data;
           const eventName = event.event.toLowerCase();
           const rawStep = String(payload?.step ?? "").toLowerCase();
@@ -677,6 +956,7 @@ export default function App() {
           }));
         },
         onError: (error) => {
+          if (currentPageRef.current !== "analyzing") return;
           if (!connectAcked) {
             rejectConnect?.(error);
             return;
@@ -713,6 +993,10 @@ export default function App() {
         callbackUrl: sessionId,
       });
 
+      if (currentPageRef.current !== "analyzing") {
+        return false;
+      }
+
       if (result?.code) {
         setLatestDiagnosisResult(result);
         setLatestDiagnosisCode(result.code);
@@ -730,6 +1014,9 @@ export default function App() {
       return false;
     } catch (error) {
       console.error("[persona.diagnosis]", error);
+      if (currentPageRef.current !== "analyzing") {
+        return false;
+      }
       setLatestDiagnosisCode("");
       setLatestDiagnosisResult(null);
       setDiagnosisProgress((prev) => ({
@@ -740,6 +1027,7 @@ export default function App() {
       }));
       return false;
     } finally {
+      diagnosisRunActiveRef.current = false;
       if (connectTimeout !== null) {
         window.clearTimeout(connectTimeout);
       }
@@ -755,17 +1043,26 @@ export default function App() {
 
     setContentGenerationError("");
     setLatestGeneratedContent(null);
+    contentGenerationRunActiveRef.current = true;
 
     try {
       const result = await createContent({
         code: personaCode,
         type: getContentTypeByRatio(ratio),
       });
+      if (currentPageRef.current !== "content-generating") {
+        return;
+      }
       setLatestGeneratedContent(result);
       handleNavigate("content-result");
     } catch (error) {
+      if (currentPageRef.current !== "content-generating") {
+        return;
+      }
       const message = error instanceof Error ? error.message : "肄섑뀗痢??앹꽦???ㅽ뙣?덉뒿?덈떎.";
       setContentGenerationError(message);
+    } finally {
+      contentGenerationRunActiveRef.current = false;
     }
   };
 
@@ -809,7 +1106,6 @@ export default function App() {
       {currentPage === "home" && (
         <HomePage
           onNavigate={handleNavigate}
-          onTabChange={handleTabChange}
           onSelectTrendingReference={handleStartTrendingContentFlow}
         />
       )}
@@ -818,7 +1114,7 @@ export default function App() {
         <DiagnosisStartPage
           onStart={() => handleNavigate("image-input")}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -826,7 +1122,7 @@ export default function App() {
         <ImageInputPage
           onNext={() => handleNavigate("voice-input")}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -834,7 +1130,7 @@ export default function App() {
         <VoiceInputPage
           onNext={() => handleNavigate("preference-test")}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -842,7 +1138,7 @@ export default function App() {
         <PreferenceTestPage
           onNext={() => handleNavigate("review-inputs")}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -851,10 +1147,11 @@ export default function App() {
           onConfirm={async () => {
             handleNavigateWithoutHistory("analyzing");
             const isSuccess = await runPersonaDiagnosis();
+            if (currentPageRef.current !== "analyzing") return;
             handleNavigateWithoutHistory(isSuccess ? "diagnosis-result" : "review-inputs");
           }}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -865,7 +1162,7 @@ export default function App() {
           status={diagnosisProgress.status}
           queuePosition={diagnosisProgress.queuePosition}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -875,7 +1172,7 @@ export default function App() {
           onSave={handleDiagnosisSave}
           onRecreate={() => handleNavigate("diagnosis-start")}
           onBack={handleBackSkipLoading}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           onNavigateToSignup={() => handleNavigate("signup")}
           onNavigateToLogin={() => handleNavigate("login")}
         />
@@ -885,7 +1182,7 @@ export default function App() {
         <SaveResultCompletePage
           onGoToPersona={() => handleNavigate("persona-list")}
           onCreateContent={() => handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: true })}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           onBack={handleBack}
         />
       )}
@@ -899,7 +1196,7 @@ export default function App() {
           onCreateNew={() => handleNavigate("diagnosis-start")}
           onTabChange={handleTabChange}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -910,7 +1207,7 @@ export default function App() {
           onCreateContent={() => handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: true })}
           onBack={handleBack}
           onTabChange={handleTabChange}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           onViewAllContents={() => handleNavigate("persona-saved-contents")}
         />
       )}
@@ -920,20 +1217,20 @@ export default function App() {
           personaCode={selectedPersonaCode}
           onBack={handleBack}
           onTabChange={handleTabChange}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           onCreateContent={() => handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: true })}
         />
       )}
 
       {currentPage === "persona-content-gallery" && (
-        <PersonaContentGalleryPage onBack={handleBack} onHome={handleNavigateToHome} />
+        <PersonaContentGalleryPage onBack={handleBack} onHome={handleTopbarHomeClick} />
       )}
 
       {currentPage === "content-explore" && (
         <ContentExplorePage
           onBack={handleBack}
           onNavigate={handleNavigate}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           onSelectReference={handleStartTrendingContentFlow}
         />
       )}
@@ -975,7 +1272,7 @@ export default function App() {
             }
           }}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           skipPersonaSelection={isRegeneratingContent || autoSelectPersonaForContent}
         />
       )}
@@ -993,7 +1290,7 @@ export default function App() {
             void runContentGeneration(selectedRatio, personaCode);
           }}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -1002,7 +1299,7 @@ export default function App() {
           errorMessage={contentGenerationError}
           onRetry={() => void runContentGeneration(selectedRatio, selectedPersonaCode)}
           onBack={handleBack}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
         />
       )}
 
@@ -1019,7 +1316,7 @@ export default function App() {
             handleNavigate("content-aspect-ratio", { autoSelectPersonaForContent: false });
           }}
           onBack={handleBackSkipLoading}
-          onHome={handleNavigateToHome}
+          onHome={handleTopbarHomeClick}
           onViewPersona={() => handleNavigate(selectedPersonaCode ? "persona-detail" : "persona-list")}
           onViewContentList={() =>
             handleNavigate(selectedPersonaCode ? "persona-saved-contents" : "persona-list")
@@ -1034,6 +1331,48 @@ export default function App() {
       {currentPage === "settings" && <SettingsPage onBack={handleBack} onNavigate={handleNavigate} />}
 
       {currentPage === "help" && <HelpPage onBack={handleBack} onNavigate={handleNavigate} />}
+
+      {!isAdminPage && (
+        <HamburgerMenu
+          isOpen={isGlobalMenuOpen}
+          onClose={() => setIsGlobalMenuOpen(false)}
+          onNavigate={handleGlobalMenuNavigate}
+          currentPage={currentPage}
+        />
+      )}
+
+      {showLeaveDiagnosisWarning && (
+        <div className="fixed inset-0 z-50 bg-black/45 flex items-end justify-center p-5">
+          <div className="w-full max-w-[360px] rounded-[24px] bg-white p-6 shadow-2xl border border-[#ececec]">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-9 h-9 rounded-full bg-[#fff3f5] flex items-center justify-center">
+                <Lock className="w-5 h-5 text-[#EF466F]" />
+              </div>
+              <p className="font-['NEXON_Football_Gothic'] text-[18px] text-black">진단 진행 중</p>
+            </div>
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666] leading-[1.6] mb-5">
+              지금 메인으로 이동하면 현재 진단 결과를 이어서 확인할 수 없습니다. 홈으로 이동할까요?
+            </p>
+            <div className="space-y-2.5">
+              <button
+                onClick={() => {
+                  setShowLeaveDiagnosisWarning(false);
+                  handleNavigateToHome();
+                }}
+                className="w-full h-[48px] rounded-[14px] bg-black text-white font-['Noto_Sans_KR'] font-semibold text-[14px]"
+              >
+                확인
+              </button>
+              <button
+                onClick={() => setShowLeaveDiagnosisWarning(false)}
+                className="w-full h-[44px] rounded-[12px] bg-[#f7f7f7] text-[#555] font-['Noto_Sans_KR'] text-[13px]"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loginGateMessage && (
         <div className="fixed inset-0 z-50 bg-black/45 flex items-end justify-center p-5">
@@ -1080,4 +1419,5 @@ export default function App() {
     </div>
   );
 }
+
 

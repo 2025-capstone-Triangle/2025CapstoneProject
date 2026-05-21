@@ -1,6 +1,5 @@
 ﻿import { useEffect, useState } from "react";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
-import { HamburgerMenu } from "../../../shared/layout/HamburgerMenu";
 import { getNoticeList, getPinnedNoticeList, type Notice } from "../../notice/lib/noticeApi";
 import {
   getReferenceList,
@@ -16,12 +15,10 @@ import { NoticeBottomSheet } from "../components/NoticeBottomSheet";
 
 interface HomePageProps {
   onNavigate?: (page: string) => void;
-  onTabChange?: (tab: "home" | "persona" | "content") => void;
   onSelectTrendingReference?: (id: number) => void;
 }
 
-export function HomePage({ onNavigate, onTabChange, onSelectTrendingReference }: HomePageProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export function HomePage({ onNavigate, onSelectTrendingReference }: HomePageProps) {
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [noticeLoading, setNoticeLoading] = useState(false);
   const [noticeError, setNoticeError] = useState("");
@@ -103,7 +100,6 @@ export function HomePage({ onNavigate, onTabChange, onSelectTrendingReference }:
       <div className="relative mx-auto flex h-full w-full max-w-[1320px] flex-1 flex-col">
         <DefaultTopBar
           title="Person:a"
-          onMenuClick={() => setIsMenuOpen(true)}
           onNotificationClick={openNotice}
           showNotificationBadge={hasNoticeBadge}
         />
@@ -137,17 +133,6 @@ export function HomePage({ onNavigate, onTabChange, onSelectTrendingReference }:
         </div>
 
       </div>
-
-      <HamburgerMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        onNavigate={(page) => {
-          if (page.startsWith("persona")) onTabChange?.("persona");
-          if (page.startsWith("content") || page === "saved-templates") onTabChange?.("content");
-          onNavigate?.(page);
-        }}
-        currentPage="home"
-      />
 
       <NoticeBottomSheet
         open={noticeOpen}

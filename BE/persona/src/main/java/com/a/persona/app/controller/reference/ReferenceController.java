@@ -5,9 +5,10 @@ import com.a.persona.app.controller.reference.payload.ReferenceStatResponse;
 import com.a.persona.app.controller.reference.payload.TrendContentRequest;
 import com.a.persona.app.controller.reference.payload.TrendContentResponse;
 import com.a.persona.app.model.reference.dto.ReferenceStatDto;
-import com.a.persona.app.model.reference.dto.TrendContentDto;
+import com.a.persona.app.model.reference.service.ReferenceCreationService;
 import com.a.persona.app.model.reference.service.ReferenceService;
 import com.a.persona.infra.response.CommonApiResponse;
+import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Tag(name="레퍼런스", description = "요즘 뜨는 컨텐츠 관련 API입니다.")
 @RestController
@@ -30,6 +32,7 @@ import java.util.List;
 public class ReferenceController {
 
     private final ReferenceService referenceService;
+    private final ReferenceCreationService referenceCreationService;
 
     @GetMapping
     @Operation(summary = "레퍼런스 조회", description = "요즘 뜨는 컨텐츠 전체를 최신순으로 정렬하여 조회합니다. <br>" +
@@ -67,14 +70,23 @@ public class ReferenceController {
     @PostMapping
     @Operation(summary = "레퍼런스를 바탕으로 컨텐츠 생성", description = "요즘 뜨는 컨텐츠를 바탕으로 컨텐츠를 생성합니다.<br>" +
             "persona 코드와, reference id를 입력하면 해당하는 레퍼런스와 페르소나를 참고하여 생성합니다.")
-    public ResponseEntity<CommonApiResponse<TrendContentResponse>> createTrendContent(
+    public CompletableFuture<ResponseEntity<CommonApiResponse<TrendContentResponse>>> createTrendContent(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody TrendContentRequest request
-            ){
-
-             TrendContentDto dto = referenceService.createContent(userDetails.getUsername(), request.getCode(), request.getReferenceId(), request.getType());
-
-        return ResponseEntity.ok(CommonApiResponse.success(TrendContentResponse.fromDto(dto)));
+    ) {
+        return referenceCreationService.createTrendContent(
+                        userDetails.getUsername(),
+                        request.getCode(),
+                        request.getReferenceId(),
+                        request.getType(),
+                        request.getSessionId()
+                )
+                .thenApply(dto -> ResponseEntity.ok(CommonApiResponse.success(TrendContentResponse.fromDto(dto))))
+                .exceptionally(e -> {
+                    log.error("트렌드 컨텐츠 생성 실패: {}", e.getMessage());
+                    return ResponseEntity.<CommonApiResponse<TrendContentResponse>>internalServerError()
+                            .body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+                });
     }
 
 

@@ -17,4 +17,6 @@ public class TrendContentRequest {
     @NotNull
     ContentType type;
 
+    String sessionId;
+
 }

@@ -14,7 +14,6 @@ import com.a.persona.app.model.reference.dto.TrendContentDto;
 import com.a.persona.app.model.reference.repo.ReferenceLikeRepository;
 import com.a.persona.app.model.reference.repo.ReferenceRepository;
 import com.a.persona.infra.error.exceptions.NotFoundException;
-import com.a.persona.infra.feign.AiServerApi;
 import com.a.persona.infra.feign.dto.AiTrendContentRequest;
 import com.a.persona.infra.feign.dto.ContentResponse;
 import com.a.persona.infra.feign.dto.LikeAnswerData;
@@ -37,7 +36,6 @@ public class ReferenceService {
     private final MemberRepository memberRepository;
     private final ReferenceRepository referenceRepository;
     private final PersonaRepository personaRepository;
-    private final AiServerApi aiServerApi;
     private final ContentRepository contentRepository;
 
     /**
@@ -82,13 +80,12 @@ public class ReferenceService {
         }
     }
 
-    public TrendContentDto createContent(String username, String code, Long referenceId, ContentType contentType) {
+    public AiTrendContentRequest buildAiTrendRequest(String username, String code, Long referenceId, ContentType contentType) {
+        Member member = memberRepository.findByUsername(username).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member, code, true).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+        Reference reference = referenceRepository.findById(referenceId).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
 
-        Member member = memberRepository.findByUsername(username).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member, code, true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        Reference reference = referenceRepository.findById(referenceId).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-
-        AiTrendContentRequest request = AiTrendContentRequest.builder()
+        return AiTrendContentRequest.builder()
                 .trend_prompt(reference.getPrompt())
                 .report(ReportData.builder()
                         .name(persona.getName())
@@ -102,8 +99,12 @@ public class ReferenceService {
                 .user_image_url(persona.getProfile())
                 .crop_type(contentType.value())
                 .build();
+    }
 
-        ContentResponse response = aiServerApi.createTrendContent(request);
+    public TrendContentDto finalizeTrendContent(String username, String code, Long referenceId, ContentResponse response, ContentType contentType) {
+        Member member = memberRepository.findByUsername(username).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member, code, true).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+        Reference reference = referenceRepository.findById(referenceId).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
 
         Content content = Content.builder()
                 .persona(persona)
@@ -115,6 +116,5 @@ public class ReferenceService {
         contentRepository.save(content);
 
         return TrendContentDto.fromEntity(content);
-
     }
 }

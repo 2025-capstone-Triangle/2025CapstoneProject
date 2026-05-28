@@ -14,4 +14,6 @@ public class ContentRequest {
     @NotNull
     ContentType type;
 
+    String sessionId;
+
 }

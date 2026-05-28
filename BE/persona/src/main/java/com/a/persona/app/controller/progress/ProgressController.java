@@ -38,7 +38,7 @@ public class ProgressController {
         return ResponseEntity.ok(CommonApiResponse.noContent());
     }
 
-    @Operation(summary = "[FE 서버용] SSE 연결", description = "fe에서 페르소나 진단 경과를 공유받기 위해 SSE를 연결하는 API 입니다.<br>" +
+    @Operation(summary = "[FE 서버용] SSE 연결", description = "fe에서 대기열과 페르소나 진단 경과를 공유받기 위해 SSE를 연결하는 API 입니다.<br>" +
             "sessionId는 직접 생성하여 보내주세요. 단 현재 연결되어 있는 SSE의 sessionId와는 겹치지 않도록 생성해주세요.<br>" +
             "페르소나 진단 요청을 보내기 전, connect라는 이벤트가 수신되었는지 확인하고 진단 요청을 보낼 수 있도록 조정해주세요.")
     @GetMapping(value = "/{sessionId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

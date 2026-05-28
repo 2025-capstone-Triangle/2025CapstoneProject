@@ -6,8 +6,10 @@ import com.a.persona.app.controller.content.payload.ContentResponse;
 import com.a.persona.app.controller.content.payload.ContentStatResponse;
 import com.a.persona.app.model.content.dto.ContentDto;
 import com.a.persona.app.model.content.dto.ContentStatDto;
+import com.a.persona.app.model.content.service.ContentCreationService;
 import com.a.persona.app.model.content.service.ContentService;
 import com.a.persona.infra.response.CommonApiResponse;
+import com.a.persona.infra.response.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Tag(name="추가 컨텐츠 생성", description = "추가 컨텐츠 생성 관련 API입니다.")
 @RestController
@@ -30,6 +33,7 @@ import java.util.List;
 public class ContentController {
 
     private final ContentService contentService;
+    private final ContentCreationService contentCreationService;
 
     // content 조회
     @GetMapping("")
@@ -50,14 +54,21 @@ public class ContentController {
     @PostMapping()
     @Operation(summary = "content 생성", description = "현재 로그인한 사용자의 페르소나를 기반으로 컨텐츠를 생성합니다." +
             "Type(SQUARE(1:1), FEED(4:5), STORY(9:16))")
-    public ResponseEntity<CommonApiResponse<ContentResponse>> createContent(
+    public CompletableFuture<ResponseEntity<CommonApiResponse<ContentResponse>>> createContent(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ContentRequest contentRequest
     ) {
-
-        ContentDto contentDto = contentService.createContent(userDetails.getUsername(), contentRequest);
-        ContentResponse response = ContentResponse.fromDto(contentDto);
-        return ResponseEntity.ok(CommonApiResponse.success(response));
+        return contentCreationService.createContent(
+                        userDetails.getUsername(),
+                        contentRequest,
+                        contentRequest.getSessionId()
+                )
+                .thenApply(dto -> ResponseEntity.ok(CommonApiResponse.success(ContentResponse.fromDto(dto))))
+                .exceptionally(e -> {
+                    log.error("컨텐츠 생성 실패: {}", e.getMessage());
+                    return ResponseEntity.<CommonApiResponse<ContentResponse>>internalServerError()
+                            .body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+                });
     }
 
 

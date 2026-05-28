@@ -17,7 +17,6 @@ import com.a.persona.app.model.persona.domain.Persona;
 import com.a.persona.app.model.persona.repo.PersonaRepository;
 import com.a.persona.app.model.reference.repo.ReferenceRepository;
 import com.a.persona.infra.error.exceptions.NotFoundException;
-import com.a.persona.infra.feign.AiServerApi;
 import com.a.persona.infra.feign.dto.AiContentRequest;
 import com.a.persona.infra.feign.dto.ContentResponse;
 import com.a.persona.infra.feign.dto.LikeAnswerData;
@@ -42,7 +41,6 @@ public class ContentService {
     private final ContentLogService contentLogService;
     private final ReferenceRepository referenceRepository;
     private final ContentLikeRepository contentLikeRepository;
-    private final AiServerApi aiServerApi;
 
     /**
      * 페르소나 코드를 통해 해당 페르소나의 모든 생성된 컨텐츠를 조회합니다.
@@ -63,12 +61,11 @@ public class ContentService {
         contentRepository.save(content);
     }
 
-    public ContentDto createContent(String username, ContentRequest contentRequest) {
-        Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
-        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member,contentRequest.getCode(),true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
+    public AiContentRequest buildAiRequest(String username, ContentRequest contentRequest) {
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member, contentRequest.getCode(), true).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
 
-
-        AiContentRequest request = AiContentRequest.builder()
+        return AiContentRequest.builder()
                 .report(ReportData.builder()
                         .name(persona.getName())
                         .color_palette(persona.getColors().stream().toList())
@@ -81,20 +78,21 @@ public class ContentService {
                 .user_image_url(persona.getProfile())
                 .crop_type(contentRequest.getType().value())
                 .build();
+    }
 
-        ContentResponse response = aiServerApi.createContent(request);
-        
+    public ContentDto finalizeContent(String username, String code, ContentResponse response, ContentType type) {
+        Member member = memberRepository.findByUsernameAndIsActive(username, true).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+        Persona persona = personaRepository.findPersonaByMemberAndCodeAndIsActive(member, code, true).orElseThrow(() -> new NotFoundException(ResponseCode.NOT_FOUND));
+
         Content content = Content.builder()
                 .persona(persona)
                 .reference(null)
                 .img(response.getGenerated_image_url())
-                .type(contentRequest.getType())
+                .type(type)
                 .build();
 
         contentRepository.save(content);
-
-        // 생성 로그
-        contentLogService.createContentLog(member,null);
+        contentLogService.createContentLog(member, null);
 
         return ContentDto.fromEntity(content);
     }

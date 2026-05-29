@@ -64,7 +64,7 @@
       open: true,
       proxy: {
         "/api": {
-          target: "http://13.209.17.191:8080",
+          target: "http://54.180.115.6:8080",
           changeOrigin: true,
           secure: false,
         },

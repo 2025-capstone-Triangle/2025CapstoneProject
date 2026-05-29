@@ -283,7 +283,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
                     setImportCode(event.target.value);
                     setImportError("");
                   }}
-                  placeholder="PRS-XXXX-XXXX"
+                  placeholder="예: TyF827yzfV"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}

@@ -242,7 +242,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
       <DefaultTopBar title="My Persona" onTitleClick={onHome} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="page-scroll">
-      <div className="mx-auto w-full max-w-[980px] px-4 pb-28 pt-2 sm:px-8 md:px-10 md:pb-8">
+      <div className="mx-auto w-full max-w-[980px] px-4 pb-28 pt-8 sm:px-8 md:px-10 md:pb-8">
         <div className="mb-7">
           <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[clamp(24px,2.6vw,32px)] font-bold leading-tight text-black">
             저장된 페르소나

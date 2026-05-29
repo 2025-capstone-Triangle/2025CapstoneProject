@@ -49,7 +49,7 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
     <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
-      <div className="mx-auto w-full max-w-[520px] px-6 pb-8 pt-2 sm:px-8">
+      <div className="mx-auto w-full max-w-[520px] px-6 pb-8 pt-8 sm:px-8">
         <div className="text-center mb-14">
           <h1 className="font-['Abhaya_Libre_ExtraBold'] text-[48px] text-black mb-3">Person:a</h1>
           <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">나만의 페르소나를 만들어 보세요</p>

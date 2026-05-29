@@ -43,7 +43,7 @@ export function ForgotPasswordPage({ onBack, onNavigate }: ForgotPasswordPagePro
     <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
-      <div className="mx-auto w-full max-w-[520px] px-6 pb-12 pt-4 sm:px-8">
+      <div className="mx-auto w-full max-w-[520px] px-6 pb-12 pt-10 sm:px-8">
         {!success ? (
           <>
             <div className="mb-12 text-center">

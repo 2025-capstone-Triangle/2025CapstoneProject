@@ -77,7 +77,7 @@ export function HelpPage({ onBack, onNavigate }: HelpPageProps) {
     <div className="flex min-h-[100dvh] w-full flex-col bg-gradient-to-b from-[#fafafa] to-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
-      <div className="mx-auto mb-3 w-full max-w-[1120px] px-4 sm:px-8 md:px-10">
+      <div className="mx-auto mb-3 w-full max-w-[1120px] px-4 pt-3 sm:px-8 md:px-10">
         <h1 className="font-['NEXON_Football_Gothic'] text-[clamp(18px,2.2vw,22px)] font-bold text-black">고객지원</h1>
       </div>
 

@@ -165,7 +165,7 @@ export function SavedTemplatesPage({ onBack, onNavigate, onHome }: SavedTemplate
     <div className="flex min-h-[100dvh] w-full flex-col bg-gradient-to-b from-[#fafafa] to-white md:h-full md:min-h-0">
       <DefaultTopBar onTitleClick={onHome ?? (() => onNavigate?.("home"))} showNotification={false} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
-      <div className="mx-auto mb-3 flex w-full max-w-[1120px] items-end justify-between px-4 sm:px-8 md:px-10">
+      <div className="mx-auto mb-3 flex w-full max-w-[1120px] items-end justify-between px-4 pt-3 sm:px-8 md:px-10">
         <h1 className="font-['NEXON_Football_Gothic'] text-[clamp(18px,2.2vw,22px)] font-bold text-black">저장한 템플릿</h1>
         <p className="font-['Noto_Sans_KR'] text-[12px] text-gray-500">{savedTemplates.length}개</p>
       </div>

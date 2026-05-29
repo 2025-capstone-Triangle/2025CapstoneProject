@@ -130,7 +130,7 @@ export function PersonaContentGalleryPage({ onBack, onHome }: PersonaContentGall
       <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       {/* Header */}
-      <div className="px-6 pt-6 pb-4">
+      <div className="px-6 pt-10 pb-4">
         <h1 className="font-['NEXON_Football_Gothic'] font-bold text-[24px] text-black mb-2">
           저장된 콘텐츠
         </h1>

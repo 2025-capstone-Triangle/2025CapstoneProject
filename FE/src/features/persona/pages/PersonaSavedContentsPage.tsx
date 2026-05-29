@@ -151,7 +151,7 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
       <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="page-scroll">
-      <div className="mx-auto w-full max-w-[1120px] px-4 pb-[92px] pt-2 sm:px-8 md:px-10 md:pb-8">
+      <div className="mx-auto w-full max-w-[1120px] px-4 pb-[92px] pt-8 sm:px-8 md:px-10 md:pb-8">
         <div className="mb-5">
           <h2 className="mb-1 font-['NEXON_Football_Gothic'] text-[clamp(24px,2.7vw,30px)] font-bold text-black">저장된 콘텐츠</h2>
           <p className="font-['Noto_Sans_KR'] text-[14px] text-[#6b6b6b]">

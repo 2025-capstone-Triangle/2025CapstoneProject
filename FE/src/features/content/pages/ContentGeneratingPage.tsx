@@ -38,8 +38,10 @@ export function ContentGeneratingPage({
 
   const isQueued = status === "queued";
 
+  const isActive = !errorMessage && !isQueued && status !== "completed";
+
   useEffect(() => {
-    if (errorMessage || typeof progress === "number") return;
+    if (!isActive) return;
 
     const stepInterval = setInterval(() => {
       setStep((prev) => (prev + 1) % steps.length);
@@ -47,7 +49,7 @@ export function ContentGeneratingPage({
 
     const progressInterval = setInterval(() => {
       setSimulatedProgress((prev) => {
-        if (prev >= 92) return 92;
+        if (prev >= 99) return 99;
         return prev + 1;
       });
     }, 420);
@@ -56,7 +58,7 @@ export function ContentGeneratingPage({
       clearInterval(stepInterval);
       clearInterval(progressInterval);
     };
-  }, [errorMessage, progress, steps.length]);
+  }, [isActive, steps.length]);
 
   useEffect(() => {
     if (!errorMessage) return;
@@ -64,7 +66,9 @@ export function ContentGeneratingPage({
     setStep(0);
   }, [errorMessage]);
 
-  const displayProgress = typeof progress === "number" ? clampProgress(progress) : simulatedProgress;
+  // SSE 실제값이 있으면 그걸 쓰고, 없으면 시뮬레이션값 사용 (둘 중 큰 값)
+  const sseProgress = typeof progress === "number" ? clampProgress(progress) : 0;
+  const displayProgress = status === "completed" ? 100 : Math.max(sseProgress, simulatedProgress);
   const displayMessage = errorMessage ? "생성 요청 중 문제가 발생했습니다." : (statusMessage || steps[step]);
 
   return (

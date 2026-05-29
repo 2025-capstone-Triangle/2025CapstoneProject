@@ -489,8 +489,6 @@ export default function App() {
         setContentProgress((prev) => {
           if (prev.sessionId !== sessionId) return prev;
           let nextProgress = serverProgress !== null ? serverProgress : prev.progress;
-          if (eventName === "queued") nextProgress = Math.max(nextProgress, 18);
-          else if (eventName === "processing") nextProgress = Math.max(nextProgress, 42);
           if (isCompleted) nextProgress = 100;
 
           let message = prev.message;
@@ -1276,8 +1274,6 @@ export default function App() {
         setContentProgress((prev) => {
           if (prev.sessionId !== sessionId) return prev;
           let nextProgress = serverProgress !== null ? serverProgress : prev.progress;
-          if (eventName === "queued") nextProgress = Math.max(nextProgress, 18);
-          else if (eventName === "processing") nextProgress = Math.max(nextProgress, 42);
           if (isCompleted) nextProgress = 100;
 
           let message = prev.message;

@@ -48,7 +48,7 @@ class BaseContentGenerator:
         )
 
         self.gemini_client = genai.Client(
-            http_options=types.HttpOptions(timeout=180)
+            http_options=types.HttpOptions(timeout=300000)
         )
 
         # MediaPipe Pose Landmarker 초기화 (스마트 크롭용)
@@ -200,7 +200,7 @@ class BaseContentGenerator:
 
             except Exception as e:
                 err = str(e)
-                if attempt < len(_GEMINI_IMAGE_RETRY_DELAYS) and ("503" in err or "UNAVAILABLE" in err or "Deadline" in err):
+                if attempt < len(_GEMINI_IMAGE_RETRY_DELAYS) and ("503" in err or "UNAVAILABLE" in err or "Deadline" in err or "timed out" in err.lower()):
                     print(f"⚠️ Gemini 503 에러 (재시도 예정): {e}")
                     continue
                 print(f"❌ 이미지 생성 에러: {e}")

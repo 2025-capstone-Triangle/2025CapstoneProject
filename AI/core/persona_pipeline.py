@@ -183,9 +183,17 @@ class ImageGenerator:
         print(f"📐 참조 이미지 리사이즈: {image.size} → {resized.size}")
         return resized
 
+    _NEGATIVE_PROMPT = (
+        " Strictly forbidden in the image: any text, typography, letters, words, sentences, "
+        "hex color codes (e.g. #F7E3E0), color swatches, color palette labels, RGB values, "
+        "watermarks, captions, UI overlays, charts, infographics, or any graphical annotation. "
+        "Pure photographic image only — no embedded text of any kind."
+    )
+
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> str | None:
         """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 로컬 임시 경로를 반환. 503 발생 시 최대 3회 재시도."""
         _retry_delays = [5, 15, 30]
+        full_prompt = prompt + self._NEGATIVE_PROMPT
         ref_image = self._resize_for_gemini(user_pil_image)
         for attempt, delay in enumerate([0] + _retry_delays):
             if delay:
@@ -195,7 +203,7 @@ class ImageGenerator:
                 print(f"🎨 Gemini 이미지 생성 요청 중... (시도 {attempt + 1})")
                 response = self.gemini_client.models.generate_content(
                     model="gemini-3.1-flash-image-preview",
-                    contents=[prompt, ref_image],
+                    contents=[full_prompt, ref_image],
                     config=types.GenerateContentConfig(
                         response_modalities=['TEXT', 'IMAGE'],
                         image_config=types.ImageConfig(
@@ -220,7 +228,7 @@ class ImageGenerator:
 
             except Exception as e:
                 err = str(e)
-                if attempt < len(_retry_delays) and ("503" in err or "UNAVAILABLE" in err or "Deadline" in err):
+                if attempt < len(_retry_delays) and ("503" in err or "UNAVAILABLE" in err or "Deadline" in err or "timed out" in err.lower()):
                     print(f"⚠️ Gemini 503 에러 (재시도 예정): {e}")
                     continue
                 print(f"❌ 이미지 생성 에러: {e}")

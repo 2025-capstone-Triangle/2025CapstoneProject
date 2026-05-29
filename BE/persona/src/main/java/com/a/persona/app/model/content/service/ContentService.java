@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -74,7 +75,7 @@ public class ContentService {
                         .keywords(persona.getKeywords().stream().toList())
                         .build())
                 .answers(LikeAnswerData.fromPreference(persona.getPreference()))
-                .q8_tone(persona.getPreference().getQ8Tone())
+                .q8_tone(new ArrayList<>(persona.getPreference().getQ8Tone()))
                 .user_image_url(persona.getProfile())
                 .crop_type(contentRequest.getType().value())
                 .build();

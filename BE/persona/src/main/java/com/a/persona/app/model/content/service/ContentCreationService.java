@@ -35,15 +35,20 @@ public class ContentCreationService {
             ContentRequest contentRequest,
             String sessionId
     ) {
+        log.info("[Content] START | user={} code={} type={} sessionId={} thread={}",
+                username, contentRequest.getCode(), contentRequest.getType(), sessionId, Thread.currentThread().getName());
         try {
-            // 1. DB에서 AI 요청 데이터 준비 (짧은 트랜잭션으로 즉시 커밋)
+            // 1. DB에서 AI 요청 데이터 준비
+            log.debug("[Content] STEP1 buildAiRequest | user={} sessionId={}", username, sessionId);
             AiContentRequest aiRequest = contentService.buildAiRequest(username, contentRequest);
+            log.debug("[Content] STEP1 done | aiRequest={}", aiRequest);
 
-            // 2. 대기열 진입 → SSE로 대기 순서 알림
+            // 2. 대기열 진입
+            log.debug("[Content] STEP2 enterQueue | sessionId={}", sessionId);
             long position = aiWaitingQueueService.enterQueue(sessionId);
             progressService.sendQueued(sessionId, position);
 
-            // 3. 슬롯 대기 중 3초마다 현재 대기 순서 갱신 전송
+            // 3. 슬롯 대기 중 3초마다 순서 갱신
             ScheduledExecutorService positionScheduler = Executors.newSingleThreadScheduledExecutor();
             ScheduledFuture<?> positionTask = positionScheduler.scheduleAtFixedRate(() -> {
                 long currentPos = aiWaitingQueueService.getPosition(sessionId);
@@ -52,36 +57,44 @@ public class ContentCreationService {
                 }
             }, 3, 3, TimeUnit.SECONDS);
 
-            // 4. 슬롯 대기 (블로킹, DB 커넥션 미점유)
+            // 4. 슬롯 대기
+            log.debug("[Content] STEP4 acquire slot | sessionId={}", sessionId);
             try {
                 aiWaitingQueueService.acquire();
             } finally {
                 positionTask.cancel(false);
                 positionScheduler.shutdown();
             }
+            log.debug("[Content] STEP4 slot acquired | sessionId={}", sessionId);
 
             try {
                 aiWaitingQueueService.leaveQueue(sessionId);
-
-                // 5. 처리 시작 알림
                 progressService.sendProcessing(sessionId);
 
-                // 6. AI 서버 호출 (generated_image_url null이면 1회 재요청)
+                // 5. AI 서버 호출
+                log.info("[Content] STEP5 AI call start | sessionId={}", sessionId);
                 ContentResponse response = createContentWithRetry(aiRequest);
+                log.info("[Content] STEP5 AI call done | sessionId={} imageUrl={}", sessionId, response.getGenerated_image_url());
 
-                // 7. 컨텐츠 저장 (짧은 트랜잭션으로 즉시 커밋)
-                return CompletableFuture.completedFuture(
-                        contentService.finalizeContent(username, contentRequest.getCode(), response, contentRequest.getType())
-                );
+                // 6. 컨텐츠 저장
+                log.debug("[Content] STEP6 finalize | sessionId={}", sessionId);
+                ContentDto result = contentService.finalizeContent(username, contentRequest.getCode(), response, contentRequest.getType());
+                log.info("[Content] DONE | user={} sessionId={} contentId={}", username, sessionId, result);
+                return CompletableFuture.completedFuture(result);
 
             } finally {
-                // 예외 발생 여부와 관계없이 반드시 슬롯 반환
                 aiWaitingQueueService.release();
+                log.debug("[Content] slot released | sessionId={}", sessionId);
             }
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("컨텐츠 생성 중단됨 (스레드 인터럽트): {}", e.getMessage());
+            log.error("[Content] INTERRUPTED | user={} sessionId={}", username, sessionId, e);
+            CompletableFuture<ContentDto> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
+        } catch (Exception e) {
+            log.error("[Content] FAILED | user={} sessionId={} error={}", username, sessionId, e.getMessage(), e);
             CompletableFuture<ContentDto> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);
             return failed;
@@ -89,12 +102,14 @@ public class ContentCreationService {
     }
 
     private ContentResponse createContentWithRetry(AiContentRequest request) {
+        log.debug("[Content] feign createContent call | request={}", request);
         ContentResponse response = aiServerApi.createContent(request);
+        log.debug("[Content] feign createContent response | imageUrl={}", response.getGenerated_image_url());
         if (response.getGenerated_image_url() == null) {
-            log.warn("AI 서버 응답에 generated_image_url이 없습니다. 재요청합니다.");
+            log.warn("[Content] generated_image_url null, retrying...");
             response = aiServerApi.createContent(request);
             if (response.getGenerated_image_url() == null) {
-                log.error("재요청 후에도 generated_image_url이 null입니다.");
+                log.error("[Content] retry 후에도 generated_image_url=null");
             }
         }
         return response;

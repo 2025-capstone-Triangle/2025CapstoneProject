@@ -58,14 +58,21 @@ public class ContentController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ContentRequest contentRequest
     ) {
+        String username = userDetails != null ? userDetails.getUsername() : "null(unauthenticated)";
+        log.info("[ContentController] POST /api/v1/content | user={} sessionId={} code={} type={}",
+                username, contentRequest.getSessionId(), contentRequest.getCode(), contentRequest.getType());
+
         return contentCreationService.createContent(
                         userDetails.getUsername(),
                         contentRequest,
                         contentRequest.getSessionId()
                 )
-                .thenApply(dto -> ResponseEntity.ok(CommonApiResponse.success(ContentResponse.fromDto(dto))))
+                .thenApply(dto -> {
+                    log.info("[ContentController] 응답 성공 | user={} sessionId={}", username, contentRequest.getSessionId());
+                    return ResponseEntity.ok(CommonApiResponse.success(ContentResponse.fromDto(dto)));
+                })
                 .exceptionally(e -> {
-                    log.error("컨텐츠 생성 실패: {}", e.getMessage());
+                    log.error("[ContentController] 응답 실패 | user={} sessionId={} cause={}", username, contentRequest.getSessionId(), e.getMessage(), e);
                     return ResponseEntity.<CommonApiResponse<ContentResponse>>internalServerError()
                             .body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
                 });

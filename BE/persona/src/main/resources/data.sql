@@ -59,9 +59,9 @@ INSERT INTO persona_colors (persona_id, color) VALUES (10002, '#6200EE'), (10002
 
 -- 1. 미니멀 기하학 스타일 (삼각형 모티프 강조)
 INSERT INTO reference (id, name, img, prompt, description, created_at, updated_at,is_active)
-VALUES (nextval('reference_sequence'), '피자', 'https://persona-capstone.s3.ap-northeast-2.amazonaws.com/reference/pizza.png',
+VALUES (nextval('reference_sequence'), '야구장 관중석', 'https://persona-capstone.s3.ap-northeast-2.amazonaws.com/reference/pizza.png',
         'Abstract 3D composition of glowing triangles, minimalist layout, soft pastel gradients, glassmorphism style, high resolution',
-        '기하학적 도형을 활용하여 깔끔하고 세련된 디지털 이미지를 구축할 때 적합한 레퍼런스입니다.', NOW(), NOW(),true);
+        '야구장 중계 카메라에 잡히다.', NOW(), NOW(),true);
 
 -- 2. 사이버펑크 네온 스타일 (MZ 트렌드 반영)
 INSERT INTO reference (id, name, img, prompt, description, created_at, updated_at,is_active)

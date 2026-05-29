@@ -42,7 +42,7 @@ public class PersonaService {
 
         Member member = memberRepository.findByUsernameAndIsActive(username,true).orElseThrow(()->new NotFoundException(ResponseCode.NOT_FOUND));
 
-        List<Persona> personas = personaRepository.findPersonasByMemberAndIsActive(member,true);
+        List<Persona> personas = personaRepository.findPersonasByMemberAndIsActiveAndIsSaved(member,true,true);
 
         return new ArrayList<>(
                 personas.stream().map(

@@ -10,7 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface PersonaRepository extends JpaRepository<Persona, Long>, PersonaRepositoryCustom{
-    List<Persona> findPersonasByMemberAndIsActive(Member member, Boolean isActive);
 
     boolean existsByCode(String code);
+
+    List<Persona> findPersonasByMemberAndIsActiveAndIsSaved(Member member, Boolean isActive, Boolean isSaved);
 }

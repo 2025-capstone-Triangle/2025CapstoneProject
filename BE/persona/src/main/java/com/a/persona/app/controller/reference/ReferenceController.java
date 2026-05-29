@@ -74,6 +74,10 @@ public class ReferenceController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody TrendContentRequest request
     ) {
+        String username = userDetails != null ? userDetails.getUsername() : "null(unauthenticated)";
+        log.info("[ReferenceController] POST /api/v1/reference | user={} sessionId={} code={} referenceId={} type={}",
+                username, request.getSessionId(), request.getCode(), request.getReferenceId(), request.getType());
+
         return referenceCreationService.createTrendContent(
                         userDetails.getUsername(),
                         request.getCode(),
@@ -81,9 +85,12 @@ public class ReferenceController {
                         request.getType(),
                         request.getSessionId()
                 )
-                .thenApply(dto -> ResponseEntity.ok(CommonApiResponse.success(TrendContentResponse.fromDto(dto))))
+                .thenApply(dto -> {
+                    log.info("[ReferenceController] 응답 성공 | user={} sessionId={}", username, request.getSessionId());
+                    return ResponseEntity.ok(CommonApiResponse.success(TrendContentResponse.fromDto(dto)));
+                })
                 .exceptionally(e -> {
-                    log.error("트렌드 컨텐츠 생성 실패: {}", e.getMessage());
+                    log.error("[ReferenceController] 응답 실패 | user={} sessionId={} cause={}", username, request.getSessionId(), e.getMessage(), e);
                     return ResponseEntity.<CommonApiResponse<TrendContentResponse>>internalServerError()
                             .body(CommonApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
                 });

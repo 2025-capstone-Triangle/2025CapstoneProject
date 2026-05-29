@@ -36,15 +36,20 @@ public class ReferenceCreationService {
             ContentType contentType,
             String sessionId
     ) {
+        log.info("[TrendContent] START | user={} code={} referenceId={} type={} sessionId={} thread={}",
+                username, code, referenceId, contentType, sessionId, Thread.currentThread().getName());
         try {
-            // 1. DB에서 AI 요청 데이터 준비 (짧은 트랜잭션으로 즉시 커밋)
+            // 1. DB에서 AI 요청 데이터 준비
+            log.debug("[TrendContent] STEP1 buildAiTrendRequest | user={} sessionId={}", username, sessionId);
             AiTrendContentRequest aiRequest = referenceService.buildAiTrendRequest(username, code, referenceId, contentType);
+            log.debug("[TrendContent] STEP1 done | trend_prompt={}", aiRequest.getTrend_prompt());
 
-            // 2. 대기열 진입 → SSE로 대기 순서 알림
+            // 2. 대기열 진입
+            log.debug("[TrendContent] STEP2 enterQueue | sessionId={}", sessionId);
             long position = aiWaitingQueueService.enterQueue(sessionId);
             progressService.sendQueued(sessionId, position);
 
-            // 3. 슬롯 대기 중 3초마다 현재 대기 순서 갱신 전송
+            // 3. 슬롯 대기 중 3초마다 순서 갱신
             ScheduledExecutorService positionScheduler = Executors.newSingleThreadScheduledExecutor();
             ScheduledFuture<?> positionTask = positionScheduler.scheduleAtFixedRate(() -> {
                 long currentPos = aiWaitingQueueService.getPosition(sessionId);
@@ -53,36 +58,44 @@ public class ReferenceCreationService {
                 }
             }, 3, 3, TimeUnit.SECONDS);
 
-            // 4. 슬롯 대기 (블로킹, DB 커넥션 미점유)
+            // 4. 슬롯 대기
+            log.debug("[TrendContent] STEP4 acquire slot | sessionId={}", sessionId);
             try {
                 aiWaitingQueueService.acquire();
             } finally {
                 positionTask.cancel(false);
                 positionScheduler.shutdown();
             }
+            log.debug("[TrendContent] STEP4 slot acquired | sessionId={}", sessionId);
 
             try {
                 aiWaitingQueueService.leaveQueue(sessionId);
-
-                // 5. 처리 시작 알림
                 progressService.sendProcessing(sessionId);
 
-                // 6. AI 서버 호출 (generated_image_url null이면 1회 재요청)
+                // 5. AI 서버 호출
+                log.info("[TrendContent] STEP5 AI call start | sessionId={}", sessionId);
                 ContentResponse response = createTrendContentWithRetry(aiRequest);
+                log.info("[TrendContent] STEP5 AI call done | sessionId={} imageUrl={}", sessionId, response.getGenerated_image_url());
 
-                // 7. 컨텐츠 저장 (짧은 트랜잭션으로 즉시 커밋)
-                return CompletableFuture.completedFuture(
-                        referenceService.finalizeTrendContent(username, code, referenceId, response, contentType)
-                );
+                // 6. 컨텐츠 저장
+                log.debug("[TrendContent] STEP6 finalize | sessionId={}", sessionId);
+                TrendContentDto result = referenceService.finalizeTrendContent(username, code, referenceId, response, contentType);
+                log.info("[TrendContent] DONE | user={} sessionId={}", username, sessionId);
+                return CompletableFuture.completedFuture(result);
 
             } finally {
-                // 예외 발생 여부와 관계없이 반드시 슬롯 반환
                 aiWaitingQueueService.release();
+                log.debug("[TrendContent] slot released | sessionId={}", sessionId);
             }
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("트렌드 컨텐츠 생성 중단됨 (스레드 인터럽트): {}", e.getMessage());
+            log.error("[TrendContent] INTERRUPTED | user={} sessionId={}", username, sessionId, e);
+            CompletableFuture<TrendContentDto> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
+        } catch (Exception e) {
+            log.error("[TrendContent] FAILED | user={} sessionId={} error={}", username, sessionId, e.getMessage(), e);
             CompletableFuture<TrendContentDto> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);
             return failed;
@@ -90,12 +103,14 @@ public class ReferenceCreationService {
     }
 
     private ContentResponse createTrendContentWithRetry(AiTrendContentRequest request) {
+        log.debug("[TrendContent] feign createTrendContent call | trend_prompt={}", request.getTrend_prompt());
         ContentResponse response = aiServerApi.createTrendContent(request);
+        log.debug("[TrendContent] feign createTrendContent response | imageUrl={}", response.getGenerated_image_url());
         if (response.getGenerated_image_url() == null) {
-            log.warn("AI 서버 응답에 generated_image_url이 없습니다. 재요청합니다.");
+            log.warn("[TrendContent] generated_image_url null, retrying...");
             response = aiServerApi.createTrendContent(request);
             if (response.getGenerated_image_url() == null) {
-                log.error("재요청 후에도 generated_image_url이 null입니다.");
+                log.error("[TrendContent] retry 후에도 generated_image_url=null");
             }
         }
         return response;

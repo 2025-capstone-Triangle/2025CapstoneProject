@@ -1,7 +1,7 @@
 import { apiRequest } from "../../../lib/api";
 
 const DIAGNOSE_API_URL =
-  import.meta.env.VITE_DIAGNOSE_API_URL?.trim() || "https://13.209.17.191.nip.io/api/v1/persona";
+  import.meta.env.VITE_DIAGNOSE_API_URL?.trim() || "https://54.180.115.6.nip.io/api/v1/persona";
 
 export interface PersonaResponse {
   id: number;

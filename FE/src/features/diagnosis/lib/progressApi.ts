@@ -1,6 +1,6 @@
 const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
 const PROGRESS_API_BASE_URL =
-  import.meta.env.VITE_PROGRESS_API_BASE_URL?.trim() || "https://13.209.17.191.nip.io";
+  import.meta.env.VITE_PROGRESS_API_BASE_URL?.trim() || "https://54.180.115.6.nip.io";
 const IS_HTTPS_PAGE = typeof window !== "undefined" && window.location.protocol === "https:";
 const IS_DEV = Boolean(import.meta.env.DEV);
 const API_BASE =

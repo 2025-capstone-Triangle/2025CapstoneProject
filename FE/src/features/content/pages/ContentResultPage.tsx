@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Download, Home, RefreshCw, User, X, List } from "lucide-react";
 import type { ContentCreateResponse } from "../lib/contentApi";
 import { ContentPageLayout } from "../components/ContentPageLayout";
+import { downloadImage } from "../../../lib/downloadImage";
 
 interface ContentResultPageProps {
   ratio: string;
@@ -41,13 +42,7 @@ export function ContentResultPage({
 
   const handleDownload = () => {
     if (!generatedContent?.img) return;
-    const link = document.createElement("a");
-    link.href = generatedContent.img;
-    link.download = `generated-${generatedContent.id}.jpg`;
-    link.rel = "noopener";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    void downloadImage(generatedContent.img, `content-${generatedContent.id}.jpg`);
   };
 
   return (

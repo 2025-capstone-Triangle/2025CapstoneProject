@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Download, Heart, Loader2, RefreshCw, Sparkle
 import { BottomTab } from "../../../shared/layout/BottomTab";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import { deleteContent, getContentListByPersonaCode, toggleContentLike, type ContentStatResponse } from "../../content/lib/contentApi";
+import { downloadImage } from "../../../lib/downloadImage";
 import { mapContentTypeToRatio, ratioToAspectClass } from "../../content/lib/contentType";
 
 interface PersonaSavedContentsPageProps {
@@ -137,24 +138,10 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
     }
   };
 
-  const handleDownloadContent = async (imgUrl: string, event?: MouseEvent<HTMLButtonElement>) => {
+  const handleDownloadContent = (imgUrl: string, event?: MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
-    try {
-      const response = await fetch(imgUrl, { mode: "cors" });
-      if (!response.ok) throw new Error("fetch failed");
-      const blob = await response.blob();
-      const ext = imgUrl.split(".").pop()?.split("?")[0] || "jpg";
-      const blobUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = blobUrl;
-      anchor.download = `content-${Date.now()}.${ext}`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(imgUrl, "_blank", "noopener,noreferrer");
-    }
+    const ext = imgUrl.split(".").pop()?.split("?")[0] || "jpg";
+    void downloadImage(imgUrl, `content-${Date.now()}.${ext}`);
   };
 
   const handleNextImage = () => {

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { isAuthenticated } from "../../../lib/auth";
 import { raiseErrorToast } from "../../../lib/errorToastService";
+import { downloadImage } from "../../../lib/downloadImage";
 import { setPendingPersonaCode, setPendingPersonaIsSelf } from "../../persona/lib/personaShareCode";
 import type { PersonaResponse } from "../../persona/lib/personaApi";
 
@@ -71,23 +72,7 @@ export function useDiagnosisResult({
       personaName.trim().replace(/[^\w가-힣]+/g, "-").replace(/^-+|-+$/g, "") || "persona";
     const fileName = `${safeName}-thumbnail.${extension === "jpeg" ? "jpg" : extension}`;
 
-    try {
-      const response = await fetch(selectedImage, { mode: "cors" });
-      if (!response.ok) throw new Error("fetch failed");
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = blobUrl;
-      anchor.download = fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      // CORS 제한으로 직접 다운로드 불가 — 새 탭에서 열어 저장 유도
-      window.open(selectedImage, "_blank", "noopener,noreferrer");
-      raiseErrorToast("이미지를 새 탭에서 열었습니다. 길게 눌러 저장해 주세요.");
-    }
+    await downloadImage(selectedImage, fileName);
   };
 
   const handleSaveClick = async () => {

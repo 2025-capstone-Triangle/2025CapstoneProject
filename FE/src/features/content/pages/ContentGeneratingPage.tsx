@@ -4,13 +4,27 @@ import { ContentPageLayout } from "../components/ContentPageLayout";
 
 interface ContentGeneratingPageProps {
   errorMessage?: string;
+  progress?: number;
+  statusMessage?: string;
   onRetry?: () => void;
   onBack?: () => void;
   onHome?: () => void;
 }
 
-export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }: ContentGeneratingPageProps) {
-  const [progress, setProgress] = useState(0);
+function clampProgress(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+export function ContentGeneratingPage({
+  errorMessage,
+  progress,
+  statusMessage,
+  onRetry,
+  onBack,
+  onHome,
+}: ContentGeneratingPageProps) {
+  const [simulatedProgress, setSimulatedProgress] = useState(0);
   const [step, setStep] = useState(0);
 
   const steps = useMemo(
@@ -19,14 +33,14 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
   );
 
   useEffect(() => {
-    if (errorMessage) return;
+    if (errorMessage || typeof progress === "number") return;
 
     const stepInterval = setInterval(() => {
       setStep((prev) => (prev + 1) % steps.length);
     }, 1800);
 
     const progressInterval = setInterval(() => {
-      setProgress((prev) => {
+      setSimulatedProgress((prev) => {
         if (prev >= 92) return 92;
         return prev + 1;
       });
@@ -36,13 +50,16 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
       clearInterval(stepInterval);
       clearInterval(progressInterval);
     };
-  }, [errorMessage, steps.length]);
+  }, [errorMessage, progress, steps.length]);
 
   useEffect(() => {
     if (!errorMessage) return;
-    setProgress(0);
+    setSimulatedProgress(0);
     setStep(0);
   }, [errorMessage]);
+
+  const displayProgress = typeof progress === "number" ? clampProgress(progress) : simulatedProgress;
+  const displayMessage = errorMessage ? "생성 요청 중 문제가 발생했습니다." : (statusMessage || steps[step]);
 
   return (
     <ContentPageLayout
@@ -63,16 +80,14 @@ export function ContentGeneratingPage({ errorMessage, onRetry, onBack, onHome }:
 
         <div className="mb-8 w-full max-w-[320px]">
           <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
-            <div className="h-full bg-black transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="h-full bg-black transition-all duration-300" style={{ width: `${displayProgress}%` }} />
           </div>
-          <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">{progress}%</p>
+          <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">{displayProgress}%</p>
         </div>
 
         <div className="text-center">
           <h2 className="mb-4 font-['NEXON_Football_Gothic'] text-[clamp(26px,4vw,34px)] font-bold text-black">콘텐츠 생성 중</h2>
-          <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">
-            {errorMessage ? "생성 요청 중 문제가 발생했습니다." : steps[step]}
-          </p>
+          <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">{displayMessage}</p>
         </div>
 
         {errorMessage ? (

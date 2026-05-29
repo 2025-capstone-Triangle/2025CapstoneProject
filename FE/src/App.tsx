@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { HomePage } from "./features/home/pages/HomePage";
 import { DiagnosisStartPage } from "./features/diagnosis/pages/DiagnosisStartPage";

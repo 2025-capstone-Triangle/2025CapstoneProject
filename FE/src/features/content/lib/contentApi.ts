@@ -29,6 +29,7 @@ export interface ContentCreateRequest {
   code: string;
   referenceId?: number;
   type: ContentType;
+  sessionId?: string;
 }
 
 export interface ContentCreateResponse {
@@ -44,9 +45,17 @@ export async function getContentListByPersonaCode(code: string) {
 }
 
 export async function createContent(payload: ContentCreateRequest) {
+  if (typeof payload.referenceId === "number") {
+    return apiRequest<ContentCreateResponse>("/api/v1/reference", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  const { referenceId: _referenceId, ...body } = payload;
   return apiRequest<ContentCreateResponse>("/api/v1/content", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
 

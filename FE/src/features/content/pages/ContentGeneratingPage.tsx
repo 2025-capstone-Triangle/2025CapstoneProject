@@ -6,6 +6,8 @@ interface ContentGeneratingPageProps {
   errorMessage?: string;
   progress?: number;
   statusMessage?: string;
+  status?: "idle" | "connecting" | "queued" | "processing" | "running" | "completed" | "error";
+  queuePosition?: number | null;
   onRetry?: () => void;
   onBack?: () => void;
   onHome?: () => void;
@@ -20,6 +22,8 @@ export function ContentGeneratingPage({
   errorMessage,
   progress,
   statusMessage,
+  status = "running",
+  queuePosition = null,
   onRetry,
   onBack,
   onHome,
@@ -31,6 +35,8 @@ export function ContentGeneratingPage({
     () => ["페르소나 분석 중...", "콘텐츠 구성 중...", "이미지 생성 중...", "최종 보정 중..."],
     [],
   );
+
+  const isQueued = status === "queued";
 
   useEffect(() => {
     if (errorMessage || typeof progress === "number") return;
@@ -78,12 +84,27 @@ export function ContentGeneratingPage({
           />
         </div>
 
-        <div className="mb-8 w-full max-w-[320px]">
-          <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
-            <div className="h-full bg-black transition-all duration-300" style={{ width: `${displayProgress}%` }} />
+        {isQueued ? (
+          <div className="mb-7 space-y-3 text-center md:mb-8">
+            <div className="rounded-[20px] border border-[#e7e7e7] bg-[#fafafa] px-6 py-5">
+              <p className="mb-1 font-['Noto_Sans_KR'] text-[13px] font-medium text-[#6d6d6d]">현재 대기 순번</p>
+              <p className="font-['NEXON_Football_Gothic'] text-[34px] leading-none text-black">
+                {queuePosition ?? "-"}번
+              </p>
+            </div>
+            <p className="max-w-[520px] px-1 text-[12px] leading-[1.6] text-[#6b6b6b] md:text-[13px]">
+              서버 용량을 늘리려면 추가 비용이 발생해서, 현재 데모 환경에서는 동시에 최대 2명만 콘텐츠를
+              생성할 수 있어 대기열이 있습니다. 양해 부탁드려요 :)
+            </p>
           </div>
-          <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">{displayProgress}%</p>
-        </div>
+        ) : (
+          <div className="mb-8 w-full max-w-[320px]">
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+              <div className="h-full bg-black transition-all duration-300" style={{ width: `${displayProgress}%` }} />
+            </div>
+            <p className="text-center font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#6b6b6b]">{displayProgress}%</p>
+          </div>
+        )}
 
         <div className="text-center">
           <h2 className="mb-4 font-['NEXON_Football_Gothic'] text-[clamp(26px,4vw,34px)] font-bold text-black">콘텐츠 생성 중</h2>

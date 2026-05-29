@@ -91,6 +91,26 @@ type DiagnosisProgressState = {
   status: "idle" | "connecting" | "connected" | "queued" | "running" | "completed" | "error";
 };
 
+type ContentProgressState = {
+  sessionId: string;
+  progress: number;
+  message: string;
+  step: string;
+  queuePosition: number | null;
+  connected: boolean;
+  status: "idle" | "connecting" | "queued" | "processing" | "running" | "completed" | "error";
+};
+
+const DEFAULT_CONTENT_PROGRESS: ContentProgressState = {
+  sessionId: "",
+  progress: 0,
+  message: "콘텐츠를 생성하고 있습니다...",
+  step: "idle",
+  queuePosition: null,
+  connected: false,
+  status: "idle",
+};
+
 const UNAUTH_ALLOWED_PAGES = new Set<Page>([
   "home",
   "login",
@@ -333,6 +353,7 @@ export default function App() {
   const [autoSelectPersonaForContent, setAutoSelectPersonaForContent] = useState<boolean>(bootstrap.autoSelectPersonaForContent);
   const [contentGenerationError, setContentGenerationError] = useState<string>("");
   const [latestGeneratedContent, setLatestGeneratedContent] = useState<ContentCreateResponse | null>(null);
+  const [contentProgress, setContentProgress] = useState<ContentProgressState>(DEFAULT_CONTENT_PROGRESS);
   const [selectedTrendReferenceId, setSelectedTrendReferenceId] = useState<number | null>(bootstrap.selectedTrendReferenceId);
   const [loginGateMessage, setLoginGateMessage] = useState<string | null>(null);
   const [selectedPersonaCode, setSelectedPersonaCode] = useState<string>(bootstrap.selectedPersonaCode);
@@ -1068,15 +1089,96 @@ export default function App() {
     setLatestGeneratedContent(null);
     contentGenerationRunActiveRef.current = true;
 
+    const sessionId = createDiagnosisSessionId();
+    let closeContentProgressStream: (() => void) | null = null;
+
+    setContentProgress({
+      ...DEFAULT_CONTENT_PROGRESS,
+      sessionId,
+      status: "connecting",
+    });
+
+    closeContentProgressStream = openDiagnosisProgressStream({
+      sessionId,
+      onEvent: (event) => {
+        const payload = event.data;
+        const eventName = event.event.toLowerCase();
+        const step = String(payload?.step ?? event.event ?? "running");
+        const lowerStep = step.toLowerCase();
+        const isCompleted = lowerStep.includes("complete");
+        const isError = lowerStep.includes("error");
+        const rawProgress = payload?.progress;
+        const serverProgress =
+          typeof rawProgress === "number" && Number.isFinite(rawProgress)
+            ? Math.max(0, Math.min(100, Math.round(rawProgress)))
+            : null;
+
+        setContentProgress((prev) => {
+          if (prev.sessionId !== sessionId) return prev;
+          let nextProgress = serverProgress !== null ? serverProgress : prev.progress;
+          if (eventName === "queued") nextProgress = Math.max(nextProgress, 18);
+          else if (eventName === "processing") nextProgress = Math.max(nextProgress, 42);
+          if (isCompleted) nextProgress = 100;
+
+          let message = prev.message;
+          let queuePosition = prev.queuePosition;
+          if (eventName === "queued") {
+            const position = Number(payload?.position ?? payload?.queuePosition ?? payload?.rank);
+            queuePosition = Number.isFinite(position) && position > 0 ? Math.round(position) : null;
+            message = queuePosition
+              ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 시작됩니다.`
+              : "콘텐츠 생성 요청이 대기열에 등록되었습니다...";
+          } else if (eventName === "processing") {
+            queuePosition = null;
+            message = "콘텐츠 생성을 시작했습니다...";
+          } else if (payload?.message && String(payload.message).trim()) {
+            queuePosition = null;
+            message = String(payload.message).trim();
+          }
+
+          return {
+            ...prev,
+            progress: Math.max(prev.progress, nextProgress),
+            message,
+            step,
+            queuePosition,
+            connected: true,
+            status: isError
+              ? "error"
+              : isCompleted
+                ? "completed"
+                : eventName === "queued"
+                  ? "queued"
+                  : eventName === "processing"
+                    ? "processing"
+                    : "running",
+          };
+        });
+      },
+      onError: () => {
+        setContentProgress((prev) =>
+          prev.sessionId === sessionId
+            ? { ...prev, connected: false, status: prev.status === "completed" ? "completed" : "error" }
+            : prev
+        );
+      },
+    });
+
     try {
       const result = await createContent({
         code: personaCode,
         type: getContentTypeByRatio(ratio),
+        sessionId,
       });
       if (currentPageRef.current !== "content-generating") {
         return;
       }
       setLatestGeneratedContent(result);
+      setContentProgress((prev) =>
+        prev.sessionId === sessionId
+          ? { ...prev, progress: 100, step: "completed", status: "completed" }
+          : prev
+      );
       handleNavigate("content-result");
     } catch (error) {
       if (currentPageRef.current !== "content-generating") {
@@ -1084,8 +1186,12 @@ export default function App() {
       }
       const message = error instanceof Error ? error.message : "肄섑뀗痢??앹꽦???ㅽ뙣?덉뒿?덈떎.";
       setContentGenerationError(message);
+      setContentProgress((prev) =>
+        prev.sessionId === sessionId ? { ...prev, status: "error" } : prev
+      );
     } finally {
       contentGenerationRunActiveRef.current = false;
+      closeContentProgressStream?.();
     }
   };
 
@@ -1320,6 +1426,10 @@ export default function App() {
       {currentPage === "content-generating" && (
         <ContentGeneratingPage
           errorMessage={contentGenerationError}
+          progress={contentProgress.progress}
+          statusMessage={contentProgress.message}
+          status={contentProgress.status}
+          queuePosition={contentProgress.queuePosition}
           onRetry={() => void runContentGeneration(selectedRatio, selectedPersonaCode)}
           onBack={handleBack}
           onHome={handleTopbarHomeClick}

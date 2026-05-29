@@ -814,7 +814,7 @@ export default function App() {
   useEffect(() => {
     const handleAuthExpired = () => {
       clearAuth();
-      setLoginGateMessage("?몄뀡??留뚮즺?섏뿀?듬땲?? ?ㅼ떆 濡쒓렇?명빐 二쇱꽭??");
+      setLoginGateMessage("로그인이 만료되었습니다. 다시 로그인해 주세요.");
       setPageHistory(["home"]);
       setCurrentPage("login");
       setActiveTab("home");
@@ -979,7 +979,7 @@ export default function App() {
         setDiagnosisProgress({
           ...DEFAULT_DIAGNOSIS_PROGRESS,
           status: "error",
-          message: "?낅젰 ?곗씠?곌? 遺議깊빀?덈떎. ?대?吏/?뚯꽦/?좏샇 ?뚯뒪?몃? ?뺤씤??二쇱꽭??",
+          message: "입력 데이터가 올바르지 않습니다. 이미지/음성/선호도 테스트를 확인해 주세요.",
           step: "invalid-input",
         });
         return false;
@@ -1049,7 +1049,7 @@ export default function App() {
             setDiagnosisProgress((prev) => ({
               sessionId,
               progress: currentProgress,
-              message: prev.message || "AI媛 ?섎Ⅴ?뚮굹瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎...",
+              message: prev.message || "AI가 페르소나를 분석하고 있습니다...",
               step: String(payload?.step ?? "connect"),
               queuePosition: prev.queuePosition,
               connected: true,
@@ -1068,7 +1068,7 @@ export default function App() {
               ? payload.message.trim()
               : queuePosition
                 ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 분석이 시작됩니다.`
-                : "吏꾨떒 ?붿껌???묒닔?섏뼱 ?湲곗뿴???깅줉?섏뿀?듬땲??";
+                : "진단 요청이 접수되어 대기열에 등록되었습니다.";
 
             setDiagnosisProgress({
               sessionId,
@@ -1129,7 +1129,7 @@ export default function App() {
           setDiagnosisProgress((prev) => ({
             ...prev,
             status: "error",
-            message: error.message || "吏꾨떒 吏꾪뻾 ?곌껐??遺덉븞?뺥빀?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??",
+            message: error.message || "진단 진행 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.",
             step: "stream-error",
             connected: false,
           }));
@@ -1168,7 +1168,7 @@ export default function App() {
           ...prev,
           progress: 100,
           status: "completed",
-          message: "?섎Ⅴ?뚮굹 吏꾨떒???꾨즺?섏뿀?듬땲??",
+          message: "페르소나 진단이 완료되었습니다.",
           step: "completed",
           queuePosition: null,
           connected: prev.connected,
@@ -1186,7 +1186,7 @@ export default function App() {
       setDiagnosisProgress((prev) => ({
         ...prev,
         status: "error",
-        message: error instanceof Error ? error.message : "吏꾨떒 ?붿껌???ㅽ뙣?덉뒿?덈떎.",
+        message: error instanceof Error ? error.message : "진단 요청에 실패했습니다.",
         step: "error",
       }));
       return false;
@@ -1201,7 +1201,7 @@ export default function App() {
 
   const runContentGeneration = async (ratio: string, personaCode: string) => {
     if (!personaCode) {
-      setContentGenerationError("?앹꽦???섎Ⅴ?뚮굹瑜?癒쇱? ?좏깮??二쇱꽭??");
+      setContentGenerationError("콘텐츠 생성에 페르소나를 먼저 선택해 주세요.");
       return;
     }
 
@@ -1313,7 +1313,7 @@ export default function App() {
       if (currentPageRef.current !== "content-generating") {
         return;
       }
-      const message = error instanceof Error ? error.message : "肄섑뀗痢??앹꽦???ㅽ뙣?덉뒿?덈떎.";
+      const message = error instanceof Error ? error.message : "콘텐츠 생성에 실패했습니다.";
       setContentGenerationError(message);
       setContentProgress((prev) =>
         prev.sessionId === sessionId ? { ...prev, status: "error" } : prev
@@ -1521,7 +1521,7 @@ export default function App() {
               void runContentGeneration(ratio, selectedPersonaCode);
             } else if (autoSelectPersonaForContent) {
               if (!selectedPersonaCode) {
-                setContentGenerationError("?앹꽦???섎Ⅴ?뚮굹瑜?癒쇱? ?좏깮??二쇱꽭??");
+                setContentGenerationError("콘텐츠 생성에 페르소나를 먼저 선택해 주세요.");
                 handleNavigate("content-select-persona");
                 return;
               }

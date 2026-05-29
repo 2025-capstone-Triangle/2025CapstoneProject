@@ -56,9 +56,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String uri = request.getRequestURI();
+        String dispatchType = request.getDispatcherType().name();
+        log.debug("[JWT] dispatch={} uri={} thread={}", dispatchType, uri, Thread.currentThread().getName());
+
         String accessToken = jwtTokenProvider.resolveToken(request, AuthToken.ACCESS_TOKEN);
 
         if (accessToken == null) {
+            log.warn("[JWT] accessToken=null | dispatch={} uri={}", dispatchType, uri);
             filterChain.doFilter(request, response);
             return;
         }
@@ -68,7 +73,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 Claims claims = jwtTokenProvider.getClaims(accessToken);
                 if (accessTokenBlackListRepository.existsById(claims.getSubject() + ":" + claims.getId())) {
-                    log.warn("JwtAuthenticationFilter: Access token {} is blacklisted.", claims.getId());
+                    log.warn("[JWT] blacklisted token | user={} jti={}", claims.getSubject(), claims.getId());
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -76,20 +81,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
 
                 if (userBlackListRepository.existsById(authentication.getName())) {
-                    log.warn("JwtAuthenticationFilter: User {} is in blacklist.", authentication.getName());
+                    log.warn("[JWT] blacklisted user={}", authentication.getName());
                     filterChain.doFilter(request, response);
                     return;
                 }
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("[JWT] authenticated | user={} dispatch={} uri={}", authentication.getName(), dispatchType, uri);
             } else {
-                log.warn("JwtAuthenticationFilter: Access token is invalid.");
+                log.warn("[JWT] invalid token | dispatch={} uri={}", dispatchType, uri);
             }
         } catch (ExpiredJwtException e) {
-            log.warn("JwtAuthenticationFilter: Access token has expired. Attempting to refresh.");
+            log.warn("[JWT] expired token | dispatch={} uri={} → attempting refresh", dispatchType, uri);
             manageTokenRefresh(accessToken, request, response);
         } catch (Exception e) {
-            log.error("JwtAuthenticationFilter: An unexpected error occurred during token processing.", e);
+            log.error("[JWT] unexpected error | dispatch={} uri={}", dispatchType, uri, e);
         }
 
         filterChain.doFilter(request, response);

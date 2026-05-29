@@ -997,8 +997,8 @@ export default function App() {
         rejectConnect = reject;
       });
 
-      // Vercel ?꾨줉?쒓? SSE瑜?踰꾪띁留곹빐 connect ?대깽?멸? ??쾶 ?꾩갑?????덉쓬.
-      // 3珥??꾩뿉??誘몄닔?????쇰떒 POST 吏꾪뻾 (SSE ?ㅽ듃由쇱? 怨꾩냽 ?댁뼱??.
+      // Vercel 환경에서 SSE를 먼저 열어 connect 이벤트를 받는 구조.
+      // 3초 후에는 무조건 POST 진행 (SSE 스트림 연결 완료 여부 무관).
       connectTimeout = window.setTimeout(() => {
         if (!connectAcked) {
           connectAcked = true;
@@ -1215,7 +1215,8 @@ export default function App() {
     setContentProgress({
       ...DEFAULT_CONTENT_PROGRESS,
       sessionId,
-      status: "connecting",
+      status: "queued",
+      message: "대기열을 확인하고 있습니다...",
     });
 
     closeContentProgressStream = openDiagnosisProgressStream({

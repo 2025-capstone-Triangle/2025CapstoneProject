@@ -106,10 +106,11 @@ export function ContentGeneratingPage({
           </div>
         )}
 
-        <div className="text-center">
-          <h2 className="mb-4 font-['NEXON_Football_Gothic'] text-[clamp(26px,4vw,34px)] font-bold text-black">콘텐츠 생성 중</h2>
-          <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">{displayMessage}</p>
-        </div>
+        {!isQueued && (
+          <div className="text-center">
+            <p className="font-['Noto_Sans_KR'] text-[15px] text-[#6b6b6b]">{displayMessage}</p>
+          </div>
+        )}
 
         {errorMessage ? (
           <div className="mt-8 w-full max-w-[380px] rounded-[16px] border border-[#f2d6d6] bg-[#fff7f7] p-4">

@@ -72,7 +72,7 @@ export function useDiagnosisResult({
     const fileName = `${safeName}-thumbnail.${extension === "jpeg" ? "jpg" : extension}`;
 
     try {
-      const response = await fetch(selectedImage);
+      const response = await fetch(selectedImage, { mode: "cors" });
       if (!response.ok) throw new Error("fetch failed");
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -83,9 +83,10 @@ export function useDiagnosisResult({
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(blobUrl);
-      raiseErrorToast("이미지를 다운로드했습니다.");
     } catch {
-      raiseErrorToast("이미지 다운로드에 실패했습니다. 다시 시도해 주세요.");
+      // CORS 제한으로 직접 다운로드 불가 — 새 탭에서 열어 저장 유도
+      window.open(selectedImage, "_blank", "noopener,noreferrer");
+      raiseErrorToast("이미지를 새 탭에서 열었습니다. 길게 눌러 저장해 주세요.");
     }
   };
 

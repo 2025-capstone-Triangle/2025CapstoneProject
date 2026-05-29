@@ -1298,6 +1298,7 @@ export default function App() {
         code: personaCode,
         type: getContentTypeByRatio(ratio),
         sessionId,
+        ...(selectedTrendReferenceId !== null && { referenceId: selectedTrendReferenceId }),
       });
       if (currentPageRef.current !== "content-generating") {
         return;

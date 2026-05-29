@@ -339,6 +339,7 @@ export default function App() {
   const [latestDiagnosisCode, setLatestDiagnosisCode] = useState<string>(bootstrap.diagnosisCode);
   const [latestDiagnosisResult, setLatestDiagnosisResult] = useState<PersonaResponse | null>(bootstrap.diagnosisResult);
   const [diagnosisProgress, setDiagnosisProgress] = useState<DiagnosisProgressState>(bootstrap.diagnosisProgress);
+  const [diagnosisReconnectTick, setDiagnosisReconnectTick] = useState(0);
   const [isGlobalMenuOpen, setIsGlobalMenuOpen] = useState(false);
   const [showLeaveDiagnosisWarning, setShowLeaveDiagnosisWarning] = useState(false);
   const previousPageRef = useRef<Page>(currentPage);
@@ -364,6 +365,28 @@ export default function App() {
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
+
+  useEffect(() => {
+    const triggerDiagnosisReconnect = () => {
+      if (currentPageRef.current !== "analyzing") return;
+      diagnosisRunActiveRef.current = false;
+      setDiagnosisReconnectTick((prev) => prev + 1);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        triggerDiagnosisReconnect();
+      }
+    };
+
+    window.addEventListener("pageshow", triggerDiagnosisReconnect);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", triggerDiagnosisReconnect);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -522,7 +545,7 @@ export default function App() {
     });
 
     return closeProgressStream;
-  }, [currentPage, diagnosisProgress.sessionId, diagnosisProgress.status]);
+  }, [currentPage, diagnosisProgress.sessionId, diagnosisProgress.status, diagnosisReconnectTick]);
 
   useEffect(() => {
     if (currentPage !== "content-generating") return;

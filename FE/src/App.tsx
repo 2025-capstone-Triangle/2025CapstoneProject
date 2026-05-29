@@ -502,9 +502,19 @@ export default function App() {
           } else if (eventName === "processing") {
             queuePosition = null;
             message = "콘텐츠 생성을 시작했습니다...";
-          } else if (payload?.message && String(payload.message).trim()) {
+          } else {
             queuePosition = null;
-            message = String(payload.message).trim();
+            const rawMsg = payload?.message ? String(payload.message).trim() : "";
+            const lower = rawMsg.toLowerCase();
+            const isTechnicalWord =
+              lower === "connect" || lower === "connected" || lower === "started" ||
+              lower === "running" || lower === "start" || lower === "begin" ||
+              lower === "processing";
+            if (rawMsg && !isTechnicalWord) {
+              message = rawMsg;
+            } else {
+              message = "AI가 콘텐츠를 생성하고 있습니다...";
+            }
           }
 
           return {
@@ -1287,9 +1297,19 @@ export default function App() {
           } else if (eventName === "processing") {
             queuePosition = null;
             message = "콘텐츠 생성을 시작했습니다...";
-          } else if (payload?.message && String(payload.message).trim()) {
+          } else {
             queuePosition = null;
-            message = String(payload.message).trim();
+            const rawMsg = payload?.message ? String(payload.message).trim() : "";
+            const lower = rawMsg.toLowerCase();
+            const isTechnicalWord =
+              lower === "connect" || lower === "connected" || lower === "started" ||
+              lower === "running" || lower === "start" || lower === "begin" ||
+              lower === "processing";
+            if (rawMsg && !isTechnicalWord) {
+              message = rawMsg;
+            } else {
+              message = "AI가 콘텐츠를 생성하고 있습니다...";
+            }
           }
 
           return {

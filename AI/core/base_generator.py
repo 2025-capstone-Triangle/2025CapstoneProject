@@ -162,10 +162,14 @@ class BaseContentGenerator:
         return resized
 
     _NEGATIVE_PROMPT = (
-        " Strictly forbidden in the image: any text, typography, letters, words, sentences, "
-        "hex color codes (e.g. #F7E3E0), color swatches, color palette labels, RGB values, "
-        "watermarks, captions, UI overlays, charts, infographics, or any graphical annotation. "
-        "Pure photographic image only — no embedded text of any kind."
+        " ABSOLUTE RULE — CRITICAL FAILURE if violated: "
+        "the output image must contain zero text, zero typography, zero letters, zero numbers. "
+        "It is strictly forbidden to render hex color codes of any format (#F7E3E0, #1A1A1A, #RRGGBB, etc.), "
+        "color palette chips, color swatches, color names, RGB values, HSL values, "
+        "any alphanumeric characters, captions, watermarks, labels, annotations, "
+        "UI overlays, charts, infographics, or any graphical element that is not part of the photograph itself. "
+        "Do NOT include text anywhere in the image — not in the background, not overlaid, not as props. "
+        "The output must be a pure photographic image with no embedded text or annotations of any kind whatsoever."
     )
 
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> bytes | None:

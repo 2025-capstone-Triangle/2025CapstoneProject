@@ -100,7 +100,11 @@ def image_crop(landmarks, w, h, aspect_ratio=0.8, mode="Post"):
     y_coords = [lm.y for lm in landmarks if 0 <= lm.y <= 1]
     if not x_coords or not y_coords: return None
 
-    person_center_x = (min(x_coords) + max(x_coords)) / 2
+    # 크롭 위치 기준: 머리+어깨 (0~12) 만 사용 — 하반신이 측면으로 치우쳐도 중심이 밀리지 않게
+    upper_x = [landmarks[i].x for i in range(13) if 0 <= landmarks[i].x <= 1]
+    person_center_x = (min(upper_x) + max(upper_x)) / 2 if upper_x else (min(x_coords) + max(x_coords)) / 2
+
+    # 줌 크기 계산은 전신 높이 기준 유지
     person_h_rel = max(y_coords) - min(y_coords)
     eye_y_rel = (landmarks[1].y + landmarks[5].y) / 2
 

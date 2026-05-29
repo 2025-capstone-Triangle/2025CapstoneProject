@@ -1,5 +1,4 @@
 import { DefaultTopBar } from '../../../shared/layout/DefaultTopBar';
-import { BackButton } from '../../../shared/layout/BackButton';
 import { Heart, Download, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -128,8 +127,7 @@ export function PersonaContentGalleryPage({ onBack, onHome }: PersonaContentGall
 
   return (
     <div className="persona-page-root persona-pretendard relative min-h-screen max-w-[390px] mx-auto overflow-hidden bg-white">
-      <DefaultTopBar onTitleClick={onHome} showNotification={true} />
-      <BackButton onClick={onBack} />
+      <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       {/* Header */}
       <div className="px-6 pt-6 pb-4">

@@ -1,6 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Heart, Loader2, RefreshCw } from "lucide-react";
-import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import { ImageWithFallback } from "../../../shared/ui/ImageWithFallback";
 import {
@@ -164,8 +163,7 @@ export function SavedTemplatesPage({ onBack, onNavigate, onHome }: SavedTemplate
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-gradient-to-b from-[#fafafa] to-white md:h-full md:min-h-0">
-      <DefaultTopBar onTitleClick={onHome ?? (() => onNavigate?.("home"))} showNotification={false} />
-      <BackButton onClick={onBack} />
+      <DefaultTopBar onTitleClick={onHome ?? (() => onNavigate?.("home"))} showNotification={false} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="mx-auto mb-3 flex w-full max-w-[1120px] items-end justify-between px-4 sm:px-8 md:px-10">
         <h1 className="font-['NEXON_Football_Gothic'] text-[clamp(18px,2.2vw,22px)] font-bold text-black">저장한 템플릿</h1>

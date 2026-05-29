@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { getMemberInfo, saveAuth, signIn } from "../../../lib/auth";
-import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface LoginPageProps {
@@ -48,8 +47,7 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
-      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
-      <BackButton onClick={onBack} />
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="mx-auto w-full max-w-[520px] px-6 pb-8 pt-2 sm:px-8">
         <div className="text-center mb-14">

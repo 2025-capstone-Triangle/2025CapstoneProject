@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { isAuthenticated } from "../../../lib/auth";
-import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import { ImageWithFallback } from "../../../shared/ui/ImageWithFallback";
 import {
@@ -240,11 +239,10 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
 
   return (
     <div className="persona-page-root persona-pretendard relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-white md:h-full md:min-h-0">
-      <DefaultTopBar title="My Persona" onTitleClick={onHome} />
+      <DefaultTopBar title="My Persona" onTitleClick={onHome} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="page-scroll">
       <div className="mx-auto w-full max-w-[980px] px-4 pb-28 pt-2 sm:px-8 md:px-10 md:pb-8">
-        <BackButton onClick={onBack} />
         <div className="mb-7">
           <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[clamp(24px,2.6vw,32px)] font-bold leading-tight text-black">
             저장된 페르소나

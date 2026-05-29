@@ -9,7 +9,6 @@ import {
   verifyEmailCode,
   type SignUpPayload,
 } from "../../../lib/auth";
-import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface SignupPageProps {
@@ -290,8 +289,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-white md:h-full md:min-h-0">
-      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} />
-      <BackButton onClick={handleBackStep} />
+      <DefaultTopBar onTitleClick={() => onNavigate?.("home")} showNotification={false} leftAction="back" onBackClick={handleBackStep} />
       <div className="page-scroll">
 
       {step === "basic" && (

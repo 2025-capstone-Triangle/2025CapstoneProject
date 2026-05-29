@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, Trash2 } from "lucide-react";
-import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 import { DiagnosisResultPage } from "../../diagnosis/pages/DiagnosisResultPage";
 import {
@@ -118,8 +117,7 @@ export function PersonaDetailPage(props: PersonaDetailPageProps) {
   if (loadingPersona) {
     return (
       <div className="persona-page-root persona-pretendard relative bg-white h-[100dvh] min-h-[100dvh] diag-page-root w-full max-w-[980px] mx-auto overflow-hidden md:h-full md:min-h-0">
-        <DefaultTopBar onTitleClick={onHome} showNotification={true} />
-        <BackButton onClick={onBack} />
+        <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
         <div className="h-[60vh] flex items-center justify-center gap-2 font-['Noto_Sans_KR'] text-[14px] text-[#666]">
           <Loader2 className="w-4 h-4 animate-spin" />
           페르소나 불러오는 중
@@ -131,8 +129,7 @@ export function PersonaDetailPage(props: PersonaDetailPageProps) {
   if (!persona) {
     return (
       <div className="persona-page-root persona-pretendard relative bg-white h-[100dvh] min-h-[100dvh] diag-page-root w-full max-w-[980px] mx-auto overflow-hidden md:h-full md:min-h-0">
-        <DefaultTopBar onTitleClick={onHome} showNotification={true} />
-        <BackButton onClick={onBack} />
+        <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
         <div className="mx-auto max-w-[760px] px-5 sm:px-8 lg:px-10 pt-10">
           <div className="rounded-[16px] border border-[#f0d0d0] bg-[#fff7f7] p-5">
             <p className="font-['Noto_Sans_KR'] text-[13px] text-[#bb3b3b] mb-3">

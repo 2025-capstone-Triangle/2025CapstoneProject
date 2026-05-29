@@ -283,7 +283,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
                     setImportCode(event.target.value);
                     setImportError("");
                   }}
-                  placeholder="예: TyF827yzfV"
+                  placeholder="영문+숫자 10자리 코드 입력"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}

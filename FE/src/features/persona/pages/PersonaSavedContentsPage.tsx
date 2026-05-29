@@ -53,7 +53,12 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
 
     try {
       const data = await getContentListByPersonaCode(personaCode);
-      setContents(data);
+      const sorted = [...data].sort((a, b) => {
+        if (a.isLiked && !b.isLiked) return -1;
+        if (!a.isLiked && b.isLiked) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      setContents(sorted);
     } catch (loadError) {
       setError(getErrorMessage(loadError, "콘텐츠를 불러오지 못했습니다."));
       setContents([]);
@@ -68,44 +73,45 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
 
   const personaName = contents[0]?.persona?.name ?? "선택한 페르소나";
 
-  const filteredContents = useMemo(() => {
-    if (filter === "all") return contents;
-    if (filter === "liked") return contents.filter((item) => item.isLiked);
-    return contents.filter((item) => mapContentTypeToRatio(item.type) === filter);
-  }, [contents, filter]);
-
   const sortedContents = useMemo(() => {
-    if (sortBy === "recent") {
-      return [...filteredContents].sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA;
-      });
-    }
-
-    return [...filteredContents].sort((a, b) => {
-      if (a.isLiked && !b.isLiked) return -1;
-      if (!a.isLiked && b.isLiked) return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [filteredContents, sortBy]);
+    const filtered =
+      filter === "liked"
+        ? contents.filter((item) => item.isLiked)
+        : filter === "all"
+          ? contents
+          : contents.filter((item) => mapContentTypeToRatio(item.type) === filter);
+    return filtered;
+  }, [contents, filter]);
 
   const expandedIndex = expandedImage === null ? -1 : sortedContents.findIndex((item) => item.id === expandedImage);
   const expandedContent = expandedIndex >= 0 ? sortedContents[expandedIndex] : null;
 
   const toggleLike = async (id: number, event?: MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
-    const target = contents.find((item) => item.id === id);
-    if (!target) return;
-
-    const nextLike = !target.isLiked;
     setActionError("");
     setLikePendingIds((prev) => [...prev, id]);
-    setContents((prev) => prev.map((item) => (item.id === id ? { ...item, isLiked: nextLike } : item)));
+
+    let nextLike = false;
+    setContents((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (!target) return prev;
+      nextLike = !target.isLiked;
+      const updated = prev.map((item) => (item.id === id ? { ...item, isLiked: nextLike } : item));
+      if (nextLike) {
+        // 좋아요 누르면 맨 위로 이동
+        const idx = updated.findIndex((item) => item.id === id);
+        if (idx > 0) {
+          const [item] = updated.splice(idx, 1);
+          return [item, ...updated];
+        }
+      }
+      return updated;
+    });
 
     try {
       await toggleContentLike(id, nextLike);
     } catch (toggleError) {
+      // 실패 시 원상복구
       setContents((prev) => prev.map((item) => (item.id === id ? { ...item, isLiked: !nextLike } : item)));
       setActionError(getErrorMessage(toggleError, "북마크 변경에 실패했습니다."));
     } finally {
@@ -187,15 +193,6 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
           이 페르소나로 새 콘텐츠 만들기
         </button>
 
-        <div className="flex items-center justify-between mb-4">
-          <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">{sortBy === "recent" ? "최신순" : "즐겨찾기 우선"}</p>
-          <button
-            onClick={() => setSortBy((prev) => (prev === "recent" ? "liked-first" : "recent"))}
-            className="h-[32px] px-3 rounded-full border border-[#e2e2e2] bg-white font-['Noto_Sans_KR'] text-[12px] text-[#555]"
-          >
-            정렬 변경
-          </button>
-        </div>
 
         <div className="mb-5 flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
           <button

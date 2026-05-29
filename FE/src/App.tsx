@@ -361,12 +361,15 @@ export default function App() {
   const [latestDiagnosisResult, setLatestDiagnosisResult] = useState<PersonaResponse | null>(bootstrap.diagnosisResult);
   const [diagnosisProgress, setDiagnosisProgress] = useState<DiagnosisProgressState>(bootstrap.diagnosisProgress);
   const [diagnosisReconnectTick, setDiagnosisReconnectTick] = useState(0);
+  const [contentReconnectTick, setContentReconnectTick] = useState(0);
   const [isGlobalMenuOpen, setIsGlobalMenuOpen] = useState(false);
   const [showLeaveDiagnosisWarning, setShowLeaveDiagnosisWarning] = useState(false);
   const previousPageRef = useRef<Page>(currentPage);
   const currentPageRef = useRef<Page>(currentPage);
   const diagnosisRunActiveRef = useRef(false);
   const contentGenerationRunActiveRef = useRef(false);
+  const contentStreamCloseRef = useRef<(() => void) | null>(null);
+  const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const isAdminPage = currentPage === "admin";
 
   const loggedIn = isAuthenticated();
@@ -394,20 +397,137 @@ export default function App() {
       setDiagnosisReconnectTick((prev) => prev + 1);
     };
 
+    const triggerContentReconnect = () => {
+      if (currentPageRef.current !== "content-generating") return;
+      contentStreamCloseRef.current?.();
+      contentStreamCloseRef.current = null;
+      contentGenerationRunActiveRef.current = false;
+      setContentReconnectTick((prev) => prev + 1);
+    };
+
+    const handleResume = () => {
+      triggerDiagnosisReconnect();
+      triggerContentReconnect();
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        triggerDiagnosisReconnect();
+        handleResume();
       }
     };
 
-    window.addEventListener("pageshow", triggerDiagnosisReconnect);
+    window.addEventListener("pageshow", handleResume);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("pageshow", triggerDiagnosisReconnect);
+      window.removeEventListener("pageshow", handleResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
+
+  // Wake Lock: 진단/콘텐츠 생성 중 화면 꺼짐 방지
+  useEffect(() => {
+    const ACTIVE_DIAGNOSIS = new Set(["connecting", "connected", "queued", "running"]);
+    const ACTIVE_CONTENT = new Set(["connecting", "queued", "processing", "running"]);
+    const isActive = ACTIVE_DIAGNOSIS.has(diagnosisProgress.status) || ACTIVE_CONTENT.has(contentProgress.status);
+
+    const nav = navigator as Navigator & {
+      wakeLock?: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> };
+    };
+
+    if (!isActive) {
+      if (wakeLockRef.current) {
+        void wakeLockRef.current.release().catch(() => {});
+        wakeLockRef.current = null;
+      }
+      return;
+    }
+
+    if (wakeLockRef.current || !nav.wakeLock || document.visibilityState !== "visible") return;
+
+    void nav.wakeLock.request("screen")
+      .then((lock) => { wakeLockRef.current = lock; })
+      .catch(() => {});
+  }, [diagnosisProgress.status, contentProgress.status]);
+
+  // 콘텐츠 생성 SSE 재연결 (다른 앱 복귀 시)
+  useEffect(() => {
+    if (currentPage !== "content-generating") return;
+    const { sessionId } = contentProgress;
+    if (!sessionId) return;
+    if (contentProgress.status === "completed" || contentProgress.status === "error") return;
+    if (contentGenerationRunActiveRef.current) return;
+
+    const closeStream = openDiagnosisProgressStream({
+      sessionId,
+      onEvent: (event) => {
+        const payload = event.data;
+        const eventName = event.event.toLowerCase();
+        const step = String(payload?.step ?? event.event ?? "running");
+        const isCompleted = step.toLowerCase().includes("complete");
+        const isError = step.toLowerCase().includes("error");
+        const serverProgress =
+          typeof payload?.progress === "number" && Number.isFinite(payload.progress)
+            ? Math.max(0, Math.min(100, Math.round(payload.progress)))
+            : null;
+
+        setContentProgress((prev) => {
+          if (prev.sessionId !== sessionId) return prev;
+          let nextProgress = serverProgress !== null ? serverProgress : prev.progress;
+          if (eventName === "queued") nextProgress = Math.max(nextProgress, 18);
+          else if (eventName === "processing") nextProgress = Math.max(nextProgress, 42);
+          if (isCompleted) nextProgress = 100;
+
+          let message = prev.message;
+          let queuePosition = prev.queuePosition;
+          if (eventName === "queued") {
+            const position = Number(payload?.position ?? payload?.queuePosition ?? payload?.rank);
+            queuePosition = Number.isFinite(position) && position > 0 ? Math.round(position) : null;
+            message = queuePosition
+              ? `현재 대기열 ${queuePosition}번입니다. 순서가 되면 자동으로 시작됩니다.`
+              : "콘텐츠 생성 요청이 대기열에 등록되었습니다...";
+          } else if (eventName === "processing") {
+            queuePosition = null;
+            message = "콘텐츠 생성을 시작했습니다...";
+          } else if (payload?.message && String(payload.message).trim()) {
+            queuePosition = null;
+            message = String(payload.message).trim();
+          }
+
+          return {
+            ...prev,
+            progress: Math.max(prev.progress, nextProgress),
+            message,
+            step,
+            queuePosition,
+            connected: true,
+            status: isError
+              ? "error"
+              : isCompleted
+                ? "completed"
+                : eventName === "queued"
+                  ? "queued"
+                  : eventName === "processing"
+                    ? "processing"
+                    : "running",
+          };
+        });
+      },
+      onError: () => {
+        setContentProgress((prev) =>
+          prev.sessionId === sessionId
+            ? { ...prev, connected: false, status: prev.status === "completed" ? "completed" : "error" }
+            : prev
+        );
+      },
+    });
+    contentStreamCloseRef.current = closeStream;
+
+    return () => {
+      closeStream();
+      if (contentStreamCloseRef.current === closeStream) contentStreamCloseRef.current = null;
+    };
+  }, [currentPage, contentProgress.sessionId, contentProgress.status, contentReconnectTick]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1100,6 +1220,15 @@ export default function App() {
 
     closeContentProgressStream = openDiagnosisProgressStream({
       sessionId,
+      onOpen: () => {
+        // 페이지 복귀 후 wake lock 재획득
+        const nav = navigator as Navigator & {
+          wakeLock?: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> };
+        };
+        if (nav.wakeLock && !wakeLockRef.current && document.visibilityState === "visible") {
+          void nav.wakeLock.request("screen").then((lock) => { wakeLockRef.current = lock; }).catch(() => {});
+        }
+      },
       onEvent: (event) => {
         const payload = event.data;
         const eventName = event.event.toLowerCase();
@@ -1192,6 +1321,9 @@ export default function App() {
     } finally {
       contentGenerationRunActiveRef.current = false;
       closeContentProgressStream?.();
+      if (contentStreamCloseRef.current === closeContentProgressStream) {
+        contentStreamCloseRef.current = null;
+      }
     }
   };
 

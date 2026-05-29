@@ -19,7 +19,7 @@ export function SaveResultCompletePage({
       onBack={onBack}
       onHome={onHome}
       contentMaxWidthClassName="max-w-[980px]"
-      contentClassName="px-5 pb-10 pt-2 sm:px-8 md:px-10"
+      contentClassName="px-5 pb-10 pt-3 sm:px-8 sm:pt-4 md:px-10"
     >
       <div className="mx-auto flex h-full w-full max-w-[640px] flex-1 flex-col items-center justify-center py-6 text-center">
         <div className="mb-10 flex h-28 w-28 items-center justify-center rounded-full bg-[#EF466F] shadow-lg md:h-32 md:w-32">

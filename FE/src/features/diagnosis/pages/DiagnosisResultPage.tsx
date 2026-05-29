@@ -59,7 +59,7 @@ export function DiagnosisResultPage({
         onHome={onHome}
         scrollContent
         contentMaxWidthClassName="max-w-[1120px]"
-        contentClassName="px-4 pt-2 pb-36 sm:px-6 sm:pb-32 md:px-8 md:pb-28 lg:px-10"
+        contentClassName="px-4 pt-3 pb-36 sm:px-6 sm:pt-4 sm:pb-32 md:px-8 md:pb-28 lg:px-10"
         bottomMaxWidthClassName="max-w-[1120px]"
         bottom={
           result ? (

@@ -173,7 +173,7 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
       onHome={onHome}
       scrollContent
       contentMaxWidthClassName="max-w-[1020px]"
-      contentClassName="px-5 pb-28 pt-2 sm:px-8 md:pb-28 lg:px-10"
+      contentClassName="px-5 pb-28 pt-3 sm:px-8 sm:pt-4 md:pb-28 lg:px-10"
       bottomMaxWidthClassName="max-w-[1020px]"
       bottom={
         hasStarted ? (
@@ -201,9 +201,11 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
         </div>
       ) : (
         <>
-          <PreferenceProgressHeader stepIndex={stepIndex} totalSteps={TOTAL_STEPS} selectedCount={selectedCount} />
+          <div className={isToneStep ? "hidden lg:block" : ""}>
+            <PreferenceProgressHeader stepIndex={stepIndex} totalSteps={TOTAL_STEPS} selectedCount={selectedCount} />
+          </div>
 
-          <div className="mb-4">
+          <div className={`mb-4 ${isToneStep ? "hidden lg:block" : ""}`}>
             <div className="mb-2 inline-flex items-center rounded-full bg-black px-3 py-1.5 font-['Noto_Sans_KR'] text-[12px] text-white">
               {isToneStep ? "질문 7" : `질문 ${currentQuestion.number}`}
             </div>
@@ -228,6 +230,9 @@ export function PreferenceTestPage({ onNext, onBack, onHome }: PreferenceTestPag
           {isToneStep ? (
             <PreferenceToneStep
               toneImageSrc={imageSrc("6-1")}
+              stepIndex={stepIndex}
+              totalSteps={TOTAL_STEPS}
+              selectedCount={selectedCount}
               toneAdjustment={toneAdjustment}
               imageFilterStyle={imageFilterStyle}
               temperatureOverlayStyle={temperatureOverlayStyle}

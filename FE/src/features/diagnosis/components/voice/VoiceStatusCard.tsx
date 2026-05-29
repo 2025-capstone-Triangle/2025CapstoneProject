@@ -8,6 +8,7 @@ interface WaveformBar {
 }
 
 interface VoiceStatusCardProps {
+  sampleScript: string;
   hasRecording: boolean;
   recordingMeta: StagedVoiceRecordingMeta | null;
   isRecorderStopping: boolean;
@@ -37,6 +38,7 @@ interface VoiceStatusCardProps {
 }
 
 export function VoiceStatusCard({
+  sampleScript,
   hasRecording,
   recordingMeta,
   isRecorderStopping,
@@ -72,7 +74,26 @@ export function VoiceStatusCard({
         </div>
       ) : null}
 
-      <div className="mb-4 rounded-[20px] border border-[#efefef] bg-white p-4 shadow-[0_10px_22px_rgba(0,0,0,0.04)] sm:p-5 lg:mb-0 lg:min-h-[100%]">
+      <div className="mb-4 rounded-[20px] border border-[#efefef] bg-white p-4 shadow-[0_12px_24px_rgba(0,0,0,0.04)] sm:p-5 lg:mb-0 lg:min-h-[100%]">
+        <div className="mb-4 rounded-[14px] bg-gradient-to-r from-[#fafafa] to-[#f6f6f6] px-4 py-3.5">
+          <p className="font-['Noto_Sans_KR'] text-[13px] font-semibold leading-[1.55] text-[#4b5563]">
+            아래 문장을 읽어주세요.
+          </p>
+          <p className="mt-2 rounded-[10px] bg-white px-3 py-2 font-['Noto_Sans_KR'] text-[13px] font-semibold leading-[1.6] text-[#1f2937]">
+            "{sampleScript}"
+          </p>
+          <div className="mt-2 space-y-1">
+            <p className="flex items-start gap-1.5 font-['Noto_Sans_KR'] text-[12px] leading-[1.55] text-[#6b7280]">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16a34a]" />
+              소음이 적은 곳에서 또렷한 목소리로 녹음해 주세요.
+            </p>
+            <p className="flex items-start gap-1.5 font-['Noto_Sans_KR'] text-[12px] leading-[1.55] text-[#6b7280]">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#16a34a]" />
+              원하는 문장으로 자유롭게 녹음해도 됩니다.
+            </p>
+          </div>
+        </div>
+
         {hasRecording && recordingMeta ? (
           <>
             <div className="mb-3 flex items-center justify-between">
@@ -86,13 +107,6 @@ export function VoiceStatusCard({
             <div className="mb-3 flex items-baseline justify-between">
               <p className="font-['NEXON_Football_Gothic'] text-[clamp(24px,3.2vw,28px)] text-black">{recordingTimeLabel}</p>
               <p className="font-['Noto_Sans_KR'] text-[12px] text-[#888]">/ {maxTimeLabel}</p>
-            </div>
-
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#effaf3] px-3 py-1.5">
-              <CheckCircle2 className="h-4 w-4 text-[#199a58]" />
-              <span className="font-['Noto_Sans_KR'] text-[12px] font-semibold text-[#199a58]">
-                다음 단계에서 이 녹음본을 사용합니다
-              </span>
             </div>
 
             <p className="mb-1 break-all font-['Noto_Sans_KR'] text-[12px] text-[#666]">{recordingMeta.fileName}</p>
@@ -126,6 +140,10 @@ export function VoiceStatusCard({
               </div>
             ) : null}
 
+            <p className="mt-3 font-['Noto_Sans_KR'] text-[12px] text-[#586174]">
+              녹음이 정상입니다. 재생으로 확인한 뒤 하단의 "녹음 완료로 다음 단계" 버튼을 눌러주세요.
+            </p>
+
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -133,12 +151,12 @@ export function VoiceStatusCard({
                 className="inline-flex h-[42px] items-center justify-center gap-1.5 rounded-[12px] border border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[13px] text-[#222] hover:bg-[#fafafa]"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                다시 녹음
+                다시 녹음하기
               </button>
               <button
                 type="button"
                 onClick={onDownload}
-                className="h-[42px] rounded-[12px] bg-[#111] font-['Noto_Sans_KR'] text-[13px] text-white"
+                className="h-[42px] rounded-[12px] border border-[#e5e5e5] bg-white font-['Noto_Sans_KR'] text-[13px] text-[#222] hover:bg-[#fafafa]"
               >
                 파일 다운로드
               </button>
@@ -154,7 +172,7 @@ export function VoiceStatusCard({
               </div>
             </div>
             <div className="flex h-[122px] flex-col items-center justify-center text-center">
-              <p className="mb-1 font-['Noto_Sans_KR'] text-[15px] font-semibold text-[#EF466F]">녹음 파일을 정리하고 있어요</p>
+              <p className="mb-1 font-['Noto_Sans_KR'] text-[15px] font-semibold text-[#EF466F]">녹음 파일을 정리하고 있어요.</p>
               <p className="font-['Noto_Sans_KR'] text-[12px] text-[#666]">잠시만 기다리면 자동으로 완료됩니다.</p>
             </div>
           </>
@@ -210,7 +228,7 @@ export function VoiceStatusCard({
                 }`}
               >
                 {isRecording || isPaused ? <Square className="h-4 w-4 fill-white" /> : <Mic className="h-4 w-4" />}
-                {isRecording || isPaused ? "녹음 종료" : "녹음 시작"}
+                {isRecording || isPaused ? "녹음 완료하기" : "녹음 시작하기"}
               </button>
               <button
                 type="button"
@@ -219,7 +237,7 @@ export function VoiceStatusCard({
                 className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#dedede] bg-white font-['Noto_Sans_KR'] text-[14px] font-semibold text-[#222] hover:bg-[#f8f8f8] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                {isPaused ? "재개" : "일시정지"}
+                {isPaused ? "이어 녹음" : "잠시 멈춤"}
               </button>
             </div>
           </>

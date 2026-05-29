@@ -12,7 +12,7 @@ export function DiagnosisStartPage({ onStart, onBack, onHome }: DiagnosisStartPa
       onBack={onBack}
       onHome={onHome}
       contentMaxWidthClassName="max-w-[1160px]"
-      contentClassName="px-5 pb-28 pt-2 sm:px-8 md:px-10 md:pb-28 lg:pt-4"
+      contentClassName="px-5 pb-28 pt-3 sm:px-8 sm:pt-4 md:px-10 md:pb-28 lg:pt-4"
       bottomMaxWidthClassName="max-w-[1160px]"
       bottom={
         <div className="p-4 sm:p-6 md:px-10 md:pb-8 md:pt-4">

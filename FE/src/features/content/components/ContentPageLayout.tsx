@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { BackButton } from "../../../shared/layout/BackButton";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface ContentPageLayoutProps {
@@ -41,12 +40,7 @@ export function ContentPageLayout({
     contentClassName,
   );
 
-  const contentNodeWithBack = (
-    <div className={contentBaseClassName}>
-      {onBack ? <BackButton onClick={onBack} /> : null}
-      {children}
-    </div>
-  );
+  const contentNode = <div className={contentBaseClassName}>{children}</div>;
 
   return (
     <div
@@ -56,12 +50,17 @@ export function ContentPageLayout({
         rootClassName,
       )}
     >
-      <DefaultTopBar onTitleClick={onHome} showNotification={showNotification} />
+      <DefaultTopBar
+        onTitleClick={onHome}
+        showNotification={showNotification}
+        leftAction={onBack ? "back" : "none"}
+        onBackClick={onBack}
+      />
 
       {scrollContent ? (
-        <div className="page-scroll">{contentNodeWithBack}</div>
+        <div className="page-scroll">{contentNode}</div>
       ) : (
-        <div className="content-content-frame">{contentNodeWithBack}</div>
+        <div className="content-content-frame">{contentNode}</div>
       )}
 
       {bottom ? (

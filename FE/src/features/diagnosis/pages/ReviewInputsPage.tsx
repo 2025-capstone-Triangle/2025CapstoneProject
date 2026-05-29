@@ -53,7 +53,7 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
       onBack={onBack}
       onHome={onHome}
       contentMaxWidthClassName="max-w-[1120px]"
-      contentClassName="px-5 pb-28 pt-5 sm:px-8 md:pb-28 lg:px-10"
+      contentClassName="px-5 pb-28 pt-3 sm:px-8 sm:pt-4 md:pb-28 lg:px-10"
       bottomMaxWidthClassName="max-w-[1120px]"
       bottom={
         <div className="p-4 sm:p-6 md:px-10 md:pb-8 md:pt-2">

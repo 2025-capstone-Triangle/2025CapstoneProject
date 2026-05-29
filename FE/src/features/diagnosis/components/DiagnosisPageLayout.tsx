@@ -1,5 +1,4 @@
-﻿import type { ReactNode } from "react";
-import { BackButton } from "../../../shared/layout/BackButton";
+import type { ReactNode } from "react";
 import { DefaultTopBar } from "../../../shared/layout/DefaultTopBar";
 
 interface DiagnosisPageLayoutProps {
@@ -41,12 +40,7 @@ export function DiagnosisPageLayout({
     contentClassName,
   );
 
-  const contentNode = (
-    <div className={contentBaseClassName}>
-      {onBack ? <BackButton onClick={onBack} /> : null}
-      {children}
-    </div>
-  );
+  const contentNode = <div className={contentBaseClassName}>{children}</div>;
 
   return (
     <div
@@ -56,7 +50,12 @@ export function DiagnosisPageLayout({
         rootClassName,
       )}
     >
-      <DefaultTopBar onTitleClick={onHome} showNotification={showNotification} />
+      <DefaultTopBar
+        onTitleClick={onHome}
+        showNotification={showNotification}
+        leftAction={onBack ? "back" : "none"}
+        onBackClick={onBack}
+      />
 
       {scrollContent ? (
         <div className="page-scroll">{contentNode}</div>

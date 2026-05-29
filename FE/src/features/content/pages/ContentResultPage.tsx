@@ -55,7 +55,7 @@ export function ContentResultPage({
       onBack={onBack}
       onHome={onHome}
       contentMaxWidthClassName="max-w-[1120px]"
-      contentClassName="px-4 pb-10 pt-2 sm:px-8 md:px-10"
+      contentClassName="px-4 pb-10 pt-8 sm:px-8 md:px-10"
       scrollContent
     >
       <div className="mb-5 rounded-[20px] border border-[#f0f0f0] bg-white p-4 shadow-sm sm:p-5">

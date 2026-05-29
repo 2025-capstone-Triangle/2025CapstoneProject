@@ -43,7 +43,7 @@ export function ContentAspectRatioPage({ onNext, onBack, onHome, skipPersonaSele
       onBack={onBack}
       onHome={onHome}
       contentMaxWidthClassName="max-w-[760px]"
-      contentClassName="px-4 pb-28 pt-2 sm:px-8 md:px-10 md:pb-8"
+      contentClassName="px-4 pb-28 pt-8 sm:px-8 md:px-10 md:pb-8"
       bottomMaxWidthClassName="max-w-[760px]"
       bottom={
         <ContentBottomActionBar

@@ -73,7 +73,7 @@ export function ContentGeneratingPage({
       onHome={onHome}
       scrollContent={false}
       contentMaxWidthClassName="max-w-[980px]"
-      contentClassName="px-6 pb-14 pt-2 md:px-10"
+      contentClassName="px-6 pb-14 pt-8 md:px-10"
     >
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className="relative mb-12">

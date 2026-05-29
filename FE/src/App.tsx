@@ -463,6 +463,21 @@ export default function App() {
       onEvent: (event) => {
         const payload = event.data;
         const eventName = event.event.toLowerCase();
+        const rawStep = String(payload?.step ?? "").toLowerCase();
+        const rawMessage = String(payload?.message ?? "").toLowerCase();
+        const rawData = event.rawData.trim().toLowerCase();
+        const isConnectEvent =
+          eventName === "connect" || rawStep === "connect" || rawMessage === "connect" || rawData === "connect";
+
+        if (isConnectEvent) {
+          setContentProgress((prev) =>
+            prev.sessionId === sessionId
+              ? { ...prev, connected: true, status: prev.status === "queued" ? "queued" : prev.status }
+              : prev
+          );
+          return;
+        }
+
         const step = String(payload?.step ?? event.event ?? "running");
         const isCompleted = step.toLowerCase().includes("complete");
         const isError = step.toLowerCase().includes("error");
@@ -1233,6 +1248,21 @@ export default function App() {
       onEvent: (event) => {
         const payload = event.data;
         const eventName = event.event.toLowerCase();
+        const rawStep = String(payload?.step ?? "").toLowerCase();
+        const rawMessage = String(payload?.message ?? "").toLowerCase();
+        const rawData = event.rawData.trim().toLowerCase();
+        const isConnectEvent =
+          eventName === "connect" || rawStep === "connect" || rawMessage === "connect" || rawData === "connect";
+
+        if (isConnectEvent) {
+          setContentProgress((prev) =>
+            prev.sessionId === sessionId
+              ? { ...prev, connected: true, status: prev.status === "queued" ? "queued" : prev.status }
+              : prev
+          );
+          return;
+        }
+
         const step = String(payload?.step ?? event.event ?? "running");
         const lowerStep = step.toLowerCase();
         const isCompleted = lowerStep.includes("complete");

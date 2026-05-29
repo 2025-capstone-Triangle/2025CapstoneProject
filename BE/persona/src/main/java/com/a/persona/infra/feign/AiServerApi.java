@@ -21,11 +21,11 @@ public interface AiServerApi {
 
     @PostMapping("/generate-content")
     ContentResponse createContent(
-        AiContentRequest request
+            @RequestBody AiContentRequest request
     );
 
     @PostMapping("/generate-trend-content")
     ContentResponse createTrendContent(
-            AiTrendContentRequest request
+            @RequestBody AiTrendContentRequest request
     );
 }

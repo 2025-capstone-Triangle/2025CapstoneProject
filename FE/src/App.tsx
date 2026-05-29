@@ -1511,6 +1511,7 @@ export default function App() {
               }
               setIsRegeneratingContent(false);
               setContentGenerationError("");
+              setContentProgress({ ...DEFAULT_CONTENT_PROGRESS, status: "queued", message: "대기열을 확인하고 있습니다..." });
               handleNavigateWithoutHistory("content-generating");
               void runContentGeneration(ratio, selectedPersonaCode);
               return;
@@ -1519,6 +1520,7 @@ export default function App() {
             if (isRegeneratingContent) {
               setIsRegeneratingContent(false);
               setContentGenerationError("");
+              setContentProgress({ ...DEFAULT_CONTENT_PROGRESS, status: "queued", message: "대기열을 확인하고 있습니다..." });
               handleNavigateWithoutHistory("content-generating");
               void runContentGeneration(ratio, selectedPersonaCode);
             } else if (autoSelectPersonaForContent) {
@@ -1528,6 +1530,7 @@ export default function App() {
                 return;
               }
               setContentGenerationError("");
+              setContentProgress({ ...DEFAULT_CONTENT_PROGRESS, status: "queued", message: "대기열을 확인하고 있습니다..." });
               handleNavigateWithoutHistory("content-generating");
               void runContentGeneration(ratio, selectedPersonaCode);
             } else {
@@ -1549,6 +1552,7 @@ export default function App() {
               handleNavigate("content-aspect-ratio");
               return;
             }
+            setContentProgress({ ...DEFAULT_CONTENT_PROGRESS, status: "queued", message: "대기열을 확인하고 있습니다..." });
             handleNavigateWithoutHistory("content-generating");
             void runContentGeneration(selectedRatio, personaCode);
           }}

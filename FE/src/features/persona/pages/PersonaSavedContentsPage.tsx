@@ -160,7 +160,7 @@ export function PersonaSavedContentsPage({ personaCode, onBack, onTabChange, onH
   const likedCount = contents.filter((item) => item.isLiked).length;
 
   return (
-    <div className="persona-page-root persona-pretendard relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-white md:h-full md:min-h-0">
+    <div className="persona-page-root persona-pretendard relative mx-auto flex min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-x-hidden bg-white">
       <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="page-scroll">

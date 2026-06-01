@@ -45,7 +45,7 @@ export function ContentPageLayout({
   return (
     <div
       className={joinClassNames(
-        "content-page-root content-pretendard relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:h-full md:min-h-0",
+        "content-page-root content-pretendard relative mx-auto flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-white",
         pageMaxWidthClassName,
         rootClassName,
       )}

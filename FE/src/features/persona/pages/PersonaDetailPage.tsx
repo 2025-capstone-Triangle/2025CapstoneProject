@@ -116,7 +116,7 @@ export function PersonaDetailPage(props: PersonaDetailPageProps) {
 
   if (loadingPersona) {
     return (
-      <div className="persona-page-root persona-pretendard relative bg-white h-[100dvh] min-h-[100dvh] diag-page-root w-full max-w-[980px] mx-auto overflow-hidden md:h-full md:min-h-0">
+      <div className="persona-page-root persona-pretendard relative bg-white min-h-[100dvh] diag-page-root w-full max-w-[980px] mx-auto overflow-x-hidden">
         <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
         <div className="h-[60vh] flex items-center justify-center gap-2 font-['Noto_Sans_KR'] text-[14px] text-[#666]">
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -128,7 +128,7 @@ export function PersonaDetailPage(props: PersonaDetailPageProps) {
 
   if (!persona) {
     return (
-      <div className="persona-page-root persona-pretendard relative bg-white h-[100dvh] min-h-[100dvh] diag-page-root w-full max-w-[980px] mx-auto overflow-hidden md:h-full md:min-h-0">
+      <div className="persona-page-root persona-pretendard relative bg-white min-h-[100dvh] diag-page-root w-full max-w-[980px] mx-auto overflow-x-hidden">
         <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
         <div className="mx-auto max-w-[760px] px-5 sm:px-8 lg:px-10 pt-10">
           <div className="rounded-[16px] border border-[#f0d0d0] bg-[#fff7f7] p-5">

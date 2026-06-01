@@ -238,7 +238,7 @@ export function PersonaListPage({ onPersonaClick, onCreateNew, onBack, onHome }:
   const favoriteCount = personas.filter((persona) => persona.isFavorite).length;
 
   return (
-    <div className="persona-page-root persona-pretendard relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-hidden bg-white md:h-full md:min-h-0">
+    <div className="persona-page-root persona-pretendard relative mx-auto flex min-h-[100dvh] w-full max-w-[1320px] flex-col overflow-x-hidden bg-white">
       <DefaultTopBar title="My Persona" onTitleClick={onHome} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       <div className="page-scroll">

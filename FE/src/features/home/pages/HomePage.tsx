@@ -96,7 +96,7 @@ export function HomePage({ onNavigate, onSelectTrendingReference }: HomePageProp
   };
 
   return (
-    <div className="home-page-root home-pretendard relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-white md:h-full md:min-h-0">
+    <div className="home-page-root home-pretendard relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-white">
       <div className="relative mx-auto flex h-full w-full max-w-[1320px] flex-1 flex-col">
         <DefaultTopBar
           title="Person:a"

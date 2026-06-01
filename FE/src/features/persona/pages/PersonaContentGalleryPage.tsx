@@ -126,7 +126,7 @@ export function PersonaContentGalleryPage({ onBack, onHome }: PersonaContentGall
   );
 
   return (
-    <div className="persona-page-root persona-pretendard relative min-h-screen max-w-[390px] mx-auto overflow-hidden bg-white">
+    <div className="persona-page-root persona-pretendard relative mx-auto flex min-h-[100dvh] w-full max-w-[390px] flex-col overflow-x-hidden bg-white">
       <DefaultTopBar onTitleClick={onHome} showNotification={true} leftAction={onBack ? "back" : "none"} onBackClick={onBack} />
 
       {/* Header */}

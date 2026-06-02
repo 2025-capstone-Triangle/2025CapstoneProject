@@ -104,7 +104,7 @@ export function HomePage({ onNavigate, onSelectTrendingReference }: HomePageProp
           showNotificationBadge={hasNoticeBadge}
         />
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-2 md:px-6 md:pb-6 md:pt-3 xl:px-8">
+        <div className="min-h-0 flex-1 overflow-y-visible px-4 pb-4 pt-2 md:overflow-y-auto md:px-6 md:pb-6 md:pt-3 xl:px-8">
           <div className="mx-auto flex w-full max-w-[1140px] flex-col gap-4 md:gap-5">
             <section className="rounded-[26px] border border-[#edf1f5] bg-white p-2.5 shadow-[0_10px_26px_rgba(15,23,42,0.06)] md:p-3.5">
               <div className="flex flex-col gap-2 md:gap-3">

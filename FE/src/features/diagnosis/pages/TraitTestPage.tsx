@@ -54,7 +54,7 @@ export function TraitTestPage({ onNext, onBack, onHome }: TraitTestPageProps) {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <div className="bg-white h-[100dvh] min-h-[100dvh] overflow-y-auto diag-page-root diag-pretendard w-full max-w-[980px] mx-auto md:h-full md:min-h-0">
+    <div className="bg-white min-h-[100dvh] overflow-x-hidden diag-page-root diag-pretendard w-full max-w-[980px] mx-auto">
       <DefaultTopBar onTitleClick={onHome} showNotification={true} />
       <BackButton onClick={onBack} />
       

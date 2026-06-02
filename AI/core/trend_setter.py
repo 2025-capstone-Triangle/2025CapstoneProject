@@ -18,14 +18,14 @@ class ContentGeneration(BaseContentGenerator):
         if answers.get('q1_environment') == 1:
             camera_style = (
                 "Shot on iPhone 15 Pro (ProRAW) — natural ambient light, authentic candid quality, "
-                "feels like a genuine photo a 20-something Korean woman would post on Instagram, "
-                "slight background bokeh, true skin texture with no heavy retouching."
+                "feels like a genuine photo a influencer would post on Instagram, "
+                "slight background bokeh, true skin texture with a little retouching."
             )
         else:
             camera_style = (
                 "Shot on Sony A7III with 85mm f/1.4 — professional studio or large-window interior lighting, "
                 "editorial-quality depth of field, soft and intentional light shaping, "
-                "polished yet natural feel that a 20-something Korean influencer would post on Instagram."
+                "polished yet natural feel that a influencer would post on Instagram."
             )
 
         prompt_refine_msg = f"""
@@ -42,6 +42,7 @@ class ContentGeneration(BaseContentGenerator):
             - 기술적 스타일: {base_elements}
 
             [작성 지침]
+            - 얼굴 보존(CRITICAL): 함께 제공되는 참조 이미지 속 인물의 얼굴을 반드시 그대로 유지할 것. 생성된 이미지의 인물이 참조 이미지 속 인물과 동일인으로 식별 가능해야 하며, 얼굴 특징·윤곽·피부 톤을 변경하지 말 것. 프롬프트에 "preserve the exact facial identity and features of the person in the reference image" 문구를 반드시 포함할 것.
             - 구도(Framing): [기술적 스타일]의 첫 번째 항목에 명시된 프레이밍을 반드시 그대로 따를 것. 사용자가 선택한 구도를 임의로 변경하지 말 것.
             - 트렌드 반영: BE의 [트렌드 컨셉]에 묘사된 상황(장소, 소품, 의상)을 반영하되, 구도는 위 사용자 선택을 우선시할 것.
             - 색상: 사용자의 [선호 색상]을 의상 포인트나 배경 조명에 자연스럽게 녹이세요.

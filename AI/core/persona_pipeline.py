@@ -156,10 +156,12 @@ class ImageGenerator:
             "1. 구도: 반드시 얼굴+어깨만 나오는 bust shot 또는 head shot. 전신·반신·광각은 절대 사용하지 말 것.\n"
             "2. 분위기·조명: 위 '분위기 & 스타일 참고'에 명시된 채도, 명도, 조명, 환경(실내/실외), 분위기 설정을 반드시 반영할 것.\n"
             "3. 색감: 위 색상 팔레트의 HEX 컬러들이 배경·조명·피부 톤·소품에 자연스럽게 녹아들도록 할 것. 옷 색으로 직접 표현하지 말 것.\n"
-            "4. 스타일: 20대 한국 여성이 자신의 인스타그램 피드에 직접 업로드할 법한 자연스럽고 세련된 인물 사진. "
+            "4. 스타일: 인플루언서가 자신의 인스타그램 피드에 직접 업로드할 법한 자연스럽고 세련된 인물 사진. "
             "[분위기 & 스타일 참고]에 명시된 카메라 기종과 촬영 배경을 그대로 반영할 것. "
-            "인위적이거나 과도하게 보정된 AI 느낌 없이, 실제 사진처럼 자연스러운 피부 질감과 조명이어야 함.\n"
-            "5. 얼굴: 입력된 인물의 얼굴을 유지할 것.\n"
+            "인위적이거나 과도하게 보정된 AI 느낌 없이, 어느정도의 깔끔한, 자연스러운 피부 질감과 조명이어야 함.\n"
+            "5. 얼굴(CRITICAL): 참조 이미지 속 인물의 얼굴을 반드시 그대로 유지할 것. "
+            "생성된 이미지의 인물이 참조 이미지의 인물과 동일인으로 식별 가능해야 하며, "
+            "얼굴 특징·윤곽·피부 톤을 임의로 변경하지 말 것. 이 규칙을 위반하면 결과물이 무효입니다.\n"
         )
         res = await self.llm.ainvoke(prompt_msg)
         return res.content.strip()
@@ -183,17 +185,29 @@ class ImageGenerator:
         print(f"📐 참조 이미지 리사이즈: {image.size} → {resized.size}")
         return resized
 
+    _FACE_PRESERVATION_PROMPT = (
+        "CRITICAL REQUIREMENT — FACE PRESERVATION: "
+        "The reference image provided is the user's actual photo. "
+        "You MUST preserve the exact facial identity, facial features, face shape, skin tone, and overall appearance of the person in the reference image. "
+        "The subject in the generated image must be instantly recognizable as the same individual from the reference photo. "
+        "Do NOT change, replace, or significantly alter the person's face under any circumstances. "
+    )
+
     _NEGATIVE_PROMPT = (
-        " Strictly forbidden in the image: any text, typography, letters, words, sentences, "
-        "hex color codes (e.g. #F7E3E0), color swatches, color palette labels, RGB values, "
-        "watermarks, captions, UI overlays, charts, infographics, or any graphical annotation. "
-        "Pure photographic image only — no embedded text of any kind."
+        " ABSOLUTE RULE — CRITICAL FAILURE if violated: "
+        "the output image must contain zero text, zero typography, zero letters, zero numbers. "
+        "It is strictly forbidden to render hex color codes of any format (#F7E3E0, #1A1A1A, #RRGGBB, etc.), "
+        "color palette chips, color swatches, color names, RGB values, HSL values, "
+        "any alphanumeric characters, captions, watermarks, labels, annotations, "
+        "UI overlays, charts, infographics, or any graphical element that is not part of the photograph itself. "
+        "Do NOT include text anywhere in the image — not in the background, not overlaid, not as props. "
+        "The output must be a pure photographic image with no embedded text or annotations of any kind whatsoever."
     )
 
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> str | None:
         """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 로컬 임시 경로를 반환. 503 발생 시 최대 3회 재시도."""
         _retry_delays = [5, 15, 30]
-        full_prompt = prompt + self._NEGATIVE_PROMPT
+        full_prompt = self._FACE_PRESERVATION_PROMPT + prompt + self._NEGATIVE_PROMPT
         ref_image = self._resize_for_gemini(user_pil_image)
         for attempt, delay in enumerate([0] + _retry_delays):
             if delay:

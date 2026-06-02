@@ -161,6 +161,14 @@ class BaseContentGenerator:
         print(f"📐 참조 이미지 리사이즈: {image.size} → {resized.size}")
         return resized
 
+    _FACE_PRESERVATION_PROMPT = (
+        "CRITICAL REQUIREMENT — FACE PRESERVATION: "
+        "The reference image provided is the user's actual photo. "
+        "You MUST preserve the exact facial identity, facial features, face shape, skin tone, and overall appearance of the person in the reference image. "
+        "The subject in the generated image must be instantly recognizable as the same individual from the reference photo. "
+        "Do NOT change, replace, or significantly alter the person's face under any circumstances. "
+    )
+
     _NEGATIVE_PROMPT = (
         " ABSOLUTE RULE — CRITICAL FAILURE if violated: "
         "the output image must contain zero text, zero typography, zero letters, zero numbers. "
@@ -174,7 +182,7 @@ class BaseContentGenerator:
 
     def generate_persona_image(self, prompt: str, user_pil_image: Image.Image) -> bytes | None:
         """Gemini로 유저 얼굴을 유지한 채 이미지를 생성하고 PNG bytes를 반환. 503 발생 시 최대 3회 재시도."""
-        full_prompt = prompt + self._NEGATIVE_PROMPT
+        full_prompt = self._FACE_PRESERVATION_PROMPT + prompt + self._NEGATIVE_PROMPT
         ref_image = self._resize_for_gemini(user_pil_image)
         for attempt, delay in enumerate([0] + _GEMINI_IMAGE_RETRY_DELAYS):
             if delay:

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+﻿import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { HomePage } from "./features/home/pages/HomePage";
 import { DiagnosisStartPage } from "./features/diagnosis/pages/DiagnosisStartPage";
@@ -24,7 +24,6 @@ import { HelpPage } from "./features/support/pages/HelpPage";
 import { LoginPage } from "./features/auth/pages/LoginPage";
 import { SignupPage } from "./features/auth/pages/SignupPage";
 import { ForgotPasswordPage } from "./features/auth/pages/ForgotPasswordPage";
-import { AdminConsolePage } from "./features/admin/pages/AdminConsolePage";
 import { diagnosePersona, saveNewPersona, type PersonaResponse } from "./features/persona/lib/personaApi";
 import { getPendingPersonaCode } from "./features/persona/lib/personaShareCode";
 import {
@@ -53,6 +52,11 @@ import { clearAuth, getMemberInfo, getSavedAuth, isAuthenticated, saveAuth, sign
 import { ErrorToast } from "./shared/ui/ErrorToast";
 import { HamburgerMenu } from "./shared/layout/HamburgerMenu";
 
+const AdminConsolePage = lazy(() =>
+  import("./features/admin/pages/AdminConsolePage").then((module) => ({
+    default: module.AdminConsolePage,
+  })),
+);
 type Page =
   | "home"
   | "login"
@@ -168,7 +172,8 @@ function isAdminAuth() {
   const payload = decodeJwtPayload(auth.accessToken);
   const roleClaim = payload?.roles;
   if (typeof roleClaim === "string" && roleClaim.includes("ROLE_ADMIN")) return true;
-  return auth.username === "admin";
+  if (Array.isArray(roleClaim) && roleClaim.some((role) => String(role).includes("ROLE_ADMIN"))) return true;
+  return false;
 }
 
 function getContentTypeByRatio(ratio: string): ContentType {
@@ -373,6 +378,14 @@ export default function App() {
   const isAdminPage = currentPage === "admin";
 
   const loggedIn = isAuthenticated();
+
+  useEffect(() => {
+    if (currentPage !== "admin" || isAdminAuth()) return;
+    setLoginGateMessage(loggedIn ? "관리자 권한이 필요합니다." : "로그인이 필요합니다.");
+    setPageHistory([loggedIn ? "home" : "login"]);
+    setCurrentPage(loggedIn ? "home" : "login");
+    setActiveTab("home");
+  }, [currentPage, loggedIn]);
 
   useEffect(() => {
     if (isAdminPage) {
@@ -727,6 +740,7 @@ export default function App() {
   ]);
 
   const canAccessPage = (page: Page) => {
+    if (page === "admin") return loggedIn && isAdminAuth();
     if (loggedIn) return true;
     return UNAUTH_ALLOWED_PAGES.has(page);
   };
@@ -738,6 +752,10 @@ export default function App() {
   const handleNavigate = (page: Page, options?: { autoSelectPersonaForContent?: boolean }) => {
     if (!canAccessPage(page)) {
       requestLoginForPage(page);
+      if (page === "admin") {
+        setPageHistory([loggedIn ? "home" : "login"]);
+        setCurrentPage(loggedIn ? "home" : "login");
+      }
       return;
     }
 
@@ -758,6 +776,9 @@ export default function App() {
   const handleNavigateWithoutHistory = (page: Page) => {
     if (!canAccessPage(page)) {
       requestLoginForPage(page);
+      if (page === "admin") {
+        setCurrentPage(loggedIn ? "home" : "login");
+      }
       return;
     }
 
@@ -883,13 +904,8 @@ export default function App() {
             { username: member.username, email: member.email }
           );
         }
-      } catch (error) {
-        if (!cancelled) {
-          // `/api/v1/member` is occasionally unstable on server side.
-          // Keep current auth state unless backend explicitly returns 401/403
-          // (handled globally in apiRequest via auth:expired event).
-          console.warn("[member.info] failed to refresh profile", error);
-        }
+      } catch {
+        // `/api/v1/member` can fail independently of auth. Keep current client state.
       }
     })();
     return () => {
@@ -1200,7 +1216,6 @@ export default function App() {
       }
       return false;
     } catch (error) {
-      console.error("[persona.diagnosis]", error);
       if (currentPageRef.current !== "analyzing") {
         return false;
       }
@@ -1387,21 +1402,23 @@ export default function App() {
         />
       )}
 
-      {currentPage === "admin" && (
-        <AdminConsolePage
-          adminId="admin"
-          onBackHome={handleNavigateToHome}
-          onLogout={async () => {
-            try {
-              await signOut();
-            } catch {
-              // ignore signout API failures and clear client auth.
-            }
-            clearAuth();
-            setPageHistory(["home"]);
-            setCurrentPage("login");
-          }}
-        />
+      {currentPage === "admin" && isAdminAuth() && (
+        <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+          <AdminConsolePage
+            adminId="admin"
+            onBackHome={handleNavigateToHome}
+            onLogout={async () => {
+              try {
+                await signOut();
+              } catch {
+                // ignore signout API failures and clear client auth.
+              }
+              clearAuth();
+              setPageHistory(["home"]);
+              setCurrentPage("login");
+            }}
+          />
+        </Suspense>
       )}
 
       {currentPage === "signup" && (

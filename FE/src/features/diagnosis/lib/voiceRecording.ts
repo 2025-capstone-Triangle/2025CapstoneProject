@@ -81,13 +81,14 @@ export function stageVoiceRecording(file: File, durationSec: number) {
     durationSec,
     recordedAt: new Date().toISOString(),
   };
-  localStorage.setItem(STAGED_VOICE_META_KEY, JSON.stringify(meta));
+  sessionStorage.setItem(STAGED_VOICE_META_KEY, JSON.stringify(meta));
   return meta;
 }
 
 export function clearStagedVoiceRecording() {
   stagedVoiceFile = null;
   localStorage.removeItem(STAGED_VOICE_META_KEY);
+  sessionStorage.removeItem(STAGED_VOICE_META_KEY);
 }
 
 export function getStagedVoiceRecordingFile() {
@@ -95,7 +96,8 @@ export function getStagedVoiceRecordingFile() {
 }
 
 export function getStagedVoiceRecordingMeta() {
-  const raw = localStorage.getItem(STAGED_VOICE_META_KEY);
+  localStorage.removeItem(STAGED_VOICE_META_KEY);
+  const raw = sessionStorage.getItem(STAGED_VOICE_META_KEY);
   if (!raw) return null;
 
   try {

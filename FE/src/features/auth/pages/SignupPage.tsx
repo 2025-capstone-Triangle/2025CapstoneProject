@@ -302,6 +302,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
               <div className="flex gap-2">
                 <input
                   type="text"
+                  autoComplete="username"
                   value={username}
                   onChange={(event) => {
                     setUsername(event.target.value);
@@ -332,6 +333,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
               <div className="flex gap-2">
                 <input
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value);
@@ -370,6 +372,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
                 <div className="flex gap-2">
                   <input
                     type="text"
+                    autoComplete="one-time-code"
                     value={verificationCode}
                     onChange={(event) => {
                       setVerificationCode(event.target.value);
@@ -406,6 +409,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(event) => {
                     setPassword(event.target.value);
@@ -434,6 +438,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(event) => {
                     setConfirmPassword(event.target.value);
@@ -539,6 +544,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
           <div className="flex gap-2 items-center justify-center mb-40">
             <input
               type="number"
+              autoComplete="bday-year"
               value={birthYear}
               onChange={(event) => setBirthYear(event.target.value.slice(0, 4))}
               placeholder="1990"
@@ -547,6 +553,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
             <span>년</span>
             <input
               type="number"
+              autoComplete="bday-month"
               value={birthMonth}
               onChange={(event) => setBirthMonth(event.target.value.slice(0, 2))}
               placeholder="01"
@@ -555,6 +562,7 @@ export function SignupPage({ onBack, onSignup, onNavigate }: SignupPageProps) {
             <span>월</span>
             <input
               type="number"
+              autoComplete="bday-day"
               value={birthDay}
               onChange={(event) => setBirthDay(event.target.value.slice(0, 2))}
               placeholder="01"

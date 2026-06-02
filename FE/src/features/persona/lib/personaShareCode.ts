@@ -14,27 +14,32 @@ export function normalizePersonaCode(rawCode: string) {
 }
 
 export function setPendingPersonaCode(code: string) {
-  localStorage.setItem(PENDING_PERSONA_CODE_KEY, normalizePersonaCode(code));
+  sessionStorage.setItem(PENDING_PERSONA_CODE_KEY, normalizePersonaCode(code));
 }
 
 export function getPendingPersonaCode() {
-  const raw = localStorage.getItem(PENDING_PERSONA_CODE_KEY);
+  localStorage.removeItem(PENDING_PERSONA_CODE_KEY);
+  const raw = sessionStorage.getItem(PENDING_PERSONA_CODE_KEY);
   return raw ? normalizePersonaCode(raw) : null;
 }
 
 export function clearPendingPersonaCode() {
   localStorage.removeItem(PENDING_PERSONA_CODE_KEY);
   localStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
+  sessionStorage.removeItem(PENDING_PERSONA_CODE_KEY);
+  sessionStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
 }
 
 export function setPendingPersonaIsSelf(isSelf: boolean) {
   if (isSelf) {
-    localStorage.setItem(PENDING_PERSONA_IS_SELF_KEY, "1");
+    sessionStorage.setItem(PENDING_PERSONA_IS_SELF_KEY, "1");
   } else {
     localStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
+    sessionStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
   }
 }
 
 export function getPendingPersonaIsSelf() {
-  return localStorage.getItem(PENDING_PERSONA_IS_SELF_KEY) === "1";
+  localStorage.removeItem(PENDING_PERSONA_IS_SELF_KEY);
+  return sessionStorage.getItem(PENDING_PERSONA_IS_SELF_KEY) === "1";
 }

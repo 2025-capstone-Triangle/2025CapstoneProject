@@ -7,6 +7,7 @@ import {
   stageVoiceRecording,
   type StagedVoiceRecordingMeta,
 } from "../lib/voiceRecording";
+import { validateAudioUploadFile } from "../../../shared/lib/fileSecurity";
 
 export interface VoiceWaveformBar {
   barHeight: number;
@@ -285,6 +286,15 @@ export function useVoiceRecorder({ maxRecordingSeconds = 90 }: UseVoiceRecorderO
       setHasRecording(false);
       setRecordingMeta(null);
       setError("WAV 변환에 실패했습니다. 다시 녹음해 주세요.");
+      clearStagedVoiceRecording();
+      return;
+    }
+
+    const validationMessage = validateAudioUploadFile(voiceFile);
+    if (validationMessage) {
+      setHasRecording(false);
+      setRecordingMeta(null);
+      setError(validationMessage);
       clearStagedVoiceRecording();
       return;
     }

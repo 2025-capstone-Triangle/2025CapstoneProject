@@ -57,7 +57,8 @@ function buildCodeCandidates(rawCode: string) {
 }
 
 function readFavoriteCodes() {
-  const raw = localStorage.getItem(FAVORITE_STORAGE_KEY);
+  localStorage.removeItem(FAVORITE_STORAGE_KEY);
+  const raw = sessionStorage.getItem(FAVORITE_STORAGE_KEY);
   if (!raw) return [] as string[];
   try {
     const parsed = JSON.parse(raw) as string[];
@@ -68,7 +69,8 @@ function readFavoriteCodes() {
 }
 
 function writeFavoriteCodes(codes: string[]) {
-  localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(codes));
+  localStorage.removeItem(FAVORITE_STORAGE_KEY);
+  sessionStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(codes));
 }
 
 function mapPersonaToCard(item: PersonaResponse, favorites: Set<string>): PersonaCardItem {

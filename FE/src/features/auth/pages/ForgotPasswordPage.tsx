@@ -27,14 +27,6 @@ export function ForgotPasswordPage({ onBack, onNavigate }: ForgotPasswordPagePro
       return;
     }
 
-    // TODO: 서버 비밀번호 재설정 API 연동 전까지 로컬 사용자 확인으로 임시 처리
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const user = users.find((item: { email?: string }) => item.email === email.trim());
-    if (!user) {
-      setError("등록되지 않은 이메일입니다.");
-      return;
-    }
-
     setSuccess(true);
     window.setTimeout(() => onNavigate?.("login"), 3000);
   };
@@ -61,6 +53,7 @@ export function ForgotPasswordPage({ onBack, onNavigate }: ForgotPasswordPagePro
             <div className="mb-6">
               <input
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="이메일"

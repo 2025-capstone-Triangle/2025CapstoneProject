@@ -1,8 +1,5 @@
 import { apiRequest } from "../../../lib/api";
 
-const DIAGNOSE_API_URL =
-  import.meta.env.VITE_DIAGNOSE_API_URL?.trim() || "https://54.180.115.6.nip.io/api/v1/persona";
-
 export interface PersonaResponse {
   id: number;
   name: string;
@@ -92,7 +89,7 @@ export async function diagnosePersona(payload: {
     formData.append("callback_url", payload.callbackUrl);
   }
 
-  return apiRequest<PersonaResponse>(DIAGNOSE_API_URL, {
+  return apiRequest<PersonaResponse>("/api/v1/persona", {
     method: "POST",
     body: formData,
   });

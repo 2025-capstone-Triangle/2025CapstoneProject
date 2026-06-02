@@ -1,16 +1,6 @@
 import { clearAuth } from "./auth";
 import { raiseErrorToast } from "./errorToastService";
 
-const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
-const IS_HTTPS_PAGE = typeof window !== "undefined" && window.location.protocol === "https:";
-const IS_DEV = Boolean(import.meta.env.DEV);
-const API_BASE =
-  !IS_DEV
-    ? ""
-    : IS_HTTPS_PAGE && API_BASE_ENV?.startsWith("http://")
-      ? ""
-      : (API_BASE_ENV ?? "");
-
 type ApiResponse<T> = {
   code: string;
   message: string;
@@ -31,27 +21,55 @@ type ApiRequestError = Error & {
 
 const AUTH_STORAGE_KEY = "auth";
 
-function getAuth() {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-  if (!raw) return null;
+function decodeJwtPayload(token: string) {
   try {
-    return JSON.parse(raw) as {
-      accessToken: string;
-      grantType?: string;
-      expiresIn?: number;
-    };
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const base64 = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(base64)) as { exp?: number };
   } catch {
     return null;
   }
 }
 
-function buildApiUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  if (!API_BASE) return path;
+function isExpiredToken(token: string) {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return false;
+  return payload.exp * 1000 <= Date.now();
+}
 
-  const base = API_BASE.replace(/\/+$/, "");
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${base}${normalizedPath}`;
+function getAuth() {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as {
+      accessToken: string;
+      grantType?: string;
+      expiresIn?: number;
+    };
+    if (parsed.accessToken && isExpiredToken(parsed.accessToken)) {
+      clearAuth();
+      return null;
+    }
+    return parsed;
+  } catch {
+    clearAuth();
+    return null;
+  }
+}
+
+function buildApiUrl(path: string) {
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+function getPublicApiErrorMessage(status: number) {
+  if (status === 401) return "·Î±×ÀÎÀÌ ÇÊ¿äÇÕ´Ï´Ù.";
+  if (status === 403) return "Á¢±Ù ±ÇÇÑÀÌ ¾ø½À´Ï´Ù.";
+  if (status === 404) return "¿äÃ»ÇÑ Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.";
+  if (status >= 500) return "¼­¹ö Ã³¸® Áß ¹®Á¦°¡ ¹ß»ıÇß½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.";
+  return "¿äÃ»À» Ã³¸®ÇÏÁö ¸øÇß½À´Ï´Ù. ÀÔ·Â°ªÀ» È®ÀÎÇØ ÁÖ¼¼¿ä.";
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -82,7 +100,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
     if (!response.ok) {
       const errorPayload = payload as ApiErrorResponse | null;
-      const message = errorPayload?.message || "ìš”ì²­ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.";
+      const message = getPublicApiErrorMessage(response.status);
       if (response.status === 401 || response.status === 403) {
         clearAuth();
         window.dispatchEvent(new CustomEvent("auth:expired"));
@@ -97,7 +115,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     }
 
     if (!payload) {
-      const message = "ì„œë²„ ì‘ë‹µì„ ì²˜ë¦¬í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.";
+      const message = "¼­¹ö ÀÀ´äÀ» Ã³¸®ÇÏÁö ¸øÇß½À´Ï´Ù.";
       raiseErrorToast(message);
       return undefined as T;
     }
@@ -106,8 +124,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   } catch (error) {
     const apiError = error as ApiRequestError;
     if (!apiError?.__toastShown) {
-      const message = error instanceof Error ? error.message : "ìš”ì²­ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.";
-      raiseErrorToast(message);
+      raiseErrorToast("¿äÃ» Ã³¸® Áß ¹®Á¦°¡ ¹ß»ıÇß½À´Ï´Ù.");
     }
     throw error;
   }

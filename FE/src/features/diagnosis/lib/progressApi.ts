@@ -1,35 +1,15 @@
-const API_BASE_ENV = import.meta.env.VITE_API_BASE_URL?.trim();
-const PROGRESS_API_BASE_URL =
-  import.meta.env.VITE_PROGRESS_API_BASE_URL?.trim() || "https://54.180.115.6.nip.io";
-const IS_HTTPS_PAGE = typeof window !== "undefined" && window.location.protocol === "https:";
-const IS_DEV = Boolean(import.meta.env.DEV);
-const API_BASE =
-  !IS_DEV
-    ? ""
-    : IS_HTTPS_PAGE && API_BASE_ENV?.startsWith("http://")
-      ? ""
-      : (API_BASE_ENV ?? "");
-
 function buildApiUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  if (!API_BASE) return path;
-
-  const base = API_BASE.replace(/\/+$/, "");
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${base}${normalizedPath}`;
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
 function buildProgressApiUrl(sessionId: string) {
   const normalizedPath = `/api/v1/progress/${encodeURIComponent(sessionId)}`;
-  if (PROGRESS_API_BASE_URL) {
-    const base = PROGRESS_API_BASE_URL.replace(/\/+$/, "");
-    return `${base}${normalizedPath}`;
-  }
   return buildApiUrl(normalizedPath);
 }
 
 function getSavedAccessToken() {
-  const raw = localStorage.getItem("auth");
+  localStorage.removeItem("auth");
+  const raw = sessionStorage.getItem("auth");
   if (!raw) return "";
 
   try {

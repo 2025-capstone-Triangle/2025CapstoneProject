@@ -49,15 +49,17 @@ const PREFERENCE_TEST_RESULT_KEY = "preferenceTestResult";
 const STAGED_DIAGNOSIS_PAYLOAD_KEY = "stagedDiagnosisPayload";
 
 export function savePreferenceTestResult(result: PreferenceTestResult) {
-  localStorage.setItem(PREFERENCE_TEST_RESULT_KEY, JSON.stringify(result));
+  sessionStorage.setItem(PREFERENCE_TEST_RESULT_KEY, JSON.stringify(result));
 }
 
 export function clearPreferenceTestResult() {
   localStorage.removeItem(PREFERENCE_TEST_RESULT_KEY);
+  sessionStorage.removeItem(PREFERENCE_TEST_RESULT_KEY);
 }
 
 export function getPreferenceTestResult() {
-  const raw = localStorage.getItem(PREFERENCE_TEST_RESULT_KEY);
+  localStorage.removeItem(PREFERENCE_TEST_RESULT_KEY);
+  const raw = sessionStorage.getItem(PREFERENCE_TEST_RESULT_KEY);
   if (!raw) return null;
 
   try {
@@ -81,15 +83,17 @@ export function buildDiagnosisPreferencePayload(result: PreferenceTestResult): D
 }
 
 export function stageDiagnosisPreferencePayload(payload: DiagnosisPreferencePayload) {
-  localStorage.setItem(STAGED_DIAGNOSIS_PAYLOAD_KEY, JSON.stringify(payload));
+  sessionStorage.setItem(STAGED_DIAGNOSIS_PAYLOAD_KEY, JSON.stringify(payload));
 }
 
 export function clearStagedDiagnosisPreferencePayload() {
   localStorage.removeItem(STAGED_DIAGNOSIS_PAYLOAD_KEY);
+  sessionStorage.removeItem(STAGED_DIAGNOSIS_PAYLOAD_KEY);
 }
 
 export function getStagedDiagnosisPreferencePayload() {
-  const raw = localStorage.getItem(STAGED_DIAGNOSIS_PAYLOAD_KEY);
+  localStorage.removeItem(STAGED_DIAGNOSIS_PAYLOAD_KEY);
+  const raw = sessionStorage.getItem(STAGED_DIAGNOSIS_PAYLOAD_KEY);
   if (!raw) return null;
 
   try {

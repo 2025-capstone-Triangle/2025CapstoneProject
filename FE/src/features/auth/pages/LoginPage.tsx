@@ -58,6 +58,7 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
         <div className="space-y-3 mb-4">
           <input
             type="text"
+            autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -67,6 +68,7 @@ export function LoginPage({ onLogin, onNavigate, onBack }: LoginPageProps) {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}

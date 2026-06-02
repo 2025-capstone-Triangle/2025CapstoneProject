@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, Upload } from "lucide-react";
 import { checkFaceAnalyzable } from "../lib/faceLandmarkCheck";
 import { getStagedDiagnosisImageFiles, stageDiagnosisImageFiles } from "../lib/imageStaging";
 import { DiagnosisPageLayout } from "../components/DiagnosisPageLayout";
+import { validateImageUploadFile } from "../../../shared/lib/fileSecurity";
 
 interface ImageInputPageProps {
   onNext?: () => void;
@@ -21,9 +22,10 @@ export function ImageInputPage({ onNext, onBack, onHome }: ImageInputPageProps) 
   const canProceed = Boolean(uploadedImage) && faceStatus === "valid";
 
   const handleImageUpload = (file: File) => {
-    if (!file.type.startsWith("image/")) {
+    const validationMessage = validateImageUploadFile(file);
+    if (validationMessage) {
       setFaceStatus("error");
-      setFaceMessage("이미지 파일만 업로드할 수 있습니다.");
+      setFaceMessage(validationMessage);
       return;
     }
     setFirstFile(file);
@@ -141,7 +143,7 @@ export function ImageInputPage({ onNext, onBack, onHome }: ImageInputPageProps) 
               <input
                 ref={firstInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];

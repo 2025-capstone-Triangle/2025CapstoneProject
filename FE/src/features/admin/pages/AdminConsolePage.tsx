@@ -32,6 +32,7 @@ import {
   updateAdminReference,
   type AdminReference,
 } from "../lib/referenceAdminApi";
+import { validateImageUploadFile } from "../../../shared/lib/fileSecurity";
 
 type SectionId = "dashboard" | "users" | "blocked" | "notices" | "references";
 type UserStatus = "ACTIVE" | "BANNED";
@@ -526,6 +527,22 @@ export function AdminConsolePage({ adminId = "admin", onLogout, onBackHome }: Ad
   const openReferenceEdit = (item: AdminReference) => {
     setReferenceForm({ id: item.id, name: item.name, prompt: "", description: item.description ?? "", image: null });
     setReferenceFormOpen(true);
+  };
+
+  const handleReferenceImageChange = (file?: File) => {
+    if (!file) {
+      setReferenceForm((prev) => ({ ...prev, image: null }));
+      return;
+    }
+
+    const validationMessage = validateImageUploadFile(file);
+    if (validationMessage) {
+      setToast(validationMessage);
+      setReferenceForm((prev) => ({ ...prev, image: null }));
+      return;
+    }
+
+    setReferenceForm((prev) => ({ ...prev, image: file }));
   };
 
   const activeSectionMeta = NAV_ITEMS.find((item) => item.id === activeSection);
@@ -1093,8 +1110,8 @@ export function AdminConsolePage({ adminId = "admin", onLogout, onBackHome }: Ad
               <input
                 className="block text-xs"
                 type="file"
-                accept="image/*"
-                onChange={(e) => setReferenceForm((prev) => ({ ...prev, image: e.target.files?.[0] ?? null }))}
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => handleReferenceImageChange(e.target.files?.[0])}
               />
               <p className="mt-1 text-[11px] text-slate-500">수정 시 이미지 없이 저장하면 기존 이미지를 유지합니다.</p>
             </div>

@@ -2,6 +2,37 @@ import { apiRequest } from "./api";
 
 export const AUTH_STORAGE_KEY = "auth";
 
+const PRIVATE_STORAGE_KEYS = [
+  AUTH_STORAGE_KEY,
+  "preferenceTestResult",
+  "stagedDiagnosisPayload",
+  "stagedDiagnosisVoiceMeta",
+  "pendingPersonaCode",
+  "pendingPersonaIsSelf",
+  "personaFavoriteCodes",
+  "app.diagnosis.latest-result",
+  "app.diagnosis.last-page",
+  "app.transient.state",
+] as const;
+
+function decodeJwtPayload(token: string) {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const base64 = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(base64)) as { exp?: number };
+  } catch {
+    return null;
+  }
+}
+
+function isExpiredToken(token: string) {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return false;
+  return payload.exp * 1000 <= Date.now();
+}
+
 export type SignInResponse = {
   accessToken: string;
   grantType: string;
@@ -124,12 +155,19 @@ export async function signOut() {
 }
 
 export function getSavedAuth() {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as SavedAuth;
+    const parsed = JSON.parse(raw) as SavedAuth;
+    if (parsed.accessToken && isExpiredToken(parsed.accessToken)) {
+      clearAuth();
+      return null;
+    }
+    return parsed;
   } catch {
+    clearAuth();
     return null;
   }
 }
@@ -140,15 +178,24 @@ export function isAuthenticated() {
 }
 
 export function saveAuth(data: SignInResponse, profile?: AuthProfile) {
+  if (data.accessToken && isExpiredToken(data.accessToken)) {
+    clearAuth();
+    return;
+  }
+
   const existing = getSavedAuth();
   const next: SavedAuth = {
     ...(existing ?? {}),
     ...data,
     ...(profile ?? {}),
   };
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(next));
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(next));
 }
 
 export function clearAuth() {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
+  PRIVATE_STORAGE_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
 }

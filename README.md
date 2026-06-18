@@ -85,11 +85,171 @@
 
 ---
 
-## 🧩 Source Code
+## 📁 Source Code
 
-- FE
-- BE
-- AI
+### 💻 Frontend
+
+### 🧩 Backend
+
+#### 🗂️ 프로젝트 구조
+ 
+```
+persona/
+├── src/main/java/com/a/persona/
+│   ├── PersonaApplication.java          # 애플리케이션 진입점
+│   ├── app/
+│   │   ├── controller/                  # REST 컨트롤러 및 요청/응답 payload
+│   │   │   ├── auth/                    # 인증 (회원가입, 로그인, 이메일 인증)
+│   │   │   ├── member/                  # 회원 정보 관리
+│   │   │   ├── persona/                 # 페르소나 진단 및 CRUD
+│   │   │   ├── content/                 # AI 생성 컨텐츠 관리
+│   │   │   ├── reference/               # 트렌드 레퍼런스 컨텐츠
+│   │   │   ├── notice/                  # 공지사항
+│   │   │   ├── progress/                # SSE 기반 AI 진행상황 스트리밍
+│   │   │   └── admin/                   # 관리자 전용 (회원/공지/레퍼런스/대시보드)
+│   │   └── model/
+│   │       ├── auth/                    # 인증 서비스, JWT 토큰, 블랙리스트
+│   │       ├── member/                  # 회원 엔티티 및 서비스
+│   │       ├── persona/                 # 페르소나 엔티티, 생성 서비스, AI 대기열
+│   │       ├── content/                 # 컨텐츠 엔티티, 생성 서비스
+│   │       ├── reference/               # 레퍼런스 엔티티 및 서비스
+│   │       ├── notice/                  # 공지사항 엔티티 및 서비스
+│   │       ├── progress/                # SSE Emitter 레포지토리
+│   │       ├── dashboard/               # 관리자 통계 서비스
+│   │       ├── contentLog/              # 컨텐츠 생성 로그
+│   │       ├── personaLog/              # 페르소나 진단 로그
+│   │       ├── loginLog/                # 로그인 로그
+│   │       └── common/
+│   │           └── BaseEntity.java      # 공통 엔티티 (id, createdAt 등)
+│   └── infra/
+│       ├── auth/jwt/                    # JWT 생성/검증 필터, 쿠키
+│       ├── config/                      # Security, Async, S3, QueryDSL, Feign, Redis 설정
+│       ├── feign/                       # AI 서버 OpenFeign 클라이언트
+│       ├── s3/                          # AWS S3 파일 업로드 매니저
+│       ├── error/                       # 전역 예외 핸들러 및 커스텀 예외
+│       ├── response/                    # 공통 API 응답 포맷 (CommonApiResponse)
+│       ├── mail/                        # 이메일 템플릿 (Thymeleaf)
+│       └── nanoid/                      # 페르소나 공유 코드 생성기
+├── src/main/resources/
+│   ├── application.properties           # 공통 설정 (프로파일: prod)
+│   ├── application-local.properties     # 로컬 설정 (.env import 포함)
+│   └── application-prod.properties      # 운영 설정
+├── .env                                 # 환경변수 파일 (직접 생성 필요)
+├── Dockerfile                           # Docker 이미지 빌드 정의
+└── build.gradle                         # 의존성 및 빌드 설정
+```
+ 
+<br>
+
+#### 🧩 주요 모듈 설명
+ 
+##### 👤 Member / Auth 모듈
+ 
+회원 가입·로그인·정보 수정 등 사용자 계정을 관리하고, JWT 기반 인증을 처리합니다.
+ 
+| 클래스 | 역할 |
+|--------|------|
+| `AuthService` | 로그인/로그아웃, 토큰 발급 |
+| `JwtTokenProvider` | JWT 생성·검증 |
+| `JwtAuthenticationFilter` | 요청마다 토큰 검증 필터 |
+| `RefreshTokenService` | Redis에 Refresh Token 저장·관리 |
+| `MemberService` | 회원 조회·수정·탈퇴 |
+| `MailService` | 이메일 인증 코드 발송 (Gmail SMTP) |
+ 
+##### 🎭 Persona 모듈
+ 
+사용자의 답변을 AI 서버로 전달해 페르소나를 진단하고, 결과를 저장·공유합니다.
+ 
+| 클래스 | 역할 |
+|--------|------|
+| `PersonaController` | 페르소나 진단 요청 수신, 조회·수정·삭제 |
+| `PersonaCreationService` | AI 서버에 비동기 진단 요청 후 결과 저장 |
+| `AiWaitingQueueService` | AI 서버 동시 요청 수 제어 (대기열) |
+| `ProgressService` | SSE로 FE에 진단 진행률 스트리밍 |
+| `Persona` (Entity) | 페르소나 정보 (이름, 키워드, 컬러, 공유코드 등) |
+ 
+##### 🖼️ Content / Reference 모듈
+ 
+페르소나 또는 트렌드 레퍼런스를 기반으로 AI 이미지 컨텐츠를 생성하고 관리합니다.
+ 
+| 클래스 | 역할 |
+|--------|------|
+| `ContentCreationService` | AI 서버에 비동기 이미지 생성 요청 후 S3 저장 |
+| `ContentService` | 컨텐츠 조회·북마크·삭제 |
+| `ReferenceService` | 트렌드 레퍼런스 조회·좋아요 |
+| `ReferenceCreationService` | 레퍼런스 기반 컨텐츠 생성 |
+| `Content` (Entity) | 생성된 이미지 (타입: SQUARE / FEED / STORY) |
+| `AmazonS3Manager` | S3 파일 업로드 처리 |
+
+ 
+<br>
+#### 📡 주요 API 엔드포인트
+ 
+모든 엔드포인트 기본 경로: `/api/v1`
+ 
+##### 인증 (Auth)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/signup` | 회원가입 |
+| POST | `/signin` | 로그인 |
+| POST | `/check` | 이메일·닉네임 중복 확인 |
+| POST | `/check-email` | 이메일 인증 코드 발송 |
+| POST | `/verify-code` | 이메일 인증 코드 검증 |
+ 
+##### 회원 (Member)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/member` | 내 정보 조회 |
+| PATCH | `/member` | 회원 정보 수정 |
+| PATCH | `/member/password` | 비밀번호 변경 |
+| PATCH | `/member/email` | 이메일 변경 |
+| DELETE | `/member` | 회원 탈퇴 |
+ 
+##### 🎭 페르소나 (Persona)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/persona` | 페르소나 진단 요청 (AI, 비동기) |
+| GET | `/persona` | 내 페르소나 목록 조회 |
+| PATCH | `/persona/save-new` | 진단 결과 저장 |
+| PATCH | `/persona/save-share` | 공유받은 페르소나 저장 |
+| PATCH | `/persona` | 페르소나 정보 수정 |
+| DELETE | `/persona` | 페르소나 삭제 |
+ 
+##### 🖼️ 컨텐츠 (Content)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/content` | AI 이미지 컨텐츠 생성 (비동기) |
+| GET | `/content` | 컨텐츠 목록 조회 |
+| PATCH | `/content` | 컨텐츠 북마크 |
+| DELETE | `/content/{id}` | 컨텐츠 삭제 |
+ 
+##### 🔥 레퍼런스 (Reference)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/reference` | 트렌드 레퍼런스 조회 |
+| POST | `/reference` | 레퍼런스 기반 컨텐츠 생성 (비동기) |
+| PATCH | `/reference` | 레퍼런스 북마크 |
+ 
+##### 📡 진행상황 (Progress · SSE)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/progress/{sessionId}` | AI 생성 진행률 실시간 수신 (SSE) |
+ 
+##### 📢 공지사항 (Notice)
+ 
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/notice` | 공지사항 목록 조회 |
+| GET | `/notice/pinned` | 고정 공지사항 조회 |
+ 
+
+### 🤖 AI 
 
 
 ---
@@ -140,128 +300,224 @@ FE(localhost:3000)
       -> AWS S3
 ```
 
-## 🗄️ DB / Redis 실행
+## 🧩 Backend, DB 구축 및 실행
 
-루트 디렉터리에서 실행합니다.
+### 📋 사전 요구사항
 
-```bash
-docker compose up -d db redis
-```
+로컬에서 프로젝트를 실행하기 전, 아래 항목이 준비되어 있어야 합니다.
 
-기본 설정은 다음과 같습니다.
+| 항목 | 비고 |
+|------|------|
+| Java 21 | |
+| IDE | Spring Boot 실행 가능한 환경 |
+| Supabase 계정 | DB 관리 |
+| AWS 계정 | S3 스토리지 |
+| Redis 계정 | 토큰 및 대기열 관리 |
+| Docker 계정 | 서버 배포 |
+| Gmail 계정 | 이메일 인증 발송 |
+| AI 서버 엔드포인트 URL | |
 
-```text
-POSTGRES_DB=persona
-POSTGRES_USER=persona
-POSTGRES_PASSWORD=persona
-POSTGRES_PORT=5432
-REDIS_PORT=6379
-```
+<br>
 
-> 현재 BE 설정은 `spring.jpa.hibernate.ddl-auto=validate`입니다. 빈 DB에서는 테이블이 없으면 실행이 실패할 수 있으므로 초기 실행 전 DB 스키마가 준비되어 있어야 합니다.
+### 🔑 환경변수 설정 (`.env`)
 
-## 🧩 Backend 실행
-
-### 환경변수 설정
-
-`BE/persona/.env` 파일을 생성합니다.
-
-로컬 실행 기준:
+프로젝트 루트 디렉토리에 `.env` 파일을 생성합니다. 내용은 다음과 같습니다.
 
 ```env
-DATABASE_URL=jdbc:postgresql://localhost:5432/persona
-DATABASE_USER=persona
-DATABASE_PASSWORD=persona
+APP_DOMAIN=
+APP_DOMAIN_ONLY=
 
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
+# ───────────────────────────────────────────
+# Database
+# ───────────────────────────────────────────
+DATABASE_URL=jdbc:postgresql://...
+DATABASE_USER=your_db_username
+DATABASE_PASSWORD=your_db_password
 
-JWT_SECRET=충분히_긴_JWT_SECRET_값
+# ───────────────────────────────────────────
+# Redis
+# ───────────────────────────────────────────
+REDIS_HOST=your_redis_host
+REDIS_PORT=your_redis_port
+REDIS_PASSWORD=your_redis_password
 
-EMAIL_NAME=이메일주소@gmail.com
-EMAIL_PASSWORD=Gmail_앱_비밀번호
+# ───────────────────────────────────────────
+# JWT
+# ───────────────────────────────────────────
+JWT_SECRET=your_jwt_secret_key_here
 
-AWS_ACCESS_KEY=AWS_ACCESS_KEY
-AWS_SECRET_KEY=AWS_SECRET_KEY
+# ───────────────────────────────────────────
+# Email (SMTP)
+# ───────────────────────────────────────────
+EMAIL_NAME=your_email@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password
 
-AI_SERVER=http://localhost:8000
+# ───────────────────────────────────────────
+# AWS
+# ───────────────────────────────────────────
+AWS_ACCESS_KEY=your_aws_access_key_id
+AWS_SECRET_KEY=your_aws_secret_access_key
+
+# ───────────────────────────────────────────
+# AI Server
+# ───────────────────────────────────────────
+AI_SERVER=http://your-ai-server-endpoint
 ```
 
-Docker Compose로 BE까지 실행하는 경우:
+<br>
+
+#### 1. Supabase (PostgreSQL)
+
+1. [Supabase](https://supabase.com/) 로그인
+2. **New Organization** 선택 → Free Plan으로 생성
+3. 새 DB 생성 (⚠️ 설정한 DB Password를 반드시 기록해두세요)
+4. 상단 **Connect** → **Direct** 선택
+   - Connection Method : `Session Pooler`
+   - Type : `JDBC`
+5. Connection String 복사 후 아래와 같이 BE의 .env 파일에 입력
 
 ```env
-DATABASE_URL=jdbc:postgresql://db:5432/persona
-DATABASE_USER=persona
-DATABASE_PASSWORD=persona
-
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-JWT_SECRET=충분히_긴_JWT_SECRET_값
-
-EMAIL_NAME=이메일주소@gmail.com
-EMAIL_PASSWORD=Gmail_앱_비밀번호
-
-AWS_ACCESS_KEY=AWS_ACCESS_KEY
-AWS_SECRET_KEY=AWS_SECRET_KEY
-
-AI_SERVER=http://host.docker.internal:8000
+DATABASE_URL=jdbc:postgresql://(주소):(port)/postgres
+DATABASE_USER=postgres.(영문코드)
+DATABASE_PASSWORD=(설정한 password)
 ```
 
-### 로컬 실행
+<br>
+
+#### 2. AWS S3
+
+1. AWS 로그인 후 **S3** 탭으로 이동
+2. **버킷 생성** 시작
+   - 버킷 이름 : `persona-capstone`
+   - 리전 : `ap-northeast-2`
+   - ACL : 비활성화
+   - 퍼블릭 액세스 차단 : **미선택**
+   - 버킷 버전 관리 : 비활성화 (비용 무관하면 활성화)
+   - 기본 암호화 : `SSE-S3` / 버킷 키 활성화
+3. 생성한 버킷 → **권한** → **버킷 정책** → 편집 후 아래 내용 입력
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::persona-capstone/*"
+        }
+    ]
+}
+```
+
+4. 버킷 내 폴더 구조 생성
+
+```
+root
+├── generated_personas
+├── reference
+└── userData
+    ├── images
+    ├── profile
+    └── voices
+```
+
+5. **AWS IAM** → 자격 증명 탭 → 액세스 키 만들기 (CSV 파일로 보관 권장) 아래와 같이 BE의 .env 파일에 입력
+
+```env
+AWS_ACCESS_KEY=(생성한 액세스 키 ID)
+AWS_SECRET_KEY=(생성한 비밀 액세스 키)
+```
+
+<br>
+
+#### 3. Redis
+
+1. Redis 무료 DB 생성
+2. **Connect to Database** → **Redis CLI** 탭에서 아래 형식의 커맨드 확인
 
 ```bash
-cd BE/persona
+redis-cli -u redis://default:(password)@(redis_host):(port)
+```
+3. 아래와 같이 BE의 .env 파일에 입력
+
+```env
+REDIS_HOST=(redis_host)
+REDIS_PASSWORD=(password)
+REDIS_PORT=(port)
+```
+<br>
+
+#### 4. JWT Secret
+
+40자 이상의 영문 대소문자 + 숫자 조합 문자열을 자유롭게 설정하세요.
+
+```env
+JWT_SECRET=your_jwt_secret_key_here
 ```
 
-Windows:
 
-```bash
-gradlew.bat bootRun --args="--spring.profiles.active=local"
+#### 5. Email (Gmail SMTP)
+
+1. [Google 앱 비밀번호](https://myaccount.google.com/apppasswords) 접속 (2차 인증 필수)
+2. 앱 이름 자유롭게 설정 후 생성 → 발급된 비밀번호 기록
+
+```env
+EMAIL_NAME=(로그인한 구글 계정 이메일)
+EMAIL_PASSWORD=(발급된 앱 비밀번호)
 ```
 
-macOS/Linux:
+<br>
+
+#### 6. AI Server
+
+AI 서버가 배포된 주소를 입력합니다.
+
+```env
+AI_SERVER=http://your-ai-server-endpoint
+```
+
+<br>
+
+#### 7. APP_DOMAIN
+
+BE 서버 실행 후 서버 주소를 입력합니다.
+
+```env
+APP_DOMAIN=(https:// 포함한 전체 주소)
+APP_DOMAIN_ONLY=(https:// 제외한 주소)
+```
+
+<br>
+
+### 💻 로컬 실행
+
+#### IDE로 실행 (IntelliJ 기준)
+
+1. 프로젝트 루트에 `.env` 파일 생성 (환경변수 설정 참고)
+2. `Run` → `Edit Configurations` → `Active profiles` 에 `local` 입력
+3. `application.properties` 에서 아래와 같이 수정
+
+```properties
+spring.profiles.active=local
+```
+
+4. `PersonaApplication.java` 우클릭 → **Run** 실행
+
+#### 터미널로 실행
 
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
-BE 서버는 `http://localhost:8080`에서 실행됩니다.
+> BE 서버는 `http://localhost:8080`에서 실행됩니다.
+> 
+> Supabase에 테이블과 더미 데이터가 정상 생성되었는지 확인하세요.
+> 
+> 📖 Swagger UI: http://localhost:8080/swagger-ui/index.html
 
-Swagger 문서는 아래 주소에서 확인할 수 있습니다.
-
-```text
-http://localhost:8080/swagger-ui/index.html
-```
-
-### Docker 실행
-
-BE Dockerfile은 `build/libs/*.jar` 파일을 복사하는 방식이므로, Docker Compose 실행 전에 JAR 파일을 먼저 생성합니다.
-
-```bash
-cd BE/persona
-```
-
-Windows:
-
-```bash
-gradlew.bat clean bootJar
-```
-
-macOS/Linux:
-
-```bash
-./gradlew clean bootJar
-```
-
-루트 디렉터리로 돌아와 실행합니다.
-
-```bash
-cd ../..
-docker compose up -d api
-```
+<br>
 
 ## 🤖 AI 서버 실행
 
@@ -435,38 +691,48 @@ https://2025-capstone-project.vercel.app/api/v1/reference
 
 ### BE 배포
 
-BE는 Spring Boot JAR 또는 Docker 이미지로 배포할 수 있습니다.
+BE는 Docker 이미지로 배포할 수 있습니다.
+BE 폴더 내 터미널에서 아래 명령어를 순서대로 실행합니다.
 
 ```bash
-cd BE/persona
-./gradlew clean bootJar
-java -jar build/libs/persona-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
+docker login
+./gradlew clean build -x test
+docker build -t (DockerID)/(레포지토리명) .
+docker push (DockerID)/(레포지토리명)
 ```
 
-운영 환경에서는 다음 환경변수가 필요합니다.
+#### ☁️ EC2 배포
 
-```env
-APP_DOMAIN=https://백엔드_배포_주소
-APP_DOMAIN_ONLY=백엔드_도메인
+##### Parameter Store로 환경변수 관리 (무료 Secret Manager 대체)
 
-DATABASE_URL=jdbc:postgresql://DB_HOST:5432/persona
-DATABASE_USER=DB_USER
-DATABASE_PASSWORD=DB_PASSWORD
+1. AWS Parameter Store → 파라미터 생성
+   - 이름 자유 설정
+   - 유형 : **보안 문자열**
+   - 데이터 형식 : `text`
+   - 값 : `.env` 내용 전체 붙여넣기
 
-REDIS_HOST=REDIS_HOST
-REDIS_PORT=6379
-REDIS_PASSWORD=REDIS_PASSWORD
+##### EC2 인스턴스에서 실행
 
-JWT_SECRET=충분히_긴_JWT_SECRET_값
+```bash
+docker login
+docker pull (DockerID)/(레포지토리명)
 
-EMAIL_NAME=이메일주소@gmail.com
-EMAIL_PASSWORD=Gmail_앱_비밀번호
+# Parameter Store에서 env 파일 가져오기
+aws ssm get-parameter \
+  --name "(파라미터스토어 이름)" \
+  --with-decryption \
+  --query "Parameter.Value" \
+  --output text > .env
 
-AWS_ACCESS_KEY=AWS_ACCESS_KEY
-AWS_SECRET_KEY=AWS_SECRET_KEY
-
-AI_SERVER=https://AI_서버_배포_주소
+# 컨테이너 실행
+sudo docker run -d -p 8080:8080 \
+  --env-file .env \
+  --name (컨테이너명) \
+  (DockerID)/(레포지토리명)
 ```
+
+> 💡 FE 서버와의 원활한 통신을 위해 **HTTPS** 설정을 권장합니다.
+
 
 ### AI 배포
 
@@ -517,6 +783,10 @@ PW: admin123
 ```
 
 > 현재 설정에서는 `spring.sql.init.mode=never`이므로 `data.sql`이 자동 실행되지 않습니다. 테스트 계정을 사용하려면 해당 SQL 데이터가 DB에 반영되어 있어야 합니다.
+>
+> BE 서버를 로컬로 실행한 경우, supabase에 해당 데이터가 반영되어 있습니다.
+>
+> 그렇지 않은 경우 starter.sql 파일 내의 sql문을 사용하여 직접 추가해주세요.
 
 ## 🧪 주요 API
 

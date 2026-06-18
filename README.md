@@ -79,6 +79,10 @@
 | DB / Storage | <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" /> <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white" /> <img src="https://img.shields.io/badge/Amazon_S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white" /> |
 | Infra | <img src="https://img.shields.io/badge/Amazon_EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white" /> <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" /> |
 
+## 📈 erd
+<img width="1630" height="1182" alt="Person_a (3)" src="https://github.com/user-attachments/assets/e901c6b2-32a4-448f-8f9d-b491cee982c6" />
+
+
 ---
 
 ## 🧩 Source Code

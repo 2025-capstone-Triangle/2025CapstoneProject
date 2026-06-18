@@ -28,21 +28,21 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
     setStagedMessage("");
 
     if (!preferenceResult) {
-      setSubmitError("¼±È£ Å×½ºÆ® °á°ú°¡ ¾ø½À´Ï´Ù. Å×½ºÆ®¸¦ ¸ÕÀú ¿Ï·áÇØ ÁÖ¼¼¿ä.");
+      setSubmitError("ì„ í˜¸ í…ŒìŠ¤íŠ¸ ê²°ê³¼ê°€ ì—†ìŠµë‹ˆë‹¤. í…ŒìŠ¤íŠ¸ë¥¼ ë¨¼ì € ì™„ë£Œí•´ ì£¼ì„¸ìš”.");
       return;
     }
     if (!imageFile) {
-      setSubmitError("ÀÌ¹ÌÁö ¾÷·Îµå°¡ ÇÊ¿äÇÕ´Ï´Ù. ÀÌ¹ÌÁö ´Ü°è¸¦ ¿Ï·áÇØ ÁÖ¼¼¿ä.");
+      setSubmitError("ì´ë¯¸ì§€ ì—…ë¡œë“œê°€ í•„ìš”í•©ë‹ˆë‹¤. ì´ë¯¸ì§€ ë‹¨ê³„ë¥¼ ì™„ë£Œí•´ ì£¼ì„¸ìš”.");
       return;
     }
     if (!voiceMeta) {
-      setSubmitError("À½¼º ³ìÀ½ÀÌ ÇÊ¿äÇÕ´Ï´Ù. À½¼º ´Ü°è¸¦ ¿Ï·áÇØ ÁÖ¼¼¿ä.");
+      setSubmitError("ìŒì„± ë…¹ìŒì´ í•„ìš”í•©ë‹ˆë‹¤. ìŒì„± ë‹¨ê³„ë¥¼ ì™„ë£Œí•´ ì£¼ì„¸ìš”.");
       return;
     }
 
     const payload = buildDiagnosisPreferencePayload(preferenceResult);
     stageDiagnosisPreferencePayload(payload);
-    setStagedMessage("ºĞ¼® ¿äÃ» µ¥ÀÌÅÍ°¡ ÁØºñµÇ¾ú½À´Ï´Ù.");
+    setStagedMessage("ë¶„ì„ ìš”ì²­ ë°ì´í„°ê°€ ì¤€ë¹„ë˜ì—ˆìŠµë‹ˆë‹¤.");
     void onConfirm?.();
   };
 
@@ -59,62 +59,62 @@ export function ReviewInputsPage({ onConfirm, onBack, onHome }: ReviewInputsPage
             onClick={handleConfirm}
             className="flex h-[56px] w-full items-center justify-center rounded-[16px] bg-black font-['Noto_Sans_KR'] text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1a1a1a]"
           >
-            È®ÀÎÇÏ°í ºĞ¼® ½ÃÀÛ
+            í™•ì¸í•˜ê³  ë¶„ì„ ì‹œì‘
           </button>
         </div>
       }
     >
-      <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[28px] text-black">ÀÔ·Â ³»¿ë È®ÀÎ</h2>
+      <h2 className="mb-2 font-['NEXON_Football_Gothic'] text-[28px] text-black">ì…ë ¥ ë‚´ìš© í™•ì¸</h2>
       <p className="mb-5 font-['Noto_Sans_KR'] text-[13px] text-[#6b7280]">
-        ºĞ¼® ¿äÃ» Àü¿¡ ¾÷·ÎµåµÈ Á¤º¸¿Í Å×½ºÆ® °á°ú¸¦ ÃÖÁ¾ È®ÀÎÇØ ÁÖ¼¼¿ä.
+        ë¶„ì„ ìš”ì²­ ì „ì— ì—…ë¡œë“œëœ ì •ë³´ì™€ í…ŒìŠ¤íŠ¸ ê²°ê³¼ë¥¼ ìµœì¢… í™•ì¸í•´ ì£¼ì„¸ìš”.
       </p>
 
       <div className="space-y-3">
         <div className="rounded-[16px] border border-[#d8e9ff] bg-[#f0f7ff] p-5">
           <p className="font-['Noto_Sans_KR'] text-[13px] leading-[1.7] text-[#1a4d8f]">
-            È®ÀÎ ¹öÆ°À» ´©¸£¸é ÇöÀç ÀÔ·Â°ªÀ¸·Î Æä¸£¼Ò³ª ºĞ¼®ÀÌ ½ÃÀÛµË´Ï´Ù. ºĞ¼® Áß¿¡´Â ÆäÀÌÁö¸¦ ´İÁö ¸»¾Æ ÁÖ¼¼¿ä.
+            í™•ì¸ ë²„íŠ¼ì„ ëˆ„ë¥´ë©´ í˜„ì¬ ì…ë ¥ê°’ìœ¼ë¡œ í˜ë¥´ì†Œë‚˜ ë¶„ì„ì´ ì‹œì‘ë©ë‹ˆë‹¤. ë¶„ì„ ì¤‘ì—ëŠ” í˜ì´ì§€ë¥¼ ë‹«ì§€ ë§ì•„ ì£¼ì„¸ìš”.
           </p>
         </div>
 
-        <InputReviewCard title="¼±È£ Å×½ºÆ®" done={Boolean(preferenceResult)}>
+        <InputReviewCard title="ì„ í˜¸ í…ŒìŠ¤íŠ¸" done={Boolean(preferenceResult)}>
           {preferenceResult ? (
             <div className="space-y-1">
               <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                ÀÌ¹ÌÁö ¼±ÅÃ: {preferenceResult.imageSelections.length}¹®Ç×
+                ì´ë¯¸ì§€ ì„ íƒ: {preferenceResult.imageSelections.length}ë¬¸í•­
               </p>
               <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                Ã¤µµ {preferenceResult.toneAdjustment.saturation} / ¸íµµ {preferenceResult.toneAdjustment.brightness}
+                ì±„ë„ {preferenceResult.toneAdjustment.saturation} / ëª…ë„ {preferenceResult.toneAdjustment.brightness}
               </p>
               <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                ´ëºñ {preferenceResult.toneAdjustment.contrast} / ¿Âµµ {preferenceResult.toneAdjustment.temperature}
+                ëŒ€ë¹„ {preferenceResult.toneAdjustment.contrast} / ì˜¨ë„ {preferenceResult.toneAdjustment.temperature}
               </p>
             </div>
           ) : (
-            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">°á°ú°¡ ÀúÀåµÇÁö ¾Ê¾Ò½À´Ï´Ù.</p>
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">ê²°ê³¼ê°€ ì €ì¥ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.</p>
           )}
         </InputReviewCard>
 
-        <InputReviewCard title="ÀÌ¹ÌÁö ºĞ¼®" done={Boolean(imageFile)}>
+        <InputReviewCard title="ì´ë¯¸ì§€ ë¶„ì„" done={Boolean(imageFile)}>
           {imageFile ? (
             <div className="space-y-1">
               <p className="break-all font-['Noto_Sans_KR'] text-[13px] text-[#666]">{imageFile.name}</p>
               <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">{(imageFile.size / 1024).toFixed(1)} KB</p>
             </div>
           ) : (
-            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">ÀÌ¹ÌÁö¸¦ ¾÷·ÎµåÇØ ÁÖ¼¼¿ä.</p>
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">ì´ë¯¸ì§€ë¥¼ ì—…ë¡œë“œí•´ ì£¼ì„¸ìš”.</p>
           )}
         </InputReviewCard>
 
-        <InputReviewCard title="À½¼º ºĞ¼®" done={Boolean(voiceMeta)}>
+        <InputReviewCard title="ìŒì„± ë¶„ì„" done={Boolean(voiceMeta)}>
           {voiceMeta ? (
             <div className="space-y-1">
               <p className="break-all font-['Noto_Sans_KR'] text-[13px] text-[#666]">{voiceMeta.fileName}</p>
               <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">
-                {voiceMeta.durationSec}ÃÊ / {(voiceMeta.size / 1024).toFixed(1)} KB
+                {voiceMeta.durationSec}ì´ˆ / {(voiceMeta.size / 1024).toFixed(1)} KB
               </p>
             </div>
           ) : (
-            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">À½¼ºÀ» ³ìÀ½ÇØ ÁÖ¼¼¿ä.</p>
+            <p className="font-['Noto_Sans_KR'] text-[13px] text-[#666]">ìŒì„±ì„ ë…¹ìŒí•´ ì£¼ì„¸ìš”.</p>
           )}
         </InputReviewCard>
 

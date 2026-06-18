@@ -65,11 +65,11 @@ function buildApiUrl(path: string) {
 }
 
 function getPublicApiErrorMessage(status: number) {
-  if (status === 401) return "·Î±×ÀÎÀÌ ÇÊ¿äÇÕ´Ï´Ù.";
-  if (status === 403) return "Á¢±Ù ±ÇÇÑÀÌ ¾ø½À´Ï´Ù.";
-  if (status === 404) return "¿äÃ»ÇÑ Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.";
-  if (status >= 500) return "¼­¹ö Ã³¸® Áß ¹®Á¦°¡ ¹ß»ıÇß½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.";
-  return "¿äÃ»À» Ã³¸®ÇÏÁö ¸øÇß½À´Ï´Ù. ÀÔ·Â°ªÀ» È®ÀÎÇØ ÁÖ¼¼¿ä.";
+  if (status === 401) return "ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.";
+  if (status === 403) return "ì ‘ê·¼ ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤.";
+  if (status === 404) return "ìš”ì²­í•œ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.";
+  if (status >= 500) return "ì„œë²„ ì²˜ë¦¬ ì¤‘ ë¬¸ì œê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ì ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•´ ì£¼ì„¸ìš”.";
+  return "ìš”ì²­ì„ ì²˜ë¦¬í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤. ì…ë ¥ê°’ì„ í™•ì¸í•´ ì£¼ì„¸ìš”.";
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -115,7 +115,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     }
 
     if (!payload) {
-      const message = "¼­¹ö ÀÀ´äÀ» Ã³¸®ÇÏÁö ¸øÇß½À´Ï´Ù.";
+      const message = "ì„œë²„ ì‘ë‹µì„ ì²˜ë¦¬í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.";
       raiseErrorToast(message);
       return undefined as T;
     }
@@ -124,7 +124,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   } catch (error) {
     const apiError = error as ApiRequestError;
     if (!apiError?.__toastShown) {
-      raiseErrorToast("¿äÃ» Ã³¸® Áß ¹®Á¦°¡ ¹ß»ıÇß½À´Ï´Ù.");
+      raiseErrorToast("ìš”ì²­ ì²˜ë¦¬ ì¤‘ ë¬¸ì œê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.");
     }
     throw error;
   }

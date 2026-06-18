@@ -252,8 +252,10 @@ function inferMessage(payload: DiagnosisProgressEventPayload | null, fallback: s
       lower === "connected" ||
       lower === "started" ||
       lower === "queued" ||
-      lower.includes("吏꾪뻾?곹솴 梨꾨꼸") ||
-      lower.includes("梨꾨꼸 ?곌껐")
+      lower.includes("진행상황 채널") ||
+      lower.includes("채널 연결") ||
+      lower.includes("channel connected") ||
+      lower.includes("session")
     ) {
       return fallback;
     }

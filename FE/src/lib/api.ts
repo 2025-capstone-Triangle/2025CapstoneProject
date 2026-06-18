@@ -65,11 +65,11 @@ function buildApiUrl(path: string) {
 }
 
 function getPublicApiErrorMessage(status: number) {
-  if (status === 401) return "로그인이 필요합니다.";
-  if (status === 403) return "접근 권한이 없습니다.";
-  if (status === 404) return "요청한 정보를 찾을 수 없습니다.";
-  if (status >= 500) return "서버 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
-  return "요청을 처리하지 못했습니다. 입력값을 확인해 주세요.";
+  if (status === 401) return "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.";
+  if (status === 403) return "\uC811\uADFC \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.";
+  if (status === 404) return "\uC694\uCCAD\uD55C \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.";
+  if (status >= 500) return "\uC11C\uBC84 \uCC98\uB9AC \uC911 \uBB38\uC81C\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.";
+  return "\uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC785\uB825\uAC12\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.";
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -115,7 +115,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     }
 
     if (!payload) {
-      const message = "서버 응답을 처리하지 못했습니다.";
+      const message = "\uC11C\uBC84 \uC751\uB2F5\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.";
       raiseErrorToast(message);
       return undefined as T;
     }
@@ -124,7 +124,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   } catch (error) {
     const apiError = error as ApiRequestError;
     if (!apiError?.__toastShown) {
-      raiseErrorToast("요청 처리 중 문제가 발생했습니다.");
+      raiseErrorToast("\uC694\uCCAD \uCC98\uB9AC \uC911 \uBB38\uC81C\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
     }
     throw error;
   }

@@ -42,21 +42,45 @@ AI 모델 연동 및 환경 변수 관리를 위한 라이브러리입니다.
 
 ```bash
 pip install python-dotenv
-pip install -U langchain
-pip install -U langchain-google-genai
+
+
+pip install openai
+
+
+pip install langchain-openai
+
+
+pip install langchain-core
+```
+
+
+#### C. `SemanticSegmentation` 관련 라이브러리
+
+포즈 추적 및 구도 추천을 위한 라이브러리입니다.
+
+```bash
+pip install mediapipe
+```
+
+#### D. Cloud 업로드 관련 라이브러리
+
+클라우드에 결과 데이터를 업로드하기 위한 라이브러리입니다.
+
+```bash
+pip install boto3
 ```
 
 -----
 
 ### 3\. API 키 설정 (LangChain 연동)
 
-Google Gemini API를 사용하기 위해 환경 변수 파일(`.env`)을 설정
+openai API를 사용하기 위해 환경 변수 파일(`.env`)을 설정
 
 1.  **`.env` 파일 생성:** 프로젝트의 **AI 폴더** 내에 `.env` 파일을 생성
 
-2.  **API 키 문의 및 입력:** `.env` 파일 내에 다음 형식으로 **팀장에게 문의한 API Key**를 입력
+2.  **API 키 문의 및 입력:** `.env` 파일 내에 다음 형식으로 **AI담당에게 문의한 API Key**를 입력
 
     ```
-    # Gemini API Key (팀장에게 문의)
-    GEMINI_API_KEY="여기에 실제 API 키를 입력"
+    # openai API Key (팀장에게 문의)
+    OPENAI_API_KEY="여기에 실제 API 키를 입력"
     ```

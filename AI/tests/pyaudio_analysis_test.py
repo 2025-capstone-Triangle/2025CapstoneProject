@@ -10,7 +10,7 @@ import numpy as np
 import json
 #langchain
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 import os
 
 #Pitch, deltaPitch 정보를 사용하기 위하여 library 내의 함수를 그대로 들고 왔습니다 - harmonic, zero_crossing_rate
@@ -75,19 +75,19 @@ def harmonic(frame, sampling_rate):
 
     return hr, f0
 
-def analyze_audio(audio): 
+def analyze_audio(audio_path): 
 
     # 1. 파일 로드 
-    input_audio_file  = audio #사용하는 음성 데이터 파일명으로 바꾸기
+    input_audio_file  = audio_path
 
     [Fs, x] = audioBasicIO.read_audio_file(input_audio_file)
     if x.ndim > 1: 
         x = np.mean(x, axis=1)
 
-    # print(f"오디오 파일 '{input_audio_file}'로드 완료:") 
-    # print(f"    샘플링 주파수(Fs): {Fs}Hz")
-    # print(f"    오디오 신호 길이: {len(x)} 샘플")
-    # print(f"    오디오 재생 시간: {len(x)/Fs:.2f}초")
+    #print(f"오디오 파일 '{input_audio_file}'로드 완료:") 
+    #print(f"    샘플링 주파수(Fs): {Fs}Hz")
+    #print(f"    오디오 신호 길이: {len(x)} 샘플")
+    #print(f"    오디오 재생 시간: {len(x)/Fs:.2f}초")
 
     # 2. 특징 추출 (stFeatureExtraction: Short-Term Feature Extraction)
     window = int(0.050 * Fs) # 50ms 윈도우 (프레임 길이)
@@ -150,28 +150,26 @@ def analyze_audio(audio):
 
     feature_map = {name: i for i, name in enumerate(feature_names)}
 
-    results = {}
-
-    total_frames = F.shape[1]
-    sample_size = 5
-
+    #total_frames = F.shape[1]
+    #sample_size = 5
+    
     #데이터의 변화 양상을 확인하기 위해 오디오를 세 부분으로 나누어 분석합니다.
     # 오디오 시작 (Start)
-    start_frames = np.arange(min(sample_size, total_frames))
+    #start_frames = np.arange(min(sample_size, total_frames))
 
     # 오디오 중간 (Middle) - 중앙 프레임을 중심으로 추출
-    middle_start = max(0, total_frames // 2 - sample_size // 2)
-    middle_frames = np.arange(middle_start, min(total_frames, middle_start + sample_size))
+    #middle_start = max(0, total_frames // 2 - sample_size // 2)
+    #middle_frames = np.arange(middle_start, min(total_frames, middle_start + sample_size))
 
     # 오디오 끝 (End)
-    end_start = max(0, total_frames - sample_size)
-    end_frames = np.arange(end_start, total_frames)
+    #end_start = max(0, total_frames - sample_size)
+    #end_frames = np.arange(end_start, total_frames)
 
-    sample_indices = {
-        "start": start_frames,
-        "middle": middle_frames,
-        "end": end_frames
-    }
+    #sample_indices = {
+    #    "start": start_frames,
+    #    "middle": middle_frames,
+    #    "end": end_frames
+    #}
 
     # json 파일 변환을 위한 dict
     result_dict={}
@@ -180,36 +178,19 @@ def analyze_audio(audio):
         try:
             idx = feature_map[feature_name]
 
-            #각 feature 에 대하여 각각 평균값과 표준편차를 구하기
+            # 1. 핵심 통계치 계산 (이게 GPT 분석의 핵심!)
             mean_val = np.mean(F[idx, :])
             std_val = np.std(F[idx, :])
             
-            result_dict[feature_name.upper()]={}
+            # 2. 결과 딕셔너리에 '꼭 필요한 정보'만 담기
+            result_dict[feature_name.upper()] = {
+                "index": idx,
+                "mean": round(float(mean_val), 4),
+                "std": round(float(std_val), 4)
+            }
             
-            result_dict[feature_name.upper()]["index"] = idx
-            # print(f"\n {feature_name.upper()} (인덱스: {idx})")
-            
-            result_dict[feature_name.upper()]["mean"] = mean_val
-            result_dict[feature_name.upper()]["std_val"] = std_val
-            # print(f"{feature_name:<25} {mean_val:^15.4f} {std_val:^15.4f}")
-            # print("-" * 30)
-
-            for label, indices in sample_indices.items():
-                # 실제 F 행렬에 접근 가능한 인덱스만 사용 (오디오가 너무 짧을 경우 대비)
-                valid_indices = indices[indices < total_frames]
-                
-                # 해당 프레임들의 특징 값 추출
-                feature_values = F[idx, valid_indices]
-                
-                # 출력 포맷 조정: 프레임 인덱스 표시
-                frame_indices_str = ', '.join(map(str, valid_indices))
-                
-                result_dict[feature_name.upper()][label]={}
-                result_dict[feature_name.upper()][label]["frame"] = frame_indices_str
-                result_dict[feature_name.upper()][label]["values"] = feature_values.tolist()
-
-                # print(f"  {label:<15} (프레임: {frame_indices_str})")
-                # print(f"    값: {feature_values}")
+            # 터미널 확인용 출력 (개별 값 출력은 뺐어!)
+            print(f"{feature_name.upper():<15} | Mean: {mean_val:.4f} | Std: {std_val:.4f}")
 
         except KeyError:
             print(f"\n{feature_name.upper():<20}: 해당 특징을 찾을 수 없습니다")
@@ -218,36 +199,50 @@ def analyze_audio(audio):
     result_json= json.dumps(result_dict, indent=2)
     
     return result_json
-    
+
 #langchain
 def generate_voice_keywords(audio):
-    load_dotenv()
+     
+    current_dir = os.path.dirname(os.path.abspath(__file__)) # tests 폴더
+    parent_dir = os.path.dirname(current_dir)                # AI 폴더 (상위)
+    dotenv_path = os.path.join(parent_dir, '.env')
 
-    model = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        max_tokens=None,
-        temperature=0.7,
-        timeout=None,
-        max_retries=2,
-    )
+    # 명시적으로 경로를 지정해서 로드
+    load_dotenv(dotenv_path)
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    if not api_key:
+        raise ValueError(f"API 키 로드 실패! 시도한 경로: {dotenv_path}")
+
+    if not api_key:
+        raise ValueError("API 키가 설정되지 않았습니다. .env 파일을 확인하세요.")
+
+    model = ChatOpenAI(
+            model="gpt-5-mini", 
+            api_key=api_key, 
+            temperature=0.7,
+        )
+
+    audio_data_json = analyze_audio(audio)
 
     messages = [
         (
             "system",
-            "당신은 음성학 및 심리학 전문가입니다. 이전의 데이터를 잊고 제공된 오디오 특징(평균/표준편차/시계열 값)을 심층적으로 분석하여 화자의 목소리가 청자에게 주는 구체적이고 직관적인 '인상(Perceptual Image)'을 도출해 주세요.\n"+
-            "[분석 지침 및 키워드 변환]\n"+
-            "최종 키워드 도출: 최종적으로 목소리 특징을 가장 잘 대변하는 핵심 이미지 키워드 3가지를 구체적이고 긍정적인 형태로 제시해야 합니다.\n"+ 
-            "톤/음색 분석: Pitch 값을 중심으로 하고 MFCCs의 값을 참고하여 목소리의 주파수 중심(톤)을 분석하여 '중저음' 또는 '하이톤' 등의 구체적인 음색 이미지를 도출합니다.\n"+
-            "안정성/신뢰성 분석: ZCR의 표준편차가 낮으면 '안정적이고 신뢰감을 주는' 이미지로, 매우 높으면 '역동적이지만 불안정한' 이미지로 변환하여 분석\n"+
-            "역동성/활력 분석: PITCH 및 DELTA PITCH의 매우 높은 표준편차는 '불안정'이 아닌 긍정적인 키워드 등으로 해석하여 분석에 핵심 가중치를 부여합니다.\n"+
-            "가중치: 모든 특징은 청각적 인상에 미치는 영향(예: 낮은 ENERGY->작은 목소리 이미지, 높은 ZCR Std Dev->불안정한 음질 이미지)을 중심으로 가중치를 부여합니다.\n",
-        ),
-        ("human", analyze_audio(audio)),
+            """당신은 음성학/심리학 전문가입니다. 제공된 수치를 분석해 청각적 '인상'을 도출하세요.
+
+            [분석 핵심]
+            1. Pitch(MFCC 참고): 중저음/하이톤 등 음색 결정.
+            2. ZCR Std: 낮으면 '신뢰/안정', 높으면 '역동적/활발'.
+            3. Energy/Pitch Std: 에너지와 활력 가중치 부여.
+
+            [출력]
+            화자의 목소리가 주는 긍정적인 핵심 이미지 키워드 3개만 출력할 것.""" ),
+        ("human", f"다음은 음성 분석 데이터입니다: {audio_data_json}"),
     ]
     ai_msg = model.invoke(messages)
-    # print(ai_msg.content)
+    print(ai_msg.content)
     return ai_msg.content
 
 if __name__ == "__main__":
-    audio = "./data/raw/음성2.wav"
+    audio = "./data/raw/음성1.wav"
     generate_voice_keywords(audio)

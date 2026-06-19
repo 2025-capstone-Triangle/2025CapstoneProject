@@ -72,9 +72,17 @@ def generate_color_palette(voice, preference, image):
     return ai_msg.content
     
 
-
-if __name__ == "__main__":
+def data1():
     voice = generate_voice_keywords("./data/raw/음성2.wav")
     preference = "이 목소리의 인상은 ISFJ가 외부로 드러내는 특징이라기보다는, ISFJ가 자신의 내향성을 유지하면서도 타인에게 헌신하고 조화(Fe)를 달성하기 위해 후천적으로 발달시켰거나 선호하는 '표현의 무기'에 가깝습니다. 이 화자는 조용하고 차분한 외모나 태도와 달리, 대화에 들어가면 예상 밖의 섬세하고 생동감 있는 표현력으로 듣는 사람의 몰입을 유도하며, 자신의 책임감 있는 메시지를 정확하게 전달하는 '조용하지만 능숙한 설득가'의 인상을 강하게 풍깁니다."
     image = get_base64_image_data("./data/raw/image2.jpg")
     print(generate_color_palette(voice, preference, image))
+
+def data2():
+    voice = generate_voice_keywords("./data/raw/음성1.wav")
+    preference = "이 목소리의 인상은 ENFP가 외부로 드러내는 전형적인 활발함이나 즉흥성이라기보다는, 자신의 변화무쌍한 아이디어를 타인에게 가치 있는 비전으로 전달하고 정서적 유대(Fi)를 형성하기 위해 후천적으로 연마한 '전략적 공감의 무기'에 가깝습니다. 이 화자는 자칫 산만하거나 가볍게 보일 수 있는 첫인상과 달리, 본격적인 대화에 접어들면 상대의 감정과 욕구를 예리하게 포착하는 몰입감 있는 서사 표현으로 청자의 마음을 움직이며, 자신이 지향하는 가치와 가능성을 가슴 벅찬 울림으로 전달하는 '열정적이지만 통찰력 있는 영감가'의 인상을 강하게 풍깁니다."
+    image = get_base64_image_data("./data/raw/image1.jpg")
+    print(generate_color_palette(voice, preference, image))
+
+if __name__ == "__main__":
+    data1()

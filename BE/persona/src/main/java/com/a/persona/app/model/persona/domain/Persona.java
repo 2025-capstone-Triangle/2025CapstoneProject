@@ -1,0 +1,74 @@
+package com.a.persona.app.model.persona.domain;
+
+import com.a.persona.app.model.common.BaseEntity;
+import com.a.persona.app.model.member.domain.Member;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Persona extends BaseEntity {
+
+    @Id
+    @Column(nullable = false, updatable = false)
+    @SequenceGenerator(
+            name = "persona_sequence",
+            sequenceName = "persona_sequence",
+            allocationSize = 1,
+            initialValue = 10000
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "persona_sequence"
+    )
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String profile;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
+
+    // 굳이 entity로 따로 만들지 않고 사용
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "persona_keywords", joinColumns = @JoinColumn(name = "persona_id"))
+    @Column(name = "keyword")
+    @Builder.Default
+    private Set<String> keywords = new HashSet<>();
+
+    // 굳이 entity로 따로 만들지 않고 사용
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "persona_colors", joinColumns = @JoinColumn(name = "persona_id"))
+    @Column(name = "color")
+    @Builder.Default
+    private Set<String> colors = new HashSet<>();
+
+    private Boolean isSaved = false;
+
+    private String code;
+
+    @Column(columnDefinition = "TEXT")
+    private String thumbnail;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private Preference preference;
+
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(columnDefinition = "TEXT")
+    private String traits;
+
+}

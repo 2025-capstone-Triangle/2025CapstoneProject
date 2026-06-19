@@ -1062,3 +1062,137 @@ AWS_REGION
 ```
 
 S3 버킷 권한과 리전이 올바른지도 확인합니다.
+
+
+
+    ```
+    # openai API Key (팀장에게 문의)
+    OPENAI_API_KEY="여기에 실제 API 키를 입력"
+    ```
+
+-----
+네, 4개 백틱으로 감싸서 렌더링 없이 원본 마크다운 문법 그대로 드릴게요. 그대로 복사해서 .md 파일에 붙여넣으시면 됩니다.
+
+
+## 🧪 AI 모듈 단독 테스트 (서버 연결 X)
+
+> S3 · DB 등 공통 인프라 환경변수 설정은 **BE 환경변수 설정(.env) 파트 참고**
+
+`AI/core` 의 각 핵심 모듈은 `if __name__ == "__main__":` 테스트 블록을 내장하고 있어, BE 서버나 AI FastAPI 서버(`app.py`)를 띄우지 않고도 모듈 단위로 동작을 검증할 수 있습니다.
+
+### 0. 가상환경 활성화
+
+이미 위 "AI 서버 실행" 단계에서 가상환경을 만들었다면 활성화만 하면 됩니다. 아직 없다면 새로 생성합니다.
+
+```bash
+cd AI/core
+python -m venv .venv
+```
+
+Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+> 라이브러리가 이미 설치되어 있다면 생략 가능합니다. 처음 세팅하는 경우 위쪽 "라이브러리 설치" 항목의 `pip install` 명령들을 먼저 실행하세요.
+
+### 사전 준비
+
+`AI/.env` 에 아래 값이 설정되어 있어야 합니다.
+
+```env
+OPENAI_API_KEY=...
+GOOGLE_API_KEY=...
+AWS_ACCESS_KEY=...
+AWS_SECRET_KEY=...
+AWS_REGION=ap-northeast-2
+AWS_BUCKET=...
+
+# 모듈 단독 테스트용 (S3에 업로드된 샘플 이미지/음성 URL)
+TEST_IMAGE_URL=https://.../userData/images/sample.jpg
+TEST_AUDIO_URL=https://.../userData/voices/sample.wav
+```
+
+### 모듈별 테스트 방법
+
+| 모듈 | 실행 명령 | 확인 내용 |
+|------|-----------|-----------|
+| 음성 분석 | `python core/audio_analysis.py` | 음성 피치·에너지 분석 후 분위기 키워드 추출 (기본값은 로컬 `./data/raw/음성1.wav` 사용, 다른 파일로 테스트하려면 코드 내 `audio` 경로 수정) |
+| 얼굴/포즈 분석 · 스마트 크롭 | `python core/image_crop.py` | `TEST_IMAGE_URL` 이미지로 포즈 랜드마크 추출 및 크롭 좌표 계산 |
+| 페르소나 진단 파이프라인 | `python core/persona_pipeline.py` | 음성+이미지+설문 답변을 통합 분석해 리포트 생성 → `persona_result.json` 으로 저장, S3 업로드 결과 URL 콘솔 출력 |
+| 기본 이미지 콘텐츠 생성 | `python core/image_generation.py` | 리포트 기반 프롬프트 생성 → Gemini 이미지 생성 → 스마트 크롭 → S3 업로드 전체 흐름 (파일 하단 `user_input_selection` 값으로 0:1:1 / 1:4:5 / 2:9:16 규격 전환) |
+| 트렌드 기반 콘텐츠 생성 | `python core/trend_setter.py` | 트렌드 프롬프트 + 페르소나 리포트를 결합한 이미지 생성 (파일 내 `trend_concept` 문자열을 원하는 프롬프트로 교체해 테스트) |
+
+각 명령은 `AI/core` 디렉토리에서 가상환경을 활성화한 뒤 실행합니다.
+
+```bash
+cd AI/core
+python audio_analysis.py
+```
+
+### FastAPI 서버만 단독 기동해서 확인하기
+
+BE 없이 AI 서버 엔드포인트만 직접 호출해보고 싶다면:
+
+```bash
+cd AI/core
+uvicorn app:app --reload --port 8000
+```
+
+Swagger UI(`http://localhost:8000/docs`)에서 `/diagnose-persona`, `/generate-content`, `/generate-trend-content` 를 직접 호출해 응답을 확인할 수 있습니다.
+
+> ⚠️ `AI/tests` 폴더의 스크립트(`face_detection.py`, `pose_detection_test.py`, `semantic_segmenation_test.py`, `color_palette_test.py`, `pyaudio_analysis_test.py`, `face_swap.py`)는 모델 채택 전 기술 검증(PoC) 단계에서 작성된 코드로, 로컬 이미지 경로(`data/raw/...`)를 직접 참조합니다. 실제 서비스 흐름과 동일한 테스트는 `core/` 모듈을 사용하세요.
+
+---
+
+## 🔄 배포 서버 관리 (pm2)
+
+> EC2 인스턴스 자체의 Docker / Parameter Store 배포 절차는 **BE EC2 배포 파트 참고**. 여기서는 EC2에서 pm2로 상시 구동 중인 AI(FastAPI) 프로세스의 운영 방법만 다룹니다.
+
+### 서버 접속
+
+```bash
+ssh -i "(키 경로)" ubuntu@(공개 IP)
+cd AI
+source venv/bin/activate
+```
+
+### 코드 갱신
+
+```bash
+git pull origin AI
+```
+
+### 코드 변경 후 동작 확인 (선택)
+
+서버에 반영하기 전, 변경된 파이프라인이 정상 동작하는지 먼저 단독으로 실행해 확인합니다.
+
+```bash
+python3 persona_pipeline.py
+```
+
+### pm2로 서버 재시작
+
+코드를 받아온 뒤에는 pm2로 등록된 프로세스를 재시작해야 변경 사항이 반영됩니다.
+
+```bash
+pm2 restart triangle-ai-api
+```
+
+> 최초 1회 등록 이후에는 `python3 app.py` 로 직접 실행할 필요 없이, pm2가 백그라운드에서 프로세스를 계속 관리합니다.
+
+### 상태 확인
+
+```bash
+pm2 list     # 등록된 프로세스 목록 및 online/stopped 상태 확인
+pm2 logs     # 실시간 로그 확인 — 재시작 후 에러 여부는 여기서 가장 먼저 확인
+```
+
+---

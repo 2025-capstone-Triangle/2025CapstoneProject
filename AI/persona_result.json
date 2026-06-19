@@ -1,0 +1,22 @@
+{
+    "persona_report": {
+        "name": "온화한 설득자",
+        "color_palette": [
+            "#0B2434",
+            "#274156",
+            "#4A6B84",
+            "#8DA0AD",
+            "#D6E1E8"
+        ],
+        "summary": "신뢰와 온화함으로 친밀감을 쌓는 차분한 표현자.",
+        "traits": "낮은 채도와 쿨 블루 중심의 미니멀한 비주얼, 균형 잡힌 표정과 절제된 제스처로 일관된 신뢰감과 따뜻한 친밀감을 전달함.",
+        "keywords": [
+            "신뢰감",
+            "온화함",
+            "표현력",
+            "일관성",
+            "친밀감"
+        ]
+    },
+    "image_url": "https://capstone-project-persona.s3.ap-northeast-2.amazonaws.com/userData/images/persona_1773903926.png"
+}

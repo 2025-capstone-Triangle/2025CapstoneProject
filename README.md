@@ -700,17 +700,17 @@ MediaPipe Pose Landmarker로 검출한 신체 랜드마크를 기반으로, 규�
 - Java 21
 - Python 3.10 권장
 - Docker, Docker Compose
-- PostgreSQL 16
-- Redis 7
+- Supabase
+- Redis 
 - OpenAI API Key
 - Google Gemini API Key
-- AWS S3 접근 키
+- AWS 접근 키
 - Gmail SMTP 앱 비밀번호
 
 ### 전체 실행 순서
 
 ```text
-1. PostgreSQL, Redis 실행
+1. Supabase, Redis, S3 실행
 2. AI 서버 실행
 3. BE 서버 실행
 4. FE 서버 실행
@@ -723,8 +723,8 @@ MediaPipe Pose Landmarker로 검출한 신체 랜드마크를 기반으로, 규�
 FE(localhost:3000)
   -> BE(localhost:8080)
       -> AI(localhost:8000)
-      -> PostgreSQL(localhost:5432)
-      -> Redis(localhost:6379)
+      -> Supabase
+      -> Redis
       -> AWS S3
 ```
 

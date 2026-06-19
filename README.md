@@ -89,6 +89,121 @@
 
 ### 💻 Frontend
 
+#### 🗂️ 프로젝트 구조
+
+```
+FE/
+├── api/
+│   └── [...path].ts                    # Vercel 배포 환경 API 프록시
+├── public/
+│   ├── fonts/                          # 서비스 전용 폰트
+│   ├── images/                         # 정적 이미지 리소스
+│   └── models/
+│       └── face_landmarker.task        # 이미지 입력 검증용 MediaPipe 모델
+├── src/
+│   ├── App.tsx                         # 라우팅 및 전체 앱 진입 컴포넌트
+│   ├── main.tsx                        # React 렌더링 진입점
+│   ├── lib/
+│   │   ├── api.ts                      # 공통 API 요청 유틸
+│   │   ├── auth.ts                     # 인증 정보 저장/삭제 유틸
+│   │   └── errorToastService.ts        # API 오류 토스트 처리
+│   ├── features/
+│   │   ├── auth/                       # 로그인, 회원가입, 비밀번호 찾기
+│   │   ├── diagnosis/                  # 페르소나 진단 플로우
+│   │   ├── persona/                    # 페르소나 목록, 상세, 저장 컨텐츠
+│   │   ├── content/                    # 페르소나 기반 콘텐츠 생성/조회
+│   │   ├── admin/                      # 관리자 콘솔
+│   │   ├── home/                       # 홈 화면, 배너, 공지
+│   │   ├── notice/                     # 공지사항 조회
+│   │   ├── settings/                   # 설정 화면
+│   │   └── support/                    # 도움말 화면
+│   ├── shared/
+│   │   ├── layout/                     # 공통 상단바, 하단 탭, 메뉴
+│   │   ├── ui/                         # 공통 UI 컴포넌트
+│   │   ├── icons/                      # 서비스 아이콘
+│   │   └── lib/                        # 파일 보안 검증 등 공통 유틸
+│   ├── styles/
+│   │   └── globals.css                 # 전역 스타일
+│   └── types/
+│       └── figma.d.ts                  # Figma asset 타입 선언
+├── Dockerfile                          # FE 컨테이너 실행 설정
+├── vite.config.ts                      # Vite 개발 서버 및 proxy 설정
+├── vercel.json                         # Vercel SPA routing/API proxy 설정
+├── tailwind.config.js                  # Tailwind CSS 설정
+└── package.json                        # 의존성 및 실행 스크립트
+```
+
+<br>
+
+#### 🧩 주요 모듈 설명
+
+##### 🔐 Auth 모듈
+
+회원가입, 로그인, 비밀번호 찾기 화면을 제공하고 세션 스토리지 기반 인증 상태를 관리합니다.
+
+| 파일/폴더 | 역할 |
+|----------|------|
+| `features/auth/pages/LoginPage.tsx` | 로그인 화면 |
+| `features/auth/pages/SignupPage.tsx` | 회원가입 화면 |
+| `features/auth/pages/ForgotPasswordPage.tsx` | 비밀번호 찾기 화면 |
+| `features/auth/hooks/useAuthState.ts` | 로그인 상태 확인 훅 |
+| `lib/auth.ts` | 인증 정보 저장 및 삭제 유틸 |
+
+##### 🎭 Diagnosis 모듈
+
+이미지, 음성, 취향 테스트 입력을 받아 페르소나 진단을 진행하고 결과 화면으로 연결합니다.
+
+| 파일/폴더 | 역할 |
+|----------|------|
+| `features/diagnosis/pages/DiagnosisStartPage.tsx` | 진단 시작 화면 |
+| `features/diagnosis/pages/ImageInputPage.tsx` | 이미지 업로드 및 얼굴 검증 |
+| `features/diagnosis/pages/VoiceInputPage.tsx` | 음성 녹음 및 업로드 |
+| `features/diagnosis/pages/PreferenceTestPage.tsx` | 취향 테스트 |
+| `features/diagnosis/pages/AnalyzingPage.tsx` | AI 분석 진행 화면 |
+| `features/diagnosis/pages/DiagnosisResultPage.tsx` | 페르소나 진단 결과 화면 |
+| `features/diagnosis/lib/progressApi.ts` | SSE 기반 진행률 수신 |
+| `features/diagnosis/lib/faceLandmarkCheck.ts` | MediaPipe 기반 얼굴 검증 |
+
+##### 🖼️ Persona / Content 모듈
+
+진단된 페르소나를 조회·저장하고, 페르소나 또는 레퍼런스를 기반으로 AI 콘텐츠를 생성합니다.
+
+| 파일/폴더 | 역할 |
+|----------|------|
+| `features/persona/pages/PersonaListPage.tsx` | 저장된 페르소나 목록 |
+| `features/persona/pages/PersonaDetailPage.tsx` | 페르소나 상세 |
+| `features/persona/pages/PersonaSavedContentsPage.tsx` | 페르소나별 저장 콘텐츠 |
+| `features/content/pages/ContentExplorePage.tsx` | 콘텐츠 생성 진입 및 레퍼런스 탐색 |
+| `features/content/pages/ContentSelectPersonaPage.tsx` | 콘텐츠 생성용 페르소나 선택 |
+| `features/content/pages/ContentGeneratingPage.tsx` | 콘텐츠 생성 진행 화면 |
+| `features/content/pages/ContentResultPage.tsx` | 생성 콘텐츠 결과 화면 |
+| `features/content/lib/contentApi.ts` | 콘텐츠 생성/조회/삭제 API |
+| `features/content/lib/referenceApi.ts` | 레퍼런스 조회/좋아요 API |
+
+##### 🛠️ Admin 모듈
+
+관리자 권한으로 서비스 통계, 회원, 공지사항, 레퍼런스를 관리합니다.
+
+| 파일/폴더 | 역할 |
+|----------|------|
+| `features/admin/pages/AdminConsolePage.tsx` | 관리자 콘솔 화면 |
+| `features/admin/lib/dashboardApi.ts` | 대시보드 통계 API |
+| `features/admin/lib/memberAdminApi.ts` | 회원 관리 API |
+| `features/admin/lib/noticeApi.ts` | 공지사항 관리 API |
+| `features/admin/lib/referenceAdminApi.ts` | 레퍼런스 관리 API |
+
+##### 🧱 Shared / API 모듈
+
+앱 전반에서 사용하는 공통 UI, 레이아웃, API 요청 로직을 관리합니다.
+
+| 파일/폴더 | 역할 |
+|----------|------|
+| `shared/layout` | 상단바, 하단 탭, 햄버거 메뉴 |
+| `shared/ui` | 버튼, 다이얼로그, 입력창 등 공통 UI |
+| `shared/lib/fileSecurity.ts` | 업로드 파일 검증 |
+| `lib/api.ts` | 공통 fetch wrapper 및 인증 헤더 처리 |
+| `api/[...path].ts` | Vercel 배포 환경 API 프록시 |
+
 ### 🧩 Backend
 
 #### 🗂️ 프로젝트 구조
@@ -603,9 +718,25 @@ cd FE
 npm install
 ```
 
+의존성 버전을 `package-lock.json`과 완전히 동일하게 맞춰 재현해야 하는 경우에는 아래 명령어를 사용할 수 있습니다.
+
+```bash
+npm ci
+```
+
 ### 환경변수 설정
 
 로컬 개발 시 `FE/.env.local` 파일을 생성합니다.
+
+```bash
+copy .env.example .env.local
+```
+
+macOS/Linux 환경에서는 다음 명령어를 사용합니다.
+
+```bash
+cp .env.example .env.local
+```
 
 로컬 BE 서버를 사용하는 경우:
 
@@ -676,7 +807,16 @@ AI: http://localhost:8000
 
 FE는 Vercel 배포를 기준으로 설정되어 있습니다.
 
+Vercel 프로젝트 설정은 FE 폴더를 기준으로 합니다.
+
+```text
+Root Directory: FE
+Build Command: npm run build
+Output Directory: build
+```
+
 ```bash
+cd FE
 npm run build
 ```
 

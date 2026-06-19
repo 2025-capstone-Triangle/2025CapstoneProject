@@ -676,8 +676,6 @@ pip install mediapipe opencv-python pillow httpx boto3
 
 ```env
 OPENAI_API_KEY=OPENAI_API_KEY
-GOOGLE_API_KEY=GOOGLE_GEMINI_API_KEY
-
 AWS_ACCESS_KEY=AWS_ACCESS_KEY
 AWS_SECRET_KEY=AWS_SECRET_KEY
 AWS_REGION=ap-northeast-2
@@ -887,7 +885,6 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 
 ```env
 OPENAI_API_KEY=OPENAI_API_KEY
-GOOGLE_API_KEY=GOOGLE_GEMINI_API_KEY
 
 AWS_ACCESS_KEY=AWS_ACCESS_KEY
 AWS_SECRET_KEY=AWS_SECRET_KEY
@@ -1109,7 +1106,6 @@ source .venv/bin/activate
 
 ```env
 OPENAI_API_KEY=...
-GOOGLE_API_KEY=...
 AWS_ACCESS_KEY=...
 AWS_SECRET_KEY=...
 AWS_REGION=ap-northeast-2

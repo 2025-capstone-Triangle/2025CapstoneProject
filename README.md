@@ -97,6 +97,9 @@
   - [💻 Frontend 실행](#-frontend-실행)
   - [🐳 Docker Compose 실행](#-전체-docker-compose-실행)
   - [☁️ 배포](#️-배포)
+    - [💻 FE 배포](#fe-배포)
+    - [🧩 BE 배포](#be-배포)
+    - [🤖 AI 배포](#ai-배포)
 - [🔑 테스트 계정](#-테스트-계정)
 - [⚠️ Trouble Shooting](#️-trouble-shooting)
 
@@ -1285,11 +1288,11 @@ AWS_PATH=ai-result
 BE_BASE_URL=https://백엔드_배포_주소
 ```
 
-## 🔄 배포 서버 관리 (pm2)
+#### 🔄 배포 서버 관리 (pm2)
 
 > EC2 인스턴스 자체의 Docker / Parameter Store 배포 절차는 **BE EC2 배포 파트 참고**. 여기서는 EC2에서 pm2로 상시 구동 중인 AI(FastAPI) 프로세스의 운영 방법만 다룹니다.
 
-### 서버 접속
+##### 서버 접속
 
 ```bash
 ssh -i "(키 경로)" ubuntu@(공개 IP)
@@ -1297,13 +1300,13 @@ cd AI
 source venv/bin/activate
 ```
 
-### 코드 갱신
+##### 코드 갱신
 
 ```bash
 git pull origin AI
 ```
 
-### 코드 변경 후 동작 확인 (선택)
+##### 코드 변경 후 동작 확인 (선택)
 
 서버에 반영하기 전, 변경된 파이프라인이 정상 동작하는지 먼저 단독으로 실행해 확인합니다.
 
@@ -1311,7 +1314,7 @@ git pull origin AI
 python3 persona_pipeline.py
 ```
 
-### pm2로 서버 재시작
+##### pm2로 서버 재시작
 
 코드를 받아온 뒤에는 pm2로 등록된 프로세스를 재시작해야 변경 사항이 반영됩니다.
 
@@ -1321,7 +1324,7 @@ pm2 restart triangle-ai-api
 
 > 최초 1회 등록 이후에는 `python3 app.py` 로 직접 실행할 필요 없이, pm2가 백그라운드에서 프로세스를 계속 관리합니다.
 
-### 상태 확인
+##### 상태 확인
 
 ```bash
 pm2 list     # 등록된 프로세스 목록 및 online/stopped 상태 확인

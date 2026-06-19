@@ -1068,16 +1068,296 @@ S3 버킷 권한과 리전이 올바른지도 확인합니다.
     ```
 
 -----
-네, 4개 백틱으로 감싸서 렌더링 없이 원본 마크다운 문법 그대로 드릴게요. 그대로 복사해서 .md 파일에 붙여넣으시면 됩니다.
+### 🤖 AI
+
+#### 🗂️ 프로젝트 구조
+
+```
+AI/
+├── core/
+│   ├── app.py                   # FastAPI 진입점, 3개 엔드포인트 정의
+│   ├── audio_analysis.py        # 음성 분석 (피치/에너지 추출 → 분위기 키워드)
+│   ├── base_generator.py        # 이미지 생성 공통 베이스 클래스 (프롬프트/생성/크롭/업로드)
+│   ├── image_crop.py            # MediaPipe 포즈 기반 스마트 크롭 좌표 계산
+│   ├── image_generation.py      # 페르소나 진단 기반 프로필 이미지 생성 (1:1)
+│   ├── persona_pipeline.py      # 음성+이미지+설문 통합 페르소나 진단 파이프라인
+│   ├── trend_setter.py          # 트렌드 레퍼런스 기반 콘텐츠 생성 (4:5)
+│   └── pose_landmarker_heavy.task   # MediaPipe Pose 모델 파일
+└── tests/                       # PoC 단계 기술 검증 스크립트 (로컬 경로 직접 참조)
+```
+
+<br>
+
+#### 🧩 주요 모듈 설명
+
+##### 🎙️ Audio 분석 모듈 — `audio_analysis.py`
+
+사용자 음성 파일에서 음향 특징을 추출하고, 이를 LLM에 전달해 청각적 인상 키워드로 변환합니다.
+
+| 함수 | 역할 |
+|------|------|
+| `harmonic()` | pyAudioAnalysis 원본 로직을 기반으로 프레임별 harmonic ratio와 pitch(F0)를 직접 계산 |
+| `analyze_audio()` | `ShortTermFeatures.feature_extraction`으로 50ms 윈도우 / 25ms 스텝 기준 단구간 특징 추출, 여기에 harmonic ratio·pitch·delta pitch를 추가하여 ZCR, Energy, Spectral Entropy, MFCC, Pitch 등 핵심 특징의 평균·표준편차를 JSON으로 반환 |
+| `generate_voice_keywords()` | 분석된 수치 데이터를 GPT-5-mini(temperature 0.7)에 전달, 음성학/심리학 전문가 역할의 system prompt로 톤·발화 강약을 해석해 **긍정적 인상 키워드 3개** 생성 |
+
+**핵심 로직**: 단순 라이브러리 호출이 아니라, pitch와 harmonic ratio를 프레임 단위로 직접 계산해 ShortTermFeatures 결과에 수동으로 병합하는 방식을 사용합니다.
+
+<br>
+
+##### 🖼️ Image Crop 모듈 — `image_crop.py`
+
+MediaPipe Pose Landmarker로 검출한 신체 랜드마크를 기반으로, 규격별(프로필/포스트/스토리) 스마트 크롭 좌표를 계산합니다.
+
+| 함수 | 역할 |
+|------|------|
+| `download_image_from_url()` | URL에서 이미지를 받아 OpenCV(BGR) 포맷으로 변환 |
+| `run_pose_visualization()` | 포즈 검출 → 랜드마크 시각화 → 3가지 비율(1:1 / 4:5 / 9:16) 크롭 동시 수행 및 결과 저장 (단독 테스트/디버깅용) |
+| `image_crop()` | **핵심 알고리즘.** 랜드마크 좌표로부터 크롭 영역을 계산 |
+
+**`image_crop()` 동작 방식**:
+- 크롭의 가로 중심은 머리·어깨 랜드마크(인덱스 0~12)만 사용 — 하반신이 비대칭으로 잡혀도 중심이 흔들리지 않도록 설계
+- 모드별 줌 배율과 눈높이 배치 비율이 다름
+
+  | mode | zoom_factor | eye_pos_ratio | 기준 |
+  |------|:---:|:---:|------|
+  | `Profile` (1:1) | 5 | 0.4 | 얼굴 랜드마크(0~10) 높이 |
+  | `Post` (4:5) | 1.6 | 0.3 | 전신 높이 |
+  | `Story` (9:16) | 2.0 | 0.25 | 전신 높이 |
+
+- 어깨 중심과 코 위치 차이(`face_offset`)로 인물이 바라보는 방향을 추정해, 크롭 중심을 좌/우로 살짝 보정(0.4 또는 0.6)함으로써 여백의 균형을 맞춤
+- 양 눈 랜드마크 각도로 기울기(`angle`)도 함께 반환
+
+<br>
+
+##### 🧱 Base Generator 모듈 — `base_generator.py`
+
+`ImageGeneration`(프로필 생성)과 `ContentGeneration`(트렌드 생성)이 공유하는 공통 로직을 담은 베이스 클래스입니다.
+
+| 메서드 | 역할 |
+|--------|------|
+| `__init__()` | OpenAI(GPT-5-mini), Gemini 클라이언트, S3 클라이언트, MediaPipe PoseLandmarker를 한 번에 초기화 |
+| `_get_framing()` | 설문 `q7_framing` 값(1~5)을 클로즈업~광각 5단계 영문 프레이밍 문구로 매핑 |
+| `_build_base_prompt()` | 설문 답변(`q1~q7`)과 톤 슬라이더(`q8_tone`: 채도/명도/대비/색온도)를 조합해 촬영 환경·스타일·조명·색감을 영문으로 서술하는 기본 프롬프트 생성 |
+| `download_image_as_pil()` | 유저 이미지 URL → PIL Image 비동기 다운로드 |
+| `_resize_for_gemini()` | Gemini 503 에러 방지를 위해 참조 이미지를 1024px 이하로 리사이즈 |
+| `generate_persona_image()` | **Gemini(`gemini-3.1-flash-image-preview`)로 이미지 생성.** 얼굴 보존 프롬프트 + 본문 프롬프트 + 텍스트/워터마크 금지 네거티브 프롬프트를 결합, 503/timeout 발생 시 5초·15초·30초 간격으로 최대 3회 재시도 |
+| `apply_smart_crop()` | 생성된 이미지에 MediaPipe Pose를 다시 적용해 `image_crop()` 호출, 포즈 미검출 시 `_center_crop()`으로 폴백 |
+| `upload_cv2_to_s3()` | 크롭된 이미지를 PNG로 인코딩해 `generated_personas/` 경로에 S3 업로드 |
+
+**설계 의도**: `_gemini_aspect_ratio` 클래스 변수만 서브클래스에서 오버라이드하면 프롬프트 생성 로직을 제외한 생성·크롭·업로드 파이프라인 전체를 그대로 재사용할 수 있도록 설계되어 있습니다.
+
+<br>
+
+##### 🎭 Persona Pipeline 모듈 — `persona_pipeline.py`
+
+음성·이미지·설문 데이터를 통합 분석해 페르소나 리포트를 생성하는 **핵심 파이프라인**입니다. `/diagnose-persona` 엔드포인트의 실제 구현체입니다.
+
+| 클래스 | 역할 |
+|--------|------|
+| `PersonaReport` (Pydantic Model) | LLM 출력 구조 정의 — `name`(페르소나명), `color_palette`(HEX 5개), `summary`, `traits`(3~5문장 성향 분석), `keywords`(5개, 서로 다른 5개 차원에서 1개씩) |
+| `PersonaAnalyzer` | 음성 분석 결과 호출, 이미지+음성 종합 인상 분석, 최종 JSON 리포트 생성을 담당 |
+| `ImageGenerator` | 리포트 기반 대표 이미지(bust shot 고정) 프롬프트 생성 및 Gemini 호출 — `base_generator`와 별도로 자체 구현된 클래스 |
+| `PersonaPipeline` | 전체 진단 흐름을 조율하는 오케스트레이터, SSE 진행률 알림(`_notify`) 포함 |
+| `CloudUploader` | 로컬 임시 파일을 S3에 업로드 (persona_pipeline 전용, `AWS_PATH` 환경변수로 경로 지정) |
+
+**`run_e2e_test()` 처리 흐름** (진행률 알림 단계 포함):
+
+```
+1. 음성 다운로드 → 음성 분석 키워드 추출        (progress 15%)
+2. 사용자 이미지 다운로드                        (progress 25%)
+3. 이미지 + 음성 키워드 종합 인상 분석 (GPT-5-mini, Vision)   (progress 40%)
+4. 설문 답변 → 선호 스타일 텍스트 변환
+5. 최종 페르소나 리포트 생성 (PersonaReport 구조로 파싱)      (progress 60%)
+6. 리포트 기반 이미지 생성 프롬프트 작성                      (progress 70%)
+7. Gemini로 페르소나 이미지 생성 (얼굴 보존 적용)              (progress 85%)
+8. S3 업로드 후 임시 파일 삭제                                (progress 100%)
+```
+
+**`PersonaAnalyzer.analyze_total_impression()`**: 외모에서 읽히는 인상과 음성 키워드가 일치하면 "신뢰감·일관성"으로, 차이가 있으면 "반전 매력·입체적 페르소나"로 해석하도록 프롬프트가 설계되어 있어, 두 데이터가 어떤 조합이든 항상 긍정적인 해석을 도출합니다.
+
+<br>
+
+##### 🖼️ Image Generation 모듈 — `image_generation.py`
+
+`base_generator.BaseContentGenerator`를 상속해, 진단된 페르소나를 기반으로 **프로필용 이미지(1:1)**를 생성합니다. `/generate-content` 엔드포인트의 실제 구현체입니다.
+
+| 클래스/메서드 | 역할 |
+|------|------|
+| `ImageGeneration` | `_gemini_aspect_ratio = "1:1"` 고정 |
+| `generate_profile_prompt()` | 페르소나 리포트(`name`, `keywords`, `color_palette`)와 설문 기반 스타일을 결합해 GPT-5-mini로 최종 영문 이미지 생성 프롬프트 작성. 촬영 환경(아이폰 캐주얼 vs 소니 스튜디오)에 따라 카메라 디스크립션을 다르게 적용 |
+
+<br>
+
+##### 🔥 Trend Setter 모듈 — `trend_setter.py`
+
+`base_generator.BaseContentGenerator`를 상속해, BE에서 전달받은 트렌드 컨셉과 사용자 페르소나를 결합한 이미지를 생성합니다. `/generate-trend-content` 엔드포인트의 실제 구현체입니다.
+
+| 클래스/메서드 | 역할 |
+|------|------|
+| `ContentGeneration` | `_gemini_aspect_ratio = "4:5"` 고정 (인스타 포스트 기본 비율) |
+| `generate_profile_prompt()` | BE가 전달한 트렌드 텍스트를 **기본 골자로 우선 반영**하면서, 사용자의 페르소나·취향·구도 선택을 결합하는 프롬프트를 GPT-5-mini로 작성. 얼굴 보존 지시문을 프롬프트 내에 명시적으로 재차 포함하도록 강제 |
+
+`image_generation.py`와의 차이는 **트렌드 컨셉이라는 외부 입력이 프롬프트의 1순위 기준이 된다는 점**과, 출력 비율이 4:5라는 점입니다.
+
+<br>
+
+##### 🚪 FastAPI 진입점 — `app.py`
+
+서버 시작 시 `PersonaPipeline`, `ImageGeneration`, `ContentGeneration` 인스턴스를 미리 생성해두어 요청마다 모델 재초기화 비용이 발생하지 않도록 합니다.
+
+| Method | Endpoint | 요청 모델 | 설명 |
+|--------|----------|-----------|------|
+| POST | `/diagnose-persona` | `DiagnosisRequest` | 음성·이미지·설문 답변을 받아 `PersonaPipeline.run_e2e_test()` 호출, 페르소나 리포트와 대표 이미지 URL 반환 |
+| POST | `/generate-content` | `ContentCreateRequest` | 진단 리포트를 받아 프로필용 이미지 생성 → 스마트 크롭 → S3 업로드 |
+| POST | `/generate-trend-content` | `TrendContentRequest` | 트렌드 프롬프트 + 진단 리포트를 결합해 이미지 생성 → 스마트 크롭 → S3 업로드 |
+
+**`/generate-content`, `/generate-trend-content` 공통 처리 흐름**:
+
+```
+1. 프롬프트 생성 (LLM)
+2. user_image_url → PIL Image 다운로드
+3. Gemini 이미지 생성 (얼굴 보존 + 네거티브 프롬프트, 503 시 최대 3회 재시도)
+4. crop_type(0/1/2)에 따른 크롭 설정 결정
+5. MediaPipe 포즈 기반 스마트 크롭
+6. S3 업로드 후 URL 반환
+```
+
+**`crop_type` 매핑**:
+
+| crop_type | ratio | mode | 용도 |
+|:---:|:---:|------|------|
+| 0 | 1.0 | Profile | 프로필(1:1) |
+| 1 | 0.8 | Post | 피드(4:5) — 기본값 |
+| 2 | 0.5625 | Story | 스토리(9:16) |
+
+<br>
+
+#### 📡 AI 서버 엔드포인트 상세 스펙
+
+모든 엔드포인트는 비동기(`async def`)로 처리되며, 예외 발생 시 `500` 상태 코드와 함께 에러 메시지를 반환합니다.
+
+##### `POST /diagnose-persona`
+
+```jsonc
+// Request
+{
+  "answers": { "q1_environment": 1, "q2_style": 2, "...": "..." },
+  "q8_tone": [34, 73, 36, 72],       // [채도, 명도, 대비, 색온도] 0~100
+  "images": "https://.../userData/images/sample.jpg",
+  "voice": "https://.../userData/voices/sample.wav",
+  "session_id": "optional-sse-session-id"
+}
+
+// Response
+{
+  "status": "success",
+  "report": {
+    "name": "맑은 자연 산책자",
+    "color_palette": ["#F7E3E0", "#EBEBEB", "..."],
+    "summary": "...",
+    "traits": "...",
+    "keywords": ["...", "...", "...", "...", "..."]
+  },
+  "image_url": "https://persona-capstone.s3.ap-northeast-2.amazonaws.com/..."
+}
+```
+
+##### `POST /generate-content`
+
+```jsonc
+// Request
+{
+  "report": { /* PersonaReport와 동일 구조 */ },
+  "answers": { "...": "..." },
+  "q8_tone": [34, 73, 36, 72],
+  "user_image_url": "https://...",
+  "crop_type": 1   // 0:Profile / 1:Post / 2:Story
+}
+
+// Response
+{
+  "status": "success",
+  "generated_image_url": "https://persona-capstone.s3.../generated_personas/persona_gen_....png",
+  "used_prompt": "Camera framing: ... (생성에 사용된 최종 영문 프롬프트)"
+}
+```
+
+##### `POST /generate-trend-content`
+
+```jsonc
+// Request
+{
+  "trend_prompt": "BE에서 전달하는 트렌드 컨셉 텍스트",
+  "report": { /* PersonaReport와 동일 구조 */ },
+  "answers": { "...": "..." },
+  "q8_tone": [34, 23, 56, 34],
+  "user_image_url": "https://...",
+  "crop_type": 2
+}
+
+// Response
+{
+  "status": "success",
+  "generated_image_url": "https://persona-capstone.s3.../generated_personas/trend_gen_....png",
+  "used_prompt": "Camera framing: ..."
+}
+```
+
+<br>
+
+#### 🔄 AI 파이프라인 전체 흐름
+
+```
+[페르소나 진단]  POST /diagnose-persona
+  음성(URL) ──┐
+              ├─▶ audio_analysis.py ──▶ 음성 키워드 3개 (GPT-5-mini)
+  이미지(URL) ─┤
+              ├─▶ Vision 종합 인상 분석 (GPT-5-mini)
+  설문 답변 ───┘
+              ▼
+   persona_pipeline.PersonaAnalyzer.analyze()
+              ▼
+   PersonaReport (name / color_palette / summary / traits / keywords)
+              ▼
+   ImageGenerator → Gemini 이미지 생성 (bust shot, 얼굴 보존) → S3 업로드
+              ▼
+   { report, image_url } 반환
 
 
-## 🧪 AI 모듈 단독 테스트 (서버 연결 X)
+[콘텐츠 생성]  POST /generate-content | /generate-trend-content
+   PersonaReport + 설문 + (트렌드 텍스트, 선택) 
+              ▼
+   base_generator._build_base_prompt() → LLM 프롬프트 정제 (GPT-5-mini)
+              ▼
+   Gemini(gemini-3.1-flash-image-preview) 이미지 생성
+   (얼굴 보존 프롬프트 + 네거티브 프롬프트, 503 시 최대 3회 재시도)
+              ▼
+   image_crop.py: MediaPipe Pose 기반 스마트 크롭 (1:1 / 4:5 / 9:16)
+              ▼
+   S3 업로드 → generated_image_url 반환
+```
+
+<br>
+
+#### 🧰 AI 모듈에서 사용하는 외부 모델/서비스
+
+| 구분 | 사용처 | 비고 |
+|------|--------|------|
+| GPT-5-mini (OpenAI) | 음성 키워드 추출, 종합 인상 분석, 페르소나 리포트 생성, 이미지 프롬프트 정제 | `ChatOpenAI`, temperature 0.7 |
+| Gemini `gemini-3.1-flash-image-preview` | 최종 페르소나/콘텐츠 이미지 생성 | 얼굴 보존 + 텍스트/워터마크 금지 프롬프트 고정 적용, 503 에러 시 지수적 재시도 |
+| pyAudioAnalysis | 음성 피치·에너지·하모닉 비율 등 단구간 특징 추출 | harmonic/pitch는 라이브러리 함수를 가져와 직접 프레임 단위로 재계산 |
+| MediaPipe Pose Landmarker (`pose_landmarker_heavy.task`) | 인물 포즈 랜드마크 검출 → 스마트 크롭 좌표 계산 | 얼굴 랜드마크(0~10)는 Profile 모드, 전신 랜드마크는 Post/Story 모드에 사용 |
+| AWS S3 (`boto3`) | 생성된 이미지 영구 저장 | `generated_personas/` 경로, `AWS_PATH` 환경변수로 진단용 경로 별도 지정 가능 |
+
+<br>
+
+#### 🧪 AI 모듈 단독 테스트 (서버 연결 X)
 
 > S3 · DB 등 공통 인프라 환경변수 설정은 **BE 환경변수 설정(.env) 파트 참고**
 
 `AI/core` 의 각 핵심 모듈은 `if __name__ == "__main__":` 테스트 블록을 내장하고 있어, BE 서버나 AI FastAPI 서버(`app.py`)를 띄우지 않고도 모듈 단위로 동작을 검증할 수 있습니다.
 
-### 0. 가상환경 활성화
+##### 0. 가상환경 활성화
 
 이미 위 "AI 서버 실행" 단계에서 가상환경을 만들었다면 활성화만 하면 됩니다. 아직 없다면 새로 생성합니다.
 
@@ -1100,7 +1380,7 @@ source .venv/bin/activate
 
 > 라이브러리가 이미 설치되어 있다면 생략 가능합니다. 처음 세팅하는 경우 위쪽 "라이브러리 설치" 항목의 `pip install` 명령들을 먼저 실행하세요.
 
-### 사전 준비
+##### 사전 준비
 
 `AI/.env` 에 아래 값이 설정되어 있어야 합니다.
 
@@ -1116,7 +1396,7 @@ TEST_IMAGE_URL=https://.../userData/images/sample.jpg
 TEST_AUDIO_URL=https://.../userData/voices/sample.wav
 ```
 
-### 모듈별 테스트 방법
+##### 모듈별 테스트 방법
 
 | 모듈 | 실행 명령 | 확인 내용 |
 |------|-----------|-----------|
@@ -1133,7 +1413,7 @@ cd AI/core
 python audio_analysis.py
 ```
 
-### FastAPI 서버만 단독 기동해서 확인하기
+##### FastAPI 서버만 단독 기동해서 확인하기
 
 BE 없이 AI 서버 엔드포인트만 직접 호출해보고 싶다면:
 

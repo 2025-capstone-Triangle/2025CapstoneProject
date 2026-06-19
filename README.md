@@ -82,8 +82,29 @@
 ## 📈 erd
 <img width="1630" height="1182" alt="Person_a (3)" src="https://github.com/user-attachments/assets/e901c6b2-32a4-448f-8f9d-b491cee982c6" />
 
+<br>
 
 ---
+
+## 📑 목차
+- [📁 소스 코드](#-source-code)
+  - [💻 Frontend](#-frontend)
+  - [🧩 Backend](#-backend)
+  - [🤖 AI](#-ai)
+- [🚀 실행 및 배포 가이드](#-실행-및-배포-가이드)
+  - [🧩 Backend / DB 구축 및 실행](#-backend-db-구축-및-실행)
+  - [🤖 AI 서버 실행](#-ai-서버-실행)
+  - [💻 Frontend 실행](#-frontend-실행)
+  - [🐳 Docker Compose 실행](#-전체-docker-compose-실행)
+  - [☁️ 배포](#️-배포)
+- [🔑 테스트 계정](#-테스트-계정)
+- [⚠️ Trouble Shooting](#️-trouble-shooting)
+
+<br>
+
+---
+
+<br>
 
 ## 📁 Source Code
 
@@ -204,6 +225,10 @@ FE/
 | `lib/api.ts` | 공통 fetch wrapper 및 인증 헤더 처리 |
 | `api/[...path].ts` | Vercel 배포 환경 API 프록시 |
 
+---
+
+<br>
+
 ### 🧩 Backend
 
 #### 🗂️ 프로젝트 구조
@@ -298,6 +323,7 @@ persona/
 
  
 <br>
+
 #### 📡 주요 API 엔드포인트
  
 모든 엔드포인트 기본 경로: `/api/v1`
@@ -363,705 +389,7 @@ persona/
 | GET | `/notice` | 공지사항 목록 조회 |
 | GET | `/notice/pinned` | 고정 공지사항 조회 |
 
----
-
-## 🚀 실행 및 배포 가이드
-
-아래 내용은 FE, BE, AI 모듈이 모두 병합된 최종 결과물을 기준으로 작성되었습니다.
-
-```text
-.
-├── FE/              # React + Vite
-├── BE/persona/      # Spring Boot
-├── AI/core/         # FastAPI
-└── docker-compose.yml
-```
-
-### 실행 환경
-
-- Node.js 20 이상
-- Java 21
-- Python 3.10 권장
-- Docker, Docker Compose
-- PostgreSQL 16
-- Redis 7
-- OpenAI API Key
-- Google Gemini API Key
-- AWS S3 접근 키
-- Gmail SMTP 앱 비밀번호
-
-### 전체 실행 순서
-
-```text
-1. PostgreSQL, Redis 실행
-2. AI 서버 실행
-3. BE 서버 실행
-4. FE 서버 실행
-5. http://localhost:3000 접속
-```
-
-서비스 연결 구조는 다음과 같습니다.
-
-```text
-FE(localhost:3000)
-  -> BE(localhost:8080)
-      -> AI(localhost:8000)
-      -> PostgreSQL(localhost:5432)
-      -> Redis(localhost:6379)
-      -> AWS S3
-```
-
-## 🧩 Backend, DB 구축 및 실행
-
-### 📋 사전 요구사항
-
-로컬에서 프로젝트를 실행하기 전, 아래 항목이 준비되어 있어야 합니다.
-
-| 항목 | 비고 |
-|------|------|
-| Java 21 | |
-| IDE | Spring Boot 실행 가능한 환경 |
-| Supabase 계정 | DB 관리 |
-| AWS 계정 | S3 스토리지 |
-| Redis 계정 | 토큰 및 대기열 관리 |
-| Docker 계정 | 서버 배포 |
-| Gmail 계정 | 이메일 인증 발송 |
-| AI 서버 엔드포인트 URL | |
-
 <br>
-
-### 🔑 환경변수 설정 (`.env`)
-
-프로젝트 루트 디렉토리에 `.env` 파일을 생성합니다. 내용은 다음과 같습니다.
-
-```env
-APP_DOMAIN=
-APP_DOMAIN_ONLY=
-
-# ───────────────────────────────────────────
-# Database
-# ───────────────────────────────────────────
-DATABASE_URL=jdbc:postgresql://...
-DATABASE_USER=your_db_username
-DATABASE_PASSWORD=your_db_password
-
-# ───────────────────────────────────────────
-# Redis
-# ───────────────────────────────────────────
-REDIS_HOST=your_redis_host
-REDIS_PORT=your_redis_port
-REDIS_PASSWORD=your_redis_password
-
-# ───────────────────────────────────────────
-# JWT
-# ───────────────────────────────────────────
-JWT_SECRET=your_jwt_secret_key_here
-
-# ───────────────────────────────────────────
-# Email (SMTP)
-# ───────────────────────────────────────────
-EMAIL_NAME=your_email@gmail.com
-EMAIL_PASSWORD=your_gmail_app_password
-
-# ───────────────────────────────────────────
-# AWS
-# ───────────────────────────────────────────
-AWS_ACCESS_KEY=your_aws_access_key_id
-AWS_SECRET_KEY=your_aws_secret_access_key
-
-# ───────────────────────────────────────────
-# AI Server
-# ───────────────────────────────────────────
-AI_SERVER=http://your-ai-server-endpoint
-```
-
-<br>
-
-#### 1. Supabase (PostgreSQL)
-
-1. [Supabase](https://supabase.com/) 로그인
-2. **New Organization** 선택 → Free Plan으로 생성
-3. 새 DB 생성 (⚠️ 설정한 DB Password를 반드시 기록해두세요)
-4. 상단 **Connect** → **Direct** 선택
-   - Connection Method : `Session Pooler`
-   - Type : `JDBC`
-5. Connection String 복사 후 아래와 같이 BE의 .env 파일에 입력
-
-```env
-DATABASE_URL=jdbc:postgresql://(주소):(port)/postgres
-DATABASE_USER=postgres.(영문코드)
-DATABASE_PASSWORD=(설정한 password)
-```
-
-<br>
-
-#### 2. AWS S3
-
-1. AWS 로그인 후 **S3** 탭으로 이동
-2. **버킷 생성** 시작
-   - 버킷 이름 : `persona-capstone`
-   - 리전 : `ap-northeast-2`
-   - ACL : 비활성화
-   - 퍼블릭 액세스 차단 : **미선택**
-   - 버킷 버전 관리 : 비활성화 (비용 무관하면 활성화)
-   - 기본 암호화 : `SSE-S3` / 버킷 키 활성화
-3. 생성한 버킷 → **권한** → **버킷 정책** → 편집 후 아래 내용 입력
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::persona-capstone/*"
-        }
-    ]
-}
-```
-
-4. 버킷 내 폴더 구조 생성
-
-```
-root
-├── generated_personas
-├── reference
-└── userData
-    ├── images
-    ├── profile
-    └── voices
-```
-
-5. **AWS IAM** → 자격 증명 탭 → 액세스 키 만들기 (CSV 파일로 보관 권장) 아래와 같이 BE의 .env 파일에 입력
-
-```env
-AWS_ACCESS_KEY=(생성한 액세스 키 ID)
-AWS_SECRET_KEY=(생성한 비밀 액세스 키)
-```
-
-<br>
-
-#### 3. Redis
-
-1. Redis 무료 DB 생성
-2. **Connect to Database** → **Redis CLI** 탭에서 아래 형식의 커맨드 확인
-
-```bash
-redis-cli -u redis://default:(password)@(redis_host):(port)
-```
-3. 아래와 같이 BE의 .env 파일에 입력
-
-```env
-REDIS_HOST=(redis_host)
-REDIS_PASSWORD=(password)
-REDIS_PORT=(port)
-```
-<br>
-
-#### 4. JWT Secret
-
-40자 이상의 영문 대소문자 + 숫자 조합 문자열을 자유롭게 설정하세요.
-
-```env
-JWT_SECRET=your_jwt_secret_key_here
-```
-
-
-#### 5. Email (Gmail SMTP)
-
-1. [Google 앱 비밀번호](https://myaccount.google.com/apppasswords) 접속 (2차 인증 필수)
-2. 앱 이름 자유롭게 설정 후 생성 → 발급된 비밀번호 기록
-
-```env
-EMAIL_NAME=(로그인한 구글 계정 이메일)
-EMAIL_PASSWORD=(발급된 앱 비밀번호)
-```
-
-<br>
-
-#### 6. AI Server
-
-AI 서버가 배포된 주소를 입력합니다.
-
-```env
-AI_SERVER=http://your-ai-server-endpoint
-```
-
-<br>
-
-#### 7. APP_DOMAIN
-
-BE 서버 실행 후 서버 주소를 입력합니다.
-
-```env
-APP_DOMAIN=(https:// 포함한 전체 주소)
-APP_DOMAIN_ONLY=(https:// 제외한 주소)
-```
-
-<br>
-
-### 💻 로컬 실행
-
-#### IDE로 실행 (IntelliJ 기준)
-
-1. 프로젝트 루트에 `.env` 파일 생성 (환경변수 설정 참고)
-2. `Run` → `Edit Configurations` → `Active profiles` 에 `local` 입력
-3. `application.properties` 에서 아래와 같이 수정
-
-```properties
-spring.profiles.active=local
-```
-
-4. `PersonaApplication.java` 우클릭 → **Run** 실행
-
-#### 터미널로 실행
-
-```bash
-./gradlew bootRun --args='--spring.profiles.active=local'
-```
-
-> BE 서버는 `http://localhost:8080`에서 실행됩니다.
-> 
-> Supabase에 테이블과 더미 데이터가 정상 생성되었는지 확인하세요.
-> 
-> 📖 Swagger UI: http://localhost:8080/swagger-ui/index.html
-
-<br>
-
-## 🤖 AI 서버 실행
-
-AI 서버는 FastAPI 기반이며 기본 포트는 `8000`입니다.
-
-### 가상환경 생성
-
-```bash
-cd AI/core
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-macOS/Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 라이브러리 설치
-
-현재 AI 모듈에는 `requirements.txt`가 없으므로 아래 패키지를 직접 설치합니다.
-
-```bash
-pip install fastapi uvicorn pydantic python-dotenv
-pip install openai langchain-openai langchain-core google-genai
-pip install pyAudioAnalysis numpy pydub scipy tqdm eyed3
-pip install mediapipe opencv-python pillow httpx boto3
-```
-
-음성 처리 과정에서 오디오 변환이 필요한 경우 FFmpeg가 필요할 수 있습니다.
-
-### 환경변수 설정
-
-`AI/core/.env` 파일을 생성합니다.
-
-```env
-OPENAI_API_KEY=OPENAI_API_KEY
-AWS_ACCESS_KEY=AWS_ACCESS_KEY
-AWS_SECRET_KEY=AWS_SECRET_KEY
-AWS_REGION=ap-northeast-2
-AWS_BUCKET=persona-capstone
-AWS_PATH=ai-result
-
-BE_BASE_URL=http://localhost:8080
-```
-
-### 서버 실행
-
-```bash
-python app.py
-```
-
-또는
-
-```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-AI 서버 주요 엔드포인트는 다음과 같습니다.
-
-```text
-POST /diagnose-persona
-POST /generate-content
-POST /generate-trend-content
-```
-
-## 💻 Frontend 실행
-
-FE는 React + Vite 기반입니다.
-
-### 패키지 설치
-
-```bash
-cd FE
-npm install
-```
-
-의존성 버전을 `package-lock.json`과 완전히 동일하게 맞춰 재현해야 하는 경우에는 아래 명령어를 사용할 수 있습니다.
-
-```bash
-npm ci
-```
-
-### 환경변수 설정
-
-로컬 개발 시 `FE/.env.local` 파일을 생성합니다.
-
-```bash
-copy .env.example .env.local
-```
-
-macOS/Linux 환경에서는 다음 명령어를 사용합니다.
-
-```bash
-cp .env.example .env.local
-```
-
-로컬 BE 서버를 사용하는 경우:
-
-```env
-VITE_API_PROXY_TARGET=http://localhost:8080
-```
-
-배포된 BE 서버를 사용하는 경우:
-
-```env
-VITE_API_PROXY_TARGET=http://54.180.115.6:8080
-```
-
-FE 코드는 `/api/v1/...` 형태로 API를 호출합니다. 로컬에서는 Vite proxy가 `/api` 요청을 BE 서버로 전달합니다.
-
-### 로컬 실행
-
-```bash
-npm run dev
-```
-
-FE 서버는 `http://localhost:3000`에서 실행됩니다.
-
-### 빌드 및 린트
-
-```bash
-npm run build
-npm run lint
-```
-
-빌드 결과물은 `FE/build` 폴더에 생성됩니다.
-
-## 🐳 전체 Docker Compose 실행
-
-루트 디렉터리의 `docker-compose.yml`은 다음 서비스를 포함합니다.
-
-- `api`: Spring Boot BE
-- `fe`: React/Vite FE
-- `db`: PostgreSQL
-- `redis`: Redis
-
-AI 서버는 현재 `docker-compose.yml`에 포함되어 있지 않으므로 별도로 실행해야 합니다.
-
-```bash
-cd AI/core
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-BE JAR 파일을 생성한 뒤 루트 디렉터리에서 실행합니다.
-
-```bash
-docker compose up --build
-```
-
-실행 후 접속 주소는 다음과 같습니다.
-
-```text
-FE: http://localhost:3000
-BE: http://localhost:8080
-DB: localhost:5432
-Redis: localhost:6379
-AI: http://localhost:8000
-```
-
-## ☁️ 배포
-
-### FE 배포
-
-FE는 Vercel 배포를 기준으로 설정되어 있습니다.
-
-Vercel 프로젝트 설정은 FE 폴더를 기준으로 합니다.
-
-```text
-Root Directory: FE
-Build Command: npm run build
-Output Directory: build
-```
-
-```bash
-cd FE
-npm run build
-```
-
-출력 디렉터리는 `build`입니다.
-
-현재 `FE/vercel.json`에서는 `/api/*` 요청을 배포된 BE 서버로 프록시합니다.
-
-```text
-https://2025-capstone-project.vercel.app/api/v1/reference
-  -> http://54.180.115.6:8080/api/v1/reference
-```
-
-### BE 배포
-
-BE는 Docker 이미지로 배포할 수 있습니다.
-BE 폴더 내 터미널에서 아래 명령어를 순서대로 실행합니다.
-
-```bash
-docker login
-./gradlew clean build -x test
-docker build -t (DockerID)/(레포지토리명) .
-docker push (DockerID)/(레포지토리명)
-```
-
-#### ☁️ EC2 배포
-
-##### Parameter Store로 환경변수 관리 (무료 Secret Manager 대체)
-
-1. AWS Parameter Store → 파라미터 생성
-   - 이름 자유 설정
-   - 유형 : **보안 문자열**
-   - 데이터 형식 : `text`
-   - 값 : `.env` 내용 전체 붙여넣기
-
-##### EC2 인스턴스에서 실행
-
-```bash
-docker login
-docker pull (DockerID)/(레포지토리명)
-
-# Parameter Store에서 env 파일 가져오기
-aws ssm get-parameter \
-  --name "(파라미터스토어 이름)" \
-  --with-decryption \
-  --query "Parameter.Value" \
-  --output text > .env
-
-# 컨테이너 실행
-sudo docker run -d -p 8080:8080 \
-  --env-file .env \
-  --name (컨테이너명) \
-  (DockerID)/(레포지토리명)
-```
-
-> 💡 FE 서버와의 원활한 통신을 위해 **HTTPS** 설정을 권장합니다.
-
-
-### AI 배포
-
-AI 서버는 FastAPI 서버이므로 `uvicorn` 기반으로 배포합니다.
-
-```bash
-cd AI/core
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-운영 환경에서는 다음 환경변수가 필요합니다.
-
-```env
-OPENAI_API_KEY=OPENAI_API_KEY
-
-AWS_ACCESS_KEY=AWS_ACCESS_KEY
-AWS_SECRET_KEY=AWS_SECRET_KEY
-AWS_REGION=ap-northeast-2
-AWS_BUCKET=persona-capstone
-AWS_PATH=ai-result
-
-BE_BASE_URL=https://백엔드_배포_주소
-```
-
-## 🔑 테스트 계정
-
-초기 데이터 `BE/persona/src/main/resources/data.sql` 기준 테스트 계정은 다음과 같습니다.
-
-일반 사용자:
-
-```text
-ID: user01
-PW: user123
-
-ID: user02
-PW: user123
-```
-
-관리자:
-
-```text
-ID: admin
-PW: admin123
-
-ID: admin1
-PW: admin123
-```
-
-> 현재 설정에서는 `spring.sql.init.mode=never`이므로 `data.sql`이 자동 실행되지 않습니다. 테스트 계정을 사용하려면 해당 SQL 데이터가 DB에 반영되어 있어야 합니다.
->
-> BE 서버를 로컬로 실행한 경우, supabase에 해당 데이터가 반영되어 있습니다.
->
-> 그렇지 않은 경우 starter.sql 파일 내의 sql문을 사용하여 직접 추가해주세요.
-
-## 🧪 주요 API
-
-BE 주요 API prefix는 `/api/v1`입니다.
-
-```text
-POST   /api/v1/signin
-POST   /api/v1/signup
-POST   /api/v1/check
-POST   /api/v1/check-email
-POST   /api/v1/verify-code
-
-GET    /api/v1/member
-POST   /api/v1/member/check
-DELETE /api/v1/member
-
-GET    /api/v1/persona
-POST   /api/v1/persona
-DELETE /api/v1/persona
-
-GET    /api/v1/content
-POST   /api/v1/content
-DELETE /api/v1/content/{id}
-
-GET    /api/v1/reference
-POST   /api/v1/reference
-
-GET    /api/v1/notice
-GET    /api/v1/notice/pinned
-
-GET    /api/v1/progress/{sessionId}
-POST   /api/v1/progress
-```
-
-AI 서버 API:
-
-```text
-POST /diagnose-persona
-POST /generate-content
-POST /generate-trend-content
-```
-
-## ⚠️ Trouble Shooting
-
-### FE에서 API 호출이 실패하는 경우
-
-`FE/.env.local`에 API proxy target이 설정되어 있는지 확인합니다.
-
-```env
-VITE_API_PROXY_TARGET=http://localhost:8080
-```
-
-배포된 BE 서버를 사용하는 경우:
-
-```env
-VITE_API_PROXY_TARGET=http://54.180.115.6:8080
-```
-
-환경변수를 수정한 뒤 FE 개발 서버를 재시작합니다.
-
-```bash
-npm run dev
-```
-
-### Vercel 배포 환경에서 `/api` 요청이 404가 나는 경우
-
-`FE/vercel.json`에 `/api/:path*` rewrite가 있는지 확인합니다.
-
-```json
-{
-  "source": "/api/:path*",
-  "destination": "http://54.180.115.6:8080/api/:path*"
-}
-```
-
-### BE 실행 시 DB 오류가 나는 경우
-
-PostgreSQL이 실행 중인지 확인합니다.
-
-```bash
-docker compose up -d db
-```
-
-`.env`의 DB 주소를 확인합니다.
-
-로컬 실행:
-
-```env
-DATABASE_URL=jdbc:postgresql://localhost:5432/persona
-```
-
-Docker 실행:
-
-```env
-DATABASE_URL=jdbc:postgresql://db:5432/persona
-```
-
-또한 현재 JPA 설정이 `ddl-auto=validate`이므로 DB 테이블이 미리 생성되어 있어야 합니다.
-
-### BE에서 AI 서버 호출이 실패하는 경우
-
-AI 서버가 실행 중인지 확인합니다.
-
-```text
-http://localhost:8000
-```
-
-BE `.env`의 `AI_SERVER` 값을 확인합니다.
-
-로컬 실행:
-
-```env
-AI_SERVER=http://localhost:8000
-```
-
-Docker 실행:
-
-```env
-AI_SERVER=http://host.docker.internal:8000
-```
-
-### 이미지 생성 또는 업로드가 실패하는 경우
-
-다음 환경변수를 확인합니다.
-
-```env
-OPENAI_API_KEY
-GOOGLE_API_KEY
-AWS_ACCESS_KEY
-AWS_SECRET_KEY
-AWS_BUCKET
-AWS_REGION
-```
-
-S3 버킷 권한과 리전이 올바른지도 확인합니다.
-
-
-
-    ```
-    # openai API Key (팀장에게 문의)
-    OPENAI_API_KEY="여기에 실제 API 키를 입력"
-    ```
 
 -----
 ### 🤖 AI
@@ -1347,6 +675,347 @@ MediaPipe Pose Landmarker로 검출한 신체 랜드마크를 기반으로, 규�
 
 <br>
 
+<br><br>
+
+---
+
+# 🚀 실행 및 배포 가이드
+
+아래 내용은 FE, BE, AI 모듈이 모두 병합된 최종 결과물을 기준으로 작성되었습니다.
+
+```text
+.
+├── FE/              # React + Vite
+├── BE/persona/      # Spring Boot
+├── AI/core/         # FastAPI
+└── docker-compose.yml
+```
+
+### 실행 환경
+
+- Node.js 20 이상
+- Java 21
+- Python 3.10 권장
+- Docker, Docker Compose
+- PostgreSQL 16
+- Redis 7
+- OpenAI API Key
+- Google Gemini API Key
+- AWS S3 접근 키
+- Gmail SMTP 앱 비밀번호
+
+### 전체 실행 순서
+
+```text
+1. PostgreSQL, Redis 실행
+2. AI 서버 실행
+3. BE 서버 실행
+4. FE 서버 실행
+5. http://localhost:3000 접속
+```
+
+서비스 연결 구조는 다음과 같습니다.
+
+```text
+FE(localhost:3000)
+  -> BE(localhost:8080)
+      -> AI(localhost:8000)
+      -> PostgreSQL(localhost:5432)
+      -> Redis(localhost:6379)
+      -> AWS S3
+```
+
+## 🧩 Backend, DB 구축 및 실행
+
+### 📋 사전 요구사항
+
+로컬에서 프로젝트를 실행하기 전, 아래 항목이 준비되어 있어야 합니다.
+
+| 항목 | 비고 |
+|------|------|
+| Java 21 | |
+| IDE | Spring Boot 실행 가능한 환경 |
+| Supabase 계정 | DB 관리 |
+| AWS 계정 | S3 스토리지 |
+| Redis 계정 | 토큰 및 대기열 관리 |
+| Docker 계정 | 서버 배포 |
+| Gmail 계정 | 이메일 인증 발송 |
+| AI 서버 엔드포인트 URL | |
+
+<br>
+
+### 🔑 환경변수 설정 (`.env`)
+
+프로젝트 루트 디렉토리에 `.env` 파일을 생성합니다. 내용은 다음과 같습니다.
+
+```env
+APP_DOMAIN=
+APP_DOMAIN_ONLY=
+
+# ───────────────────────────────────────────
+# Database
+# ───────────────────────────────────────────
+DATABASE_URL=jdbc:postgresql://...
+DATABASE_USER=your_db_username
+DATABASE_PASSWORD=your_db_password
+
+# ───────────────────────────────────────────
+# Redis
+# ───────────────────────────────────────────
+REDIS_HOST=your_redis_host
+REDIS_PORT=your_redis_port
+REDIS_PASSWORD=your_redis_password
+
+# ───────────────────────────────────────────
+# JWT
+# ───────────────────────────────────────────
+JWT_SECRET=your_jwt_secret_key_here
+
+# ───────────────────────────────────────────
+# Email (SMTP)
+# ───────────────────────────────────────────
+EMAIL_NAME=your_email@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password
+
+# ───────────────────────────────────────────
+# AWS
+# ───────────────────────────────────────────
+AWS_ACCESS_KEY=your_aws_access_key_id
+AWS_SECRET_KEY=your_aws_secret_access_key
+
+# ───────────────────────────────────────────
+# AI Server
+# ───────────────────────────────────────────
+AI_SERVER=http://your-ai-server-endpoint
+```
+
+<br>
+
+#### 1. Supabase (PostgreSQL)
+
+1. [Supabase](https://supabase.com/) 로그인
+2. **New Organization** 선택 → Free Plan으로 생성
+3. 새 DB 생성 (⚠️ 설정한 DB Password를 반드시 기록해두세요)
+4. 상단 **Connect** → **Direct** 선택
+   - Connection Method : `Session Pooler`
+   - Type : `JDBC`
+5. Connection String 복사 후 아래와 같이 BE의 .env 파일에 입력
+
+```env
+DATABASE_URL=jdbc:postgresql://(주소):(port)/postgres
+DATABASE_USER=postgres.(영문코드)
+DATABASE_PASSWORD=(설정한 password)
+```
+
+<br>
+
+#### 2. AWS S3
+
+1. AWS 로그인 후 **S3** 탭으로 이동
+2. **버킷 생성** 시작
+   - 버킷 이름 : `persona-capstone`
+   - 리전 : `ap-northeast-2`
+   - ACL : 비활성화
+   - 퍼블릭 액세스 차단 : **미선택**
+   - 버킷 버전 관리 : 비활성화 (비용 무관하면 활성화)
+   - 기본 암호화 : `SSE-S3` / 버킷 키 활성화
+3. 생성한 버킷 → **권한** → **버킷 정책** → 편집 후 아래 내용 입력
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::persona-capstone/*"
+        }
+    ]
+}
+```
+
+4. 버킷 내 폴더 구조 생성
+
+```
+root
+├── generated_personas
+├── reference
+└── userData
+    ├── images
+    ├── profile
+    └── voices
+```
+
+5. **AWS IAM** → 자격 증명 탭 → 액세스 키 만들기 (CSV 파일로 보관 권장) 아래와 같이 BE의 .env 파일에 입력
+
+```env
+AWS_ACCESS_KEY=(생성한 액세스 키 ID)
+AWS_SECRET_KEY=(생성한 비밀 액세스 키)
+```
+
+<br>
+
+#### 3. Redis
+
+1. Redis 무료 DB 생성
+2. **Connect to Database** → **Redis CLI** 탭에서 아래 형식의 커맨드 확인
+
+```bash
+redis-cli -u redis://default:(password)@(redis_host):(port)
+```
+3. 아래와 같이 BE의 .env 파일에 입력
+
+```env
+REDIS_HOST=(redis_host)
+REDIS_PASSWORD=(password)
+REDIS_PORT=(port)
+```
+<br>
+
+#### 4. JWT Secret
+
+40자 이상의 영문 대소문자 + 숫자 조합 문자열을 자유롭게 설정하세요.
+
+```env
+JWT_SECRET=your_jwt_secret_key_here
+```
+
+
+#### 5. Email (Gmail SMTP)
+
+1. [Google 앱 비밀번호](https://myaccount.google.com/apppasswords) 접속 (2차 인증 필수)
+2. 앱 이름 자유롭게 설정 후 생성 → 발급된 비밀번호 기록
+
+```env
+EMAIL_NAME=(로그인한 구글 계정 이메일)
+EMAIL_PASSWORD=(발급된 앱 비밀번호)
+```
+
+<br>
+
+#### 6. AI Server
+
+AI 서버가 배포된 주소를 입력합니다.
+
+```env
+AI_SERVER=http://your-ai-server-endpoint
+```
+
+<br>
+
+#### 7. APP_DOMAIN
+
+BE 서버 실행 후 서버 주소를 입력합니다.
+
+```env
+APP_DOMAIN=(https:// 포함한 전체 주소)
+APP_DOMAIN_ONLY=(https:// 제외한 주소)
+```
+
+<br>
+
+### 💻 BE 로컬 실행
+
+#### IDE로 실행 (IntelliJ 기준)
+
+1. 프로젝트 루트에 `.env` 파일 생성 (환경변수 설정 참고)
+2. `Run` → `Edit Configurations` → `Active profiles` 에 `local` 입력
+3. `application.properties` 에서 아래와 같이 수정
+
+```properties
+spring.profiles.active=local
+```
+
+4. `PersonaApplication.java` 우클릭 → **Run** 실행
+
+#### 터미널로 실행
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+> BE 서버는 `http://localhost:8080`에서 실행됩니다.
+> 
+> Supabase에 테이블과 더미 데이터가 정상 생성되었는지 확인하세요.
+> 
+> 📖 Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+<br><br>
+
+
+## 🤖 AI 서버 실행
+
+AI 서버는 FastAPI 기반이며 기본 포트는 `8000`입니다.
+
+### 가상환경 생성
+
+```bash
+cd AI/core
+python -m venv .venv
+```
+
+Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+### 라이브러리 설치
+
+현재 AI 모듈에는 `requirements.txt`가 없으므로 아래 패키지를 직접 설치합니다.
+
+```bash
+pip install fastapi uvicorn pydantic python-dotenv
+pip install openai langchain-openai langchain-core google-genai
+pip install pyAudioAnalysis numpy pydub scipy tqdm eyed3
+pip install mediapipe opencv-python pillow httpx boto3
+```
+
+음성 처리 과정에서 오디오 변환이 필요한 경우 FFmpeg가 필요할 수 있습니다.
+
+### 환경변수 설정
+
+`AI/core/.env` 파일을 생성합니다.
+
+```env
+OPENAI_API_KEY=OPENAI_API_KEY
+AWS_ACCESS_KEY=AWS_ACCESS_KEY
+AWS_SECRET_KEY=AWS_SECRET_KEY
+AWS_REGION=ap-northeast-2
+AWS_BUCKET=persona-capstone
+AWS_PATH=ai-result
+
+BE_BASE_URL=http://localhost:8080
+```
+
+### 서버 실행
+
+```bash
+python app.py
+```
+
+또는
+
+```bash
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+AI 서버 주요 엔드포인트는 다음과 같습니다.
+
+```text
+POST /diagnose-persona
+POST /generate-content
+POST /generate-trend-content
+```
+
 #### 🧪 AI 모듈 단독 테스트 (서버 연결 X)
 
 > S3 · DB 등 공통 인프라 환경변수 설정은 **BE 환경변수 설정(.env) 파트 참고**
@@ -1424,6 +1093,198 @@ Swagger UI(`http://localhost:8000/docs`)에서 `/diagnose-persona`, `/generate-c
 
 ---
 
+<br><br>
+
+## 💻 Frontend 실행
+
+FE는 React + Vite 기반입니다.
+
+### 패키지 설치
+
+```bash
+cd FE
+npm install
+```
+
+의존성 버전을 `package-lock.json`과 완전히 동일하게 맞춰 재현해야 하는 경우에는 아래 명령어를 사용할 수 있습니다.
+
+```bash
+npm ci
+```
+
+### 환경변수 설정
+
+로컬 개발 시 `FE/.env.local` 파일을 생성합니다.
+
+```bash
+copy .env.example .env.local
+```
+
+macOS/Linux 환경에서는 다음 명령어를 사용합니다.
+
+```bash
+cp .env.example .env.local
+```
+
+로컬 BE 서버를 사용하는 경우:
+
+```env
+VITE_API_PROXY_TARGET=http://localhost:8080
+```
+
+배포된 BE 서버를 사용하는 경우:
+
+```env
+VITE_API_PROXY_TARGET=http://54.180.115.6:8080
+```
+
+FE 코드는 `/api/v1/...` 형태로 API를 호출합니다. 로컬에서는 Vite proxy가 `/api` 요청을 BE 서버로 전달합니다.
+
+### 로컬 실행
+
+```bash
+npm run dev
+```
+
+FE 서버는 `http://localhost:3000`에서 실행됩니다.
+
+### 빌드 및 린트
+
+```bash
+npm run build
+npm run lint
+```
+
+빌드 결과물은 `FE/build` 폴더에 생성됩니다.
+
+## 🐳 전체 Docker Compose 실행
+
+루트 디렉터리의 `docker-compose.yml`은 다음 서비스를 포함합니다.
+
+- `api`: Spring Boot BE
+- `fe`: React/Vite FE
+- `db`: PostgreSQL
+- `redis`: Redis
+
+AI 서버는 현재 `docker-compose.yml`에 포함되어 있지 않으므로 별도로 실행해야 합니다.
+
+```bash
+cd AI/core
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+BE JAR 파일을 생성한 뒤 루트 디렉터리에서 실행합니다.
+
+```bash
+docker compose up --build
+```
+
+실행 후 접속 주소는 다음과 같습니다.
+
+```text
+FE: http://localhost:3000
+BE: http://localhost:8080
+DB: localhost:5432
+Redis: localhost:6379
+AI: http://localhost:8000
+```
+
+## ☁️ 배포
+
+### FE 배포
+
+FE는 Vercel 배포를 기준으로 설정되어 있습니다.
+
+Vercel 프로젝트 설정은 FE 폴더를 기준으로 합니다.
+
+```text
+Root Directory: FE
+Build Command: npm run build
+Output Directory: build
+```
+
+```bash
+cd FE
+npm run build
+```
+
+출력 디렉터리는 `build`입니다.
+
+현재 `FE/vercel.json`에서는 `/api/*` 요청을 배포된 BE 서버로 프록시합니다.
+
+```text
+https://2025-capstone-project.vercel.app/api/v1/reference
+  -> http://54.180.115.6:8080/api/v1/reference
+```
+
+### BE 배포
+
+BE는 Docker 이미지로 배포할 수 있습니다.
+BE 폴더 내 터미널에서 아래 명령어를 순서대로 실행합니다.
+
+```bash
+docker login
+./gradlew clean build -x test
+docker build -t (DockerID)/(레포지토리명) .
+docker push (DockerID)/(레포지토리명)
+```
+
+#### ☁️ EC2 배포
+
+##### Parameter Store로 환경변수 관리 (무료 Secret Manager 대체)
+
+1. AWS Parameter Store → 파라미터 생성
+   - 이름 자유 설정
+   - 유형 : **보안 문자열**
+   - 데이터 형식 : `text`
+   - 값 : `.env` 내용 전체 붙여넣기
+
+##### EC2 인스턴스에서 실행
+
+```bash
+docker login
+docker pull (DockerID)/(레포지토리명)
+
+# Parameter Store에서 env 파일 가져오기
+aws ssm get-parameter \
+  --name "(파라미터스토어 이름)" \
+  --with-decryption \
+  --query "Parameter.Value" \
+  --output text > .env
+
+# 컨테이너 실행
+sudo docker run -d -p 8080:8080 \
+  --env-file .env \
+  --name (컨테이너명) \
+  (DockerID)/(레포지토리명)
+```
+
+> 💡 FE 서버와의 원활한 통신을 위해 **HTTPS** 설정을 권장합니다.
+
+
+### AI 배포
+
+AI 서버는 FastAPI 서버이므로 `uvicorn` 기반으로 배포합니다.
+
+```bash
+cd AI/core
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+운영 환경에서는 다음 환경변수가 필요합니다.
+
+```env
+OPENAI_API_KEY=OPENAI_API_KEY
+
+AWS_ACCESS_KEY=AWS_ACCESS_KEY
+AWS_SECRET_KEY=AWS_SECRET_KEY
+AWS_REGION=ap-northeast-2
+AWS_BUCKET=persona-capstone
+AWS_PATH=ai-result
+
+BE_BASE_URL=https://백엔드_배포_주소
+```
+
 ## 🔄 배포 서버 관리 (pm2)
 
 > EC2 인스턴스 자체의 Docker / Parameter Store 배포 절차는 **BE EC2 배포 파트 참고**. 여기서는 EC2에서 pm2로 상시 구동 중인 AI(FastAPI) 프로세스의 운영 방법만 다룹니다.
@@ -1467,4 +1328,180 @@ pm2 list     # 등록된 프로세스 목록 및 online/stopped 상태 확인
 pm2 logs     # 실시간 로그 확인 — 재시작 후 에러 여부는 여기서 가장 먼저 확인
 ```
 
+<br><br>
+
 ---
+
+
+## 🔑 테스트 계정
+
+초기 데이터 `BE/persona/src/main/resources/data.sql` 기준 테스트 계정은 다음과 같습니다.
+
+일반 사용자:
+
+```text
+ID: user01
+PW: user123
+
+ID: user02
+PW: user123
+```
+
+관리자:
+
+```text
+ID: admin
+PW: admin123
+
+ID: admin1
+PW: admin123
+```
+
+> 현재 설정에서는 `spring.sql.init.mode=never`이므로 `data.sql`이 자동 실행되지 않습니다. 테스트 계정을 사용하려면 해당 SQL 데이터가 DB에 반영되어 있어야 합니다.
+>
+> BE 서버를 로컬로 실행한 경우, supabase에 해당 데이터가 반영되어 있습니다.
+>
+> 그렇지 않은 경우 starter.sql 파일 내의 sql문을 사용하여 직접 추가해주세요.
+
+## 🧪 주요 API
+
+BE 주요 API prefix는 `/api/v1`입니다.
+
+```text
+POST   /api/v1/signin
+POST   /api/v1/signup
+POST   /api/v1/check
+POST   /api/v1/check-email
+POST   /api/v1/verify-code
+
+GET    /api/v1/member
+POST   /api/v1/member/check
+DELETE /api/v1/member
+
+GET    /api/v1/persona
+POST   /api/v1/persona
+DELETE /api/v1/persona
+
+GET    /api/v1/content
+POST   /api/v1/content
+DELETE /api/v1/content/{id}
+
+GET    /api/v1/reference
+POST   /api/v1/reference
+
+GET    /api/v1/notice
+GET    /api/v1/notice/pinned
+
+GET    /api/v1/progress/{sessionId}
+POST   /api/v1/progress
+```
+
+AI 서버 API:
+
+```text
+POST /diagnose-persona
+POST /generate-content
+POST /generate-trend-content
+```
+
+## ⚠️ Trouble Shooting
+
+### FE에서 API 호출이 실패하는 경우
+
+`FE/.env.local`에 API proxy target이 설정되어 있는지 확인합니다.
+
+```env
+VITE_API_PROXY_TARGET=http://localhost:8080
+```
+
+배포된 BE 서버를 사용하는 경우:
+
+```env
+VITE_API_PROXY_TARGET=http://54.180.115.6:8080
+```
+
+환경변수를 수정한 뒤 FE 개발 서버를 재시작합니다.
+
+```bash
+npm run dev
+```
+
+### Vercel 배포 환경에서 `/api` 요청이 404가 나는 경우
+
+`FE/vercel.json`에 `/api/:path*` rewrite가 있는지 확인합니다.
+
+```json
+{
+  "source": "/api/:path*",
+  "destination": "http://54.180.115.6:8080/api/:path*"
+}
+```
+
+### BE 실행 시 DB 오류가 나는 경우
+
+PostgreSQL이 실행 중인지 확인합니다.
+
+```bash
+docker compose up -d db
+```
+
+`.env`의 DB 주소를 확인합니다.
+
+로컬 실행:
+
+```env
+DATABASE_URL=jdbc:postgresql://localhost:5432/persona
+```
+
+Docker 실행:
+
+```env
+DATABASE_URL=jdbc:postgresql://db:5432/persona
+```
+
+또한 현재 JPA 설정이 `ddl-auto=validate`이므로 DB 테이블이 미리 생성되어 있어야 합니다.
+
+### BE에서 AI 서버 호출이 실패하는 경우
+
+AI 서버가 실행 중인지 확인합니다.
+
+```text
+http://localhost:8000
+```
+
+BE `.env`의 `AI_SERVER` 값을 확인합니다.
+
+로컬 실행:
+
+```env
+AI_SERVER=http://localhost:8000
+```
+
+Docker 실행:
+
+```env
+AI_SERVER=http://host.docker.internal:8000
+```
+
+### 이미지 생성 또는 업로드가 실패하는 경우
+
+다음 환경변수를 확인합니다.
+
+```env
+OPENAI_API_KEY
+GOOGLE_API_KEY
+AWS_ACCESS_KEY
+AWS_SECRET_KEY
+AWS_BUCKET
+AWS_REGION
+```
+
+S3 버킷 권한과 리전이 올바른지도 확인합니다.
+
+
+
+    ```
+    # openai API Key (팀장에게 문의)
+    OPENAI_API_KEY="여기에 실제 API 키를 입력"
+    ```
+
